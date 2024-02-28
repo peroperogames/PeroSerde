@@ -1,0 +1,17 @@
+{
+  "name": "com.prpr.serde",
+  "displayName": "PeroSerde",
+  "description": "Universal Serializer & Deserializer For Unity, Aims To Be Efficient, Generic And Easy To Use.",
+  "version": "0.1.0",
+  "unity": "2021.3",
+  "author": {
+    "name": "PeroPero",
+    "email": "unity@peropero.net"
+  },
+  "documentationUrl": "https://git.peropero.net/unity-packages/autobuild/-/blob/master/README.md",
+  "changelogUrl": "https://git.peropero.net/unity-packages/autobuild/-/releases",
+  "dependencies": {
+    "com.prpr.system.runtime.compilerservices.unsafe": "6.0.0"
+  },
+  "type": "tool"
+}

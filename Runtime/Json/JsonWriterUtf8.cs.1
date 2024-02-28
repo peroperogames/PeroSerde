@@ -1,0 +1,1806 @@
+﻿/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: AidenMX
+ * Created On: 2024/02/02
+ * Description: JsonWriterUtf8
+ */
+
+using System;
+using System.Buffers;
+using System.Buffers.Text;
+using System.Runtime.CompilerServices;
+using System.Text;
+
+namespace PeroTools2.Serde.Json
+{
+    // public static class SpanUtils
+    // {
+    //     // 去掉了类型长度检查
+    //     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //     public static unsafe Span<T> DangerousCreateSpan<T>(ref T value, int length)
+    //         where T : unmanaged
+    //     {
+    //         // 等同于 MemoryMarshal.CreateSpan(ref value, length);
+    //         // .Net7之后可以直接使用 new Span(ref value, length);
+    //         return new Span<T>(Unsafe.AsPointer(ref value), length);
+    //     }
+    //
+    //     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //     public static unsafe ReadOnlySpan<T> DangerousCreateReadOnlySpan<T>(ref T value, int length)
+    //         where T : unmanaged
+    //     {
+    //         // 等同于 MemoryMarshal.CreateReadOnlySpan(ref value, length);
+    //         // .Net7之后可以直接使用 new ReadOnlySpan(ref value, length);
+    //         return new ReadOnlySpan<T>(Unsafe.AsPointer(ref value), length);
+    //     }
+    //
+    //     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //     public static unsafe Span<TR> DangerousSpanCast<T, TR>(this Span<T> span)
+    //         where T : unmanaged
+    //         where TR : unmanaged
+    //     {
+    //         // 等同于 return MemoryMarshal.Cast<T, TR>(span);
+    //         return span.IsEmpty
+    //             ? Span<TR>.Empty
+    //             : new Span<TR>(Unsafe.AsPointer(ref span[0]), span.Length);
+    //     }
+    // }
+
+    // TODO Write Array, IList, Object, NonGeneric
+
+    public ref struct JsonWriter<TSymbol, TBufferWriter>
+        where TBufferWriter : class, IBufferWriter<TSymbol>
+        where TSymbol : unmanaged
+    {
+        // private const int depth_limit = 1000;
+        private const int max_number_buffer_size = 32;
+
+        private readonly TBufferWriter m_BufferWriter;
+
+        // C# 10之后可以使用 private ref TSymbol m_BufferRef;
+        private Span<TSymbol> m_BufferRef;
+        private int m_AdvancedCount;
+        private int m_WrittenCount;
+        private readonly JsonCode<TSymbol> m_JsonCode;
+
+        /// <summary>true代表写UTF8, false代表写UTF16</summary>
+        private readonly bool m_WriteUtf8;
+
+        // TODO Options
+
+        public JsonWriter(TBufferWriter writer)
+        {
+            m_BufferWriter = writer;
+            m_BufferRef = default;
+            m_AdvancedCount = 0;
+            m_WrittenCount = 0;
+            m_JsonCode = JsonCode.Get<TSymbol>();
+            m_WriteUtf8 = typeof(TSymbol) == typeof(byte);
+        }
+
+        #region Buffer Op
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ref TSymbol GetSpanRef(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            // 这里使用MemoryMarshal.GetReference()获取引用会慢很多
+            return ref m_BufferRef[0];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ref T GetSpanRef<T>(int sizeHint) where T : unmanaged
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return ref Unsafe.As<TSymbol, T>(ref m_BufferRef[0]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Span<TSymbol> GetSpan(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return m_BufferRef;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe Span<T> GetSpan<T>(int sizeHint) where T : unmanaged
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            // 这里不使用MemoryMarshal.Cast()来强转Span是因为直接使用Pointer性能更好,
+            // 因为去掉了sizeof(T)是否相等的比较, 还有两个运行时检查.
+            return new Span<T>(Unsafe.AsPointer(ref m_BufferRef[0]), m_BufferRef.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void RequestNewBuffer(int sizeHint)
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = m_BufferWriter.GetSpan(sizeHint);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int count)
+        {
+            if (count == 0) return;
+            if (m_BufferRef.Length - count < 0)
+            {
+                SerdeException.ThrowInvalidAdvance();
+            }
+            m_BufferRef = m_BufferRef.Slice(count);
+            m_AdvancedCount += count;
+            m_WrittenCount += count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Flush()
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = default;
+            m_WrittenCount = 0;
+        }
+
+        #endregion
+
+        #region Write Indent
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteIndent(int count)
+        {
+            var span = GetSpan(count);
+            for (var i = 0; i < count; i++)
+            {
+                span[i] = m_JsonCode.space;
+            }
+            Advance(count);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNewLine()
+        {
+            GetSpanRef(1) = m_JsonCode.newLine;
+            Advance(1);
+        }
+
+        #endregion
+
+        #region Write Literal
+
+        /// <summary>写入一个英文冒号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteKeyEnding()
+        {
+            GetSpanRef(1) = m_JsonCode.colon;
+            Advance(1);
+        }
+
+        /// <summary>写入一个英文逗号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueEnding()
+        {
+            GetSpanRef(1) = m_JsonCode.comma;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginObject()
+        {
+            GetSpanRef(1) = m_JsonCode.leftBrace;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndObject()
+        {
+            GetSpanRef(1) = m_JsonCode.rightBrace;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginArray()
+        {
+            GetSpanRef(1) = m_JsonCode.leftBracket;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndArray()
+        {
+            GetSpanRef(1) = m_JsonCode.rightBracket;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteDoubleQuote()
+        {
+            GetSpanRef(1) = m_JsonCode.doubleQuote;
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNull()
+        {
+            // 性能测试表明, 少量字节拷贝的速度远不如直接一个一个赋值..
+            if (m_WriteUtf8)
+            {
+                var s = GetSpan<byte>(4);
+                s[0] = (byte) 'n';
+                s[1] = (byte) 'u';
+                s[2] = (byte) 'l';
+                s[3] = (byte) 'l';
+            }
+            else
+            {
+                var s = GetSpan<char>(4);
+                s[0] = 'n';
+                s[1] = 'u';
+                s[2] = 'l';
+                s[3] = 'l';
+            }
+            Advance(4);
+        }
+
+        #endregion
+
+        #region Write Primitive
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBool(bool value)
+        {
+            var length = value ? 4 : 5;
+            if (m_WriteUtf8)
+                WriteUtf8(GetSpan<byte>(length), value);
+            else
+                WriteUtf16(GetSpan<char>(length), value);
+            Advance(length);
+            return;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static void WriteUtf8(Span<byte> s, bool b)
+            {
+                if (b)
+                {
+                    s[0] = (byte) 't';
+                    s[1] = (byte) 'r';
+                    s[2] = (byte) 'u';
+                    s[3] = (byte) 'e';
+                }
+                else
+                {
+                    s[0] = (byte) 'f';
+                    s[1] = (byte) 'a';
+                    s[2] = (byte) 'l';
+                    s[3] = (byte) 's';
+                    s[4] = (byte) 'e';
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static void WriteUtf16(Span<char> s, bool b)
+            {
+                if (b)
+                {
+                    s[0] = 't';
+                    s[1] = 'r';
+                    s[2] = 'u';
+                    s[3] = 'e';
+                }
+                else
+                {
+                    s[0] = 'f';
+                    s[1] = 'a';
+                    s[2] = 'l';
+                    s[3] = 's';
+                    s[4] = 'e';
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt8(sbyte value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt16(short value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt32(int value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt64(long value)
+        {
+            if (value < 0)
+            {
+                GetSpanRef(1) = m_JsonCode.negative;
+                Advance(1);
+                value = unchecked(-value);
+            }
+            WriteUInt64((ulong) value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt8(byte value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt16(ushort value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt32(uint value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt64(ulong value)
+        {
+            if (m_WriteUtf8)
+                WriteUInt64Utf8(value);
+            else
+                WriteUInt64Utf16(value);
+        }
+
+        private void WriteUInt64Utf8(ulong value)
+        {
+            if (value < 10)
+            {
+                GetSpanRef<byte>(1) = (byte) ('0' + value);
+                Advance(1);
+                return;
+            }
+            var digits = MathUtil.CountDigits(value);
+            var span = GetSpan<byte>(digits);
+            for (var i = digits; i > 0; i--)
+            {
+                var temp = '0' + value;
+                value /= 10;
+                span[i - 1] = (byte) (temp - value * 10);
+            }
+            Advance(digits);
+        }
+
+        private void WriteUInt64Utf16(ulong value)
+        {
+            if (value < 10)
+            {
+                GetSpanRef<char>(1) = (char) ('0' + value);
+                Advance(1);
+                return;
+            }
+            var digits = MathUtil.CountDigits(value);
+            var span = GetSpan<char>(digits);
+            for (var i = digits; i > 0; i--)
+            {
+                var temp = '0' + value;
+                value /= 10;
+                span[i - 1] = (char) (temp - value * 10);
+            }
+            Advance(digits);
+        }
+
+        public unsafe void WriteFloat(float value, string format = null)
+        {
+            if (NumberHelper.IsSpecialValue(value))
+            {
+                SerdeException.ThrowInvalidFloatPoint();
+                return;
+            }
+            if (m_WriteUtf8)
+            {
+                Span<byte> temp = stackalloc byte[NumberHelper.DecimalMaxSingleStringLength];
+                Utf8Formatter.TryFormat(value, temp, out var bytesWritten, StandardFormat.Parse(format));
+                var dest = GetSpan<byte>(bytesWritten);
+                temp[..bytesWritten].CopyTo(dest);
+                Advance(bytesWritten);
+            }
+            else
+            {
+                // Span<char> temp = stackalloc char[max_number_buffer_size];
+                // value.TryFormat(temp, out var charsWritten, format.AsSpan(), CultureInfo.InvariantCulture);
+                // var dest = GetSpan<char>(charsWritten);
+                // temp[..charsWritten].CopyTo(dest);
+                // Advance(charsWritten);
+                var span = GetSpan(NumberHelper.DecimalMaxSingleStringLength);
+                var charsWritten = NumberHelper.Decimal.ToString(value, (char*) Unsafe.AsPointer(ref span[0]));
+                Advance(charsWritten);
+            }
+        }
+
+        public unsafe void WriteDouble(double value, string format = null)
+        {
+            if (NumberHelper.IsSpecialValue(value))
+            {
+                throw new ArgumentException("Infinity float point value is invalid in json.", nameof(value));
+            }
+            if (m_WriteUtf8)
+            {
+                Span<byte> temp = stackalloc byte[max_number_buffer_size];
+                Utf8Formatter.TryFormat(value, temp, out var bytesWritten, StandardFormat.Parse(format));
+                var dest = GetSpan<byte>(bytesWritten);
+                temp[..bytesWritten].CopyTo(dest);
+                Advance(bytesWritten);
+            }
+            else
+            {
+                // Span<char> temp = stackalloc char[max_number_buffer_size];
+                // value.TryFormat(temp, out var charsWritten, format.AsSpan(), CultureInfo.InvariantCulture);
+                // var dest = GetSpan<char>(charsWritten);
+                // temp[..charsWritten].CopyTo(dest);
+                // Advance(charsWritten);
+                var span = GetSpan(NumberHelper.DecimalMaxDoubleStringLength);
+                var charsWritten = NumberHelper.Decimal.ToString(value, (char*) Unsafe.AsPointer(ref span[0]));
+                Advance(charsWritten);
+            }
+        }
+
+        public unsafe void WriteDecimal(decimal value, string format = null)
+        {
+            if (m_WriteUtf8)
+            {
+                Span<byte> temp = stackalloc byte[max_number_buffer_size];
+                Utf8Formatter.TryFormat(value, temp, out var bytesWritten, StandardFormat.Parse(format.AsSpan()));
+                var dest = GetSpan<byte>(bytesWritten);
+                temp[..bytesWritten].CopyTo(dest);
+                Advance(bytesWritten);
+            }
+            else
+            {
+                // Span<char> temp = stackalloc char[max_number_buffer_size];
+                // value.TryFormat(temp, out var charsWritten, format.AsSpan(), CultureInfo.InvariantCulture);
+                // var dest = GetSpan<char>(charsWritten);
+                // temp[..charsWritten].CopyTo(dest);
+                // Advance(charsWritten);
+                var span = GetSpan(NumberHelper.DecimalStringMaxLength);
+                var charsWritten = NumberHelper.ToString(value, (char*) Unsafe.AsPointer(ref span[0]));
+                Advance(charsWritten);
+            }
+        }
+
+        #endregion
+
+        #region Write Char & String
+
+        /// <summary>写入一个char, 按照string的方式写入.</summary>
+        public void WriteChar(char value)
+        {
+            WriteDoubleQuote();
+            if (value < 0x20 || value is '"' or '\\') // 转义控制字符和特殊字符
+            {
+                WriteEscapedChar(value);
+            }
+            else if (!m_WriteUtf8)
+            {
+                GetSpanRef<char>(1) = value;
+                Advance(1);
+            }
+            else
+            {
+                if (value < 0x80) // ASCII范围内的字符, UTF8编码就是ASCII编码
+                {
+                    GetSpanRef<byte>(1) = (byte) value;
+                    Advance(1);
+                }
+                else // 非ASCII范围内(127, 0x7F)但在Char范围内(65535, 0xFFFF)的UTF8字符, 需要占用2-3字节, 这里方便起见, 直接当调包侠
+                {
+                    var srcSpan = MemoryMarshal.CreateReadOnlySpan(ref value, 1);
+                    var destSpan = GetSpan<byte>(3);
+                    // .net5之后可以使用Utf8.FromUtf16()代替.
+                    var bytesWritten = Encoding.UTF8.GetBytes(srcSpan, destSpan);
+                    Advance(bytesWritten);
+                }
+            }
+            WriteDoubleQuote();
+        }
+
+        /// <summary>写入"name":</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteKey(string name)
+        {
+            // key不会含有转义字符. 这应该在生成序列化代码时保证.
+            WriteStringNoEscape(name);
+            WriteKeyEnding();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteString(string str)
+        {
+            if (str == null)
+            {
+                WriteNull();
+                return;
+            }
+            WriteDoubleQuote();
+            if (m_WriteUtf8)
+                WriteStringUtf8(str.AsSpan());
+            else
+                WriteStringUtf16(str.AsSpan());
+            WriteDoubleQuote();
+        }
+
+        /// <summary>在不考虑转义字符的情况下写入字符串</summary>
+        public void WriteStringNoEscape(string str)
+        {
+            if (str == null)
+            {
+                WriteNull();
+                return;
+            }
+            WriteDoubleQuote();
+            if (m_WriteUtf8)
+                WriteUtf8StringNoEscape(str.AsSpan());
+            else
+                WriteRaw(str.AsSpan());
+            WriteDoubleQuote();
+        }
+
+        /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
+        // ReSharper disable once CognitiveComplexity
+        private void WriteEscapedChar(char value)
+        {
+            switch (value)
+            {
+                case '"':
+                    WriteSingleEscapedChar('"');
+                    break;
+                case '\\':
+                    WriteSingleEscapedChar('\\');
+                    break;
+                case '\b':
+                    WriteSingleEscapedChar('b');
+                    break;
+                case '\f':
+                    WriteSingleEscapedChar('f');
+                    break;
+                case '\n':
+                    WriteSingleEscapedChar('n');
+                    break;
+                case '\r':
+                    WriteSingleEscapedChar('r');
+                    break;
+                case '\t':
+                    WriteSingleEscapedChar('t');
+                    break;
+                // case < '\u001F':
+                //     WriteDoubleEscapedChar(value);
+                //     break;
+                case '\u0000':
+                    WriteDoubleEscapedChar('0', '0');
+                    break;
+                case '\u0001':
+                    WriteDoubleEscapedChar('0', '1');
+                    break;
+                case '\u0002':
+                    WriteDoubleEscapedChar('0', '2');
+                    break;
+                case '\u0003':
+                    WriteDoubleEscapedChar('0', '3');
+                    break;
+                case '\u0004':
+                    WriteDoubleEscapedChar('0', '4');
+                    break;
+                case '\u0005':
+                    WriteDoubleEscapedChar('0', '5');
+                    break;
+                case '\u0006':
+                    WriteDoubleEscapedChar('0', '6');
+                    break;
+                case '\u0007':
+                    WriteDoubleEscapedChar('0', '7');
+                    break;
+                case '\u000B':
+                    WriteDoubleEscapedChar('0', 'B');
+                    break;
+                case '\u000E':
+                    WriteDoubleEscapedChar('0', 'E');
+                    break;
+                case '\u000F':
+                    WriteDoubleEscapedChar('0', 'F');
+                    break;
+                case '\u0010':
+                    WriteDoubleEscapedChar('1', '0');
+                    break;
+                case '\u0011':
+                    WriteDoubleEscapedChar('1', '1');
+                    break;
+                case '\u0012':
+                    WriteDoubleEscapedChar('1', '2');
+                    break;
+                case '\u0013':
+                    WriteDoubleEscapedChar('1', '3');
+                    break;
+                case '\u0014':
+                    WriteDoubleEscapedChar('1', '4');
+                    break;
+                case '\u0015':
+                    WriteDoubleEscapedChar('1', '5');
+                    break;
+                case '\u0016':
+                    WriteDoubleEscapedChar('1', '6');
+                    break;
+                case '\u0017':
+                    WriteDoubleEscapedChar('1', '7');
+                    break;
+                case '\u0018':
+                    WriteDoubleEscapedChar('1', '8');
+                    break;
+                case '\u0019':
+                    WriteDoubleEscapedChar('1', '9');
+                    break;
+                case '\u001A':
+                    WriteDoubleEscapedChar('1', 'A');
+                    break;
+                case '\u001B':
+                    WriteDoubleEscapedChar('1', 'B');
+                    break;
+                case '\u001C':
+                    WriteDoubleEscapedChar('1', 'C');
+                    break;
+                case '\u001D':
+                    WriteDoubleEscapedChar('1', 'D');
+                    break;
+                case '\u001E':
+                    WriteDoubleEscapedChar('1', 'E');
+                    break;
+                case '\u001F':
+                    WriteDoubleEscapedChar('1', 'F');
+                    break;
+            }
+        }
+
+        /// <summary>写入\x类型的转义字符.这种字符在文本中占2个位置</summary>
+        private void WriteSingleEscapedChar(char toEscape)
+        {
+            if (m_WriteUtf8)
+            {
+                var span = GetSpan<byte>(2);
+                span[0] = (byte) '\\';
+                span[1] = (byte) toEscape;
+            }
+            else
+            {
+                var span = GetSpan<char>(2);
+                span[0] = '\\';
+                span[1] = toEscape;
+            }
+            Advance(2);
+        }
+
+        /// <summary>写入\u00xx类型的转义字符.这种字符在文本中占6个位置</summary>
+        private void WriteDoubleEscapedChar(char firstToEscape, char secondToEscape)
+        {
+            // 需要转移的控制字符范围是\u0000到\u001F, 所以可以固定前四位一定是\u00
+            if (m_WriteUtf8)
+            {
+                var s = GetSpan<byte>(6);
+                s[0] = (byte) '\\';
+                s[1] = (byte) 'u';
+                s[2] = (byte) '0';
+                s[3] = (byte) '0';
+                s[4] = (byte) firstToEscape;
+                s[5] = (byte) secondToEscape;
+            }
+            else
+            {
+                var s = GetSpan<char>(6);
+                s[0] = '\\';
+                s[1] = 'u';
+                s[2] = '0';
+                s[3] = '0';
+                s[4] = firstToEscape;
+                s[5] = secondToEscape;
+            }
+            Advance(6);
+        }
+
+        /// <summary>将<see cref="string"/>转换成UTF8编码后写入Buffer.</summary>
+        /// <remarks>
+        /// 1. 仅当<typeparamref name="TSymbol"/>为byte时可以调用.<br/>
+        /// 2. 会考虑到转义字符.
+        /// </remarks>
+        private void WriteStringUtf8(ReadOnlySpan<char> str)
+        {
+            // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
+            var from = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                ref readonly var c = ref str[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    if (i - from > 0)
+                    {
+                        WriteUtf8StringNoEscape(str.Slice(from, i - from));
+                    }
+                    WriteEscapedChar(c);
+                    from = i + 1;
+                }
+            }
+            if (from < str.Length)
+            {
+                WriteUtf8StringNoEscape(str[from..]);
+            }
+        }
+
+        /// <summary>
+        /// 在不考虑转义字符的情况下写入UTF8序列.
+        /// 如果字符串内有需要转义的字符，则结果会异常.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteUtf8StringNoEscape(ReadOnlySpan<char> str)
+        {
+            var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+            var destSpan = GetSpan<byte>(maxByteCount);
+            // .Net5开始可以使用Utf8.FromUtf16()来加速
+            var bytesWritten = Encoding.UTF8.GetBytes(str, destSpan);
+            Advance(bytesWritten);
+        }
+
+        /// <summary>将<see cref="string"/>写入UTF16 Buffer.</summary>
+        /// <remarks>
+        /// 1. 仅当<typeparamref name="TSymbol"/>为char时可以调用.<br/>
+        /// 2. 会考虑到转义字符.
+        /// </remarks>
+        private void WriteStringUtf16(ReadOnlySpan<char> str)
+        {
+            // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
+            var from = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                ref readonly var c = ref str[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    if (i - from > 0)
+                    {
+                        // 字符串本身就是UTF16编码, 在不考虑大端序小端序的情况下可以直接写入
+                        WriteRaw(str.Slice(from, i - from));
+                    }
+                    WriteEscapedChar(c);
+                    from = i + 1;
+                }
+            }
+            if (from < str.Length)
+            {
+                WriteRaw(str[from..]);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteRaw<T>(ReadOnlySpan<T> raw) where T : unmanaged
+        {
+            raw.CopyTo(GetSpan<T>(raw.Length));
+            Advance(raw.Length);
+        }
+
+        #endregion
+    }
+
+    public unsafe ref struct UnsafeJsonWriterUtf16<TBufferWriter>
+        where TBufferWriter : class, IBufferWriter<char>
+    {
+        private readonly TBufferWriter m_BufferWriter;
+
+        // C# 10之后可以使用 private ref TSymbol m_BufferRef;
+        private Span<char> m_BufferRef;
+        private int m_AdvancedCount;
+        private int m_WrittenCount;
+
+        // TODO Options
+
+        public UnsafeJsonWriterUtf16(TBufferWriter writer)
+        {
+            m_BufferWriter = writer;
+            m_BufferRef = default;
+            m_AdvancedCount = 0;
+            m_WrittenCount = 0;
+        }
+
+        #region Buffer Op
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ref char GetSpanRef(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            // 这里使用MemoryMarshal.GetReference()获取引用会慢很多
+            return ref m_BufferRef[0];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Span<char> GetSpan(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return m_BufferRef;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void RequestNewBuffer(int sizeHint)
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = m_BufferWriter.GetSpan(sizeHint);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int count)
+        {
+            if (count == 0) return;
+            if (m_BufferRef.Length - count < 0)
+            {
+                SerdeException.ThrowInvalidAdvance();
+            }
+            m_BufferRef = m_BufferRef.Slice(count);
+            m_AdvancedCount += count;
+            m_WrittenCount += count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Flush()
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = default;
+            m_WrittenCount = 0;
+        }
+
+        #endregion
+
+        #region Write Literal
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginObject()
+        {
+            GetSpanRef(1) = '{';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndObject()
+        {
+            GetSpanRef(1) = '}';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginArray()
+        {
+            GetSpanRef(1) = '[';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndArray()
+        {
+            GetSpanRef(1) = ']';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNull()
+        {
+            // 性能测试表明, 少量字节拷贝的速度远不如直接一个一个赋值..
+            var s = GetSpan(4);
+            s[0] = 'n';
+            s[1] = 'u';
+            s[2] = 'l';
+            s[3] = 'l';
+            Advance(4);
+        }
+
+        /// <summary>写入一个英文冒号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteKeyEndingUnsafe(char* dest)
+        {
+            *dest = ':';
+            return 1;
+        }
+
+        /// <summary>写入一个英文逗号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteValueEndingUnsafe(char* dest)
+        {
+            *dest = ',';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteDoubleQuoteUnsafe(char* dest)
+        {
+            *dest = '"';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteSpaceUnsafe(char* dest)
+        {
+            *dest = ' ';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteNullUnsafe(char* dest)
+        {
+            dest[0] = 'n';
+            dest[1] = 'u';
+            dest[2] = 'l';
+            dest[3] = 'l';
+            return 4;
+        }
+
+        #endregion
+
+        #region Write Indent
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteIndentUnsafe(int count, char* dest)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                dest[i] = ' ';
+            }
+            return count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteNewLineUnsafe(char* dest)
+        {
+            *dest = '\n';
+            return 1;
+        }
+
+        #endregion
+
+        #region Write Primitive
+
+        public void WriteValue<T>(string key, T value, bool writeComma = true)
+        {
+            // TODO 写入Format时长度会加一个空格
+            var requiredSize = key.Length + GetValueRequiredSize(value) + 2; // 2 是 : 和 , 的大小
+            var destSpan = GetSpan(requiredSize);
+            fixed (char* fixedPtr = destSpan)
+            {
+                var destPtr = fixedPtr;
+                destPtr += WriteStringNoEscapeUnsafe(destPtr, key);
+                destPtr += WriteKeyEndingUnsafe(destPtr);
+
+                destPtr += WriteValueUnsafe(destPtr, value);
+
+                if (writeComma)
+                    destPtr += WriteValueEndingUnsafe(destPtr);
+                Advance((int) (destPtr - fixedPtr));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteBoolUnsafe(char* dest, bool value)
+        {
+            if (value)
+            {
+                dest[0] = 't';
+                dest[1] = 'r';
+                dest[2] = 'u';
+                dest[3] = 'e';
+                return 4;
+            }
+            else
+            {
+                dest[0] = 'f';
+                dest[1] = 'a';
+                dest[2] = 'l';
+                dest[3] = 's';
+                dest[4] = 'e';
+                return 5;
+            }
+        }
+
+        private static int WriteInt64Unsafe(char* dest, long value)
+        {
+            return NumberHelper.ToDecimalString(value, dest);
+            // if (value >= 0)
+            // {
+            //     return WriteUInt64Unsafe(dest, (ulong) value);
+            // }
+            // *dest = '-';
+            // return WriteUInt64Unsafe(dest + 1, (ulong) -value) + 1;
+        }
+
+        private static int WriteUInt64Unsafe(char* dest, ulong value)
+        {
+            return NumberHelper.ToDecimalString(value, dest);
+            // if (value < 10)
+            // {
+            //     *dest = (char) ('0' + value);
+            //     return 1;
+            // }
+            // var digits = MathUtil.CountDigits(value);
+            // for (var i = digits; i > 0; i--)
+            // {
+            //     var temp = '0' + value;
+            //     value /= 10;
+            //     dest[i - 1] = (char) (temp - value * 10);
+            // }
+            // return digits;
+        }
+
+        private static int WriteFloatUnsafe(char* dest, float value)
+        {
+            if (NumberHelper.IsSpecialValue(value))
+            {
+                // TODO 格式值按照字符串或者默认值写入？
+                SerdeException.ThrowInvalidFloatPoint();
+                return default;
+            }
+            return NumberHelper.Decimal.ToString(value, dest);
+        }
+
+        private static int WriteDoubleUnsafe(char* dest, double value)
+        {
+            if (NumberHelper.IsSpecialValue(value))
+            {
+                SerdeException.ThrowInvalidFloatPoint();
+                return default;
+            }
+            return NumberHelper.Decimal.ToString(value, dest);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteDecimalUnsafe(char* dest, decimal value)
+            => NumberHelper.ToString(value, dest);
+
+        private static int WriteCharUnsafe(char* dest, char value)
+        {
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafe(dest);
+            if (value < 0x20 || value is '"' or '\\') // 转义控制字符和特殊字符
+            {
+                dest += WriteEscapedCharUnsafe(value, dest);
+            }
+            else
+            {
+                *dest = value;
+                dest += 1;
+            }
+            dest += WriteDoubleQuoteUnsafe(dest);
+            return (int) (dest - start);
+        }
+
+        private static int WriteStringUnsafe(char* dest, string value)
+        {
+            if (value == null)
+                return WriteNullUnsafe(dest);
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafe(dest);
+            dest += WriteStringValueUnsafe(value.AsSpan(), dest);
+            dest += WriteDoubleQuoteUnsafe(dest);
+            return (int) (dest - start);
+        }
+
+        /// <summary>在不考虑转义字符的情况下写入字符串</summary>
+        /// <return>charsWritten</return>
+        /// <remarks>需要自己保证不会出现内存越界</remarks>
+        private static int WriteStringNoEscapeUnsafe(char* dest, string str)
+        {
+            if (str == null)
+                return WriteNullUnsafe(dest);
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafe(dest);
+            dest += WriteRawUnsafe(str.AsSpan(), dest);
+            dest += WriteDoubleQuoteUnsafe(dest);
+            return (int) (dest - start);
+        }
+
+        private static int GetValueRequiredSize<T>(T value)
+        {
+            switch (value)
+            {
+                case bool v:
+                    return v ? 4 : 5;
+                case byte: // 0 ~ 255
+                    return 3;
+                case sbyte: // -128 ~ 127
+                    return 4;
+                case ushort: // 0 到 65535
+                    return 5;
+                case short: // -32768 到 32767
+                    return 6;
+                case uint: // 0 到 4294967295
+                    return 10;
+                case int: // -2147483648 到 2147483647
+                    return 11;
+                case ulong: // 0 到 18446744073709551615
+                    return 20;
+                case long: // -9223372036854775808 到 9223372036854775807
+                    return 20;
+                case float:
+                    return NumberHelper.DecimalMaxSingleStringLength;
+                case double:
+                    return NumberHelper.DecimalMaxDoubleStringLength;
+                case decimal:
+                    return NumberHelper.DecimalStringMaxLength;
+                case char v:
+                    return 2 + (v < 0x20 || v is '"' or '\\' ? 6 : 1);
+                case string v:
+                    return v == null ? 4 : v.Length + 2;
+                default:
+                    throw new NotSupportedException($"{value.GetType()} Is Not Supported.");
+            }
+        }
+
+        private static int WriteValueUnsafe<T>(char* dest, T value)
+        {
+            return value switch
+            {
+                bool v => WriteBoolUnsafe(dest, v),
+                sbyte v => WriteInt64Unsafe(dest, v),
+                short v => WriteInt64Unsafe(dest, v),
+                int v => WriteInt64Unsafe(dest, v),
+                long v => WriteInt64Unsafe(dest, v),
+                byte v => WriteUInt64Unsafe(dest, v),
+                ushort v => WriteUInt64Unsafe(dest, v),
+                uint v => WriteUInt64Unsafe(dest, v),
+                ulong v => WriteUInt64Unsafe(dest, v),
+                float v => WriteFloatUnsafe(dest, v),
+                double v => WriteDoubleUnsafe(dest, v),
+                decimal v => WriteDecimalUnsafe(dest, v),
+                char v => WriteCharUnsafe(dest, v),
+                string v => WriteStringUnsafe(dest, v),
+                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
+            };
+        }
+
+        #endregion
+
+        #region Write Char & String
+
+        /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
+        // ReSharper disable once CognitiveComplexity
+        private static int WriteEscapedCharUnsafe(char value, char* dest)
+        {
+            return value switch
+            {
+                '"' => WriteSingleEscapedChar(dest, '"'),
+                '\\' => WriteSingleEscapedChar(dest, '\\'),
+                '\u0000' => WriteDoubleEscapedChar(dest, '0', '0'),
+                '\u0001' => WriteDoubleEscapedChar(dest, '0', '1'),
+                '\u0002' => WriteDoubleEscapedChar(dest, '0', '2'),
+                '\u0003' => WriteDoubleEscapedChar(dest, '0', '3'),
+                '\u0004' => WriteDoubleEscapedChar(dest, '0', '4'),
+                '\u0005' => WriteDoubleEscapedChar(dest, '0', '5'),
+                '\u0006' => WriteDoubleEscapedChar(dest, '0', '6'),
+                '\u0007' => WriteDoubleEscapedChar(dest, '0', '7'),
+                '\b' => WriteSingleEscapedChar(dest, 'b'),
+                '\t' => WriteSingleEscapedChar(dest, 't'),
+                '\n' => WriteSingleEscapedChar(dest, 'n'),
+                '\u000B' => WriteDoubleEscapedChar(dest, '0', 'B'),
+                '\f' => WriteSingleEscapedChar(dest, 'f'),
+                '\r' => WriteSingleEscapedChar(dest, 'r'),
+                '\u000E' => WriteDoubleEscapedChar(dest, '0', 'E'),
+                '\u000F' => WriteDoubleEscapedChar(dest, '0', 'F'),
+                '\u0010' => WriteDoubleEscapedChar(dest, '1', '0'),
+                '\u0011' => WriteDoubleEscapedChar(dest, '1', '1'),
+                '\u0012' => WriteDoubleEscapedChar(dest, '1', '2'),
+                '\u0013' => WriteDoubleEscapedChar(dest, '1', '3'),
+                '\u0014' => WriteDoubleEscapedChar(dest, '1', '4'),
+                '\u0015' => WriteDoubleEscapedChar(dest, '1', '5'),
+                '\u0016' => WriteDoubleEscapedChar(dest, '1', '6'),
+                '\u0017' => WriteDoubleEscapedChar(dest, '1', '7'),
+                '\u0018' => WriteDoubleEscapedChar(dest, '1', '8'),
+                '\u0019' => WriteDoubleEscapedChar(dest, '1', '9'),
+                '\u001A' => WriteDoubleEscapedChar(dest, '1', 'A'),
+                '\u001B' => WriteDoubleEscapedChar(dest, '1', 'B'),
+                '\u001C' => WriteDoubleEscapedChar(dest, '1', 'C'),
+                '\u001D' => WriteDoubleEscapedChar(dest, '1', 'D'),
+                '\u001E' => WriteDoubleEscapedChar(dest, '1', 'E'),
+                '\u001F' => WriteDoubleEscapedChar(dest, '1', 'F'),
+                _ => throw new SerdeException($"Invalid Escaped Char: {value}")
+            };
+
+            // 写入\x类型的转义字符.这种字符在文本中占2个位置
+            static int WriteSingleEscapedChar(char* dest, char toEscape)
+            {
+                dest[0] = '\\';
+                dest[1] = toEscape;
+                return 2;
+            }
+
+            // 写入\u00xx类型的转义字符.这种字符在文本中占6个位置
+            static int WriteDoubleEscapedChar(char* dest, char firstToEscape, char secondToEscape)
+            {
+                // 需要转移的控制字符范围是\u0000到\u001F, 所以可以固定前四位一定是\u00
+                dest[0] = '\\';
+                dest[1] = 'u';
+                dest[2] = '0';
+                dest[3] = '0';
+                dest[4] = firstToEscape;
+                dest[5] = secondToEscape;
+                return 6;
+            }
+        }
+
+        /// <summary>将<see cref="string"/>写入UTF16 Buffer.</summary>
+        /// <returns>charsWritten</returns>
+        /// <remarks>会考虑到转义字符.</remarks>
+        private static int WriteStringValueUnsafe(ReadOnlySpan<char> str, char* dest)
+        {
+            // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
+            var originalPtr = dest;
+            var from = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                ref readonly var c = ref str[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    if (i - from > 0)
+                    {
+                        // 字符串本身就是UTF16编码, 在不考虑大端序小端序的情况下可以直接写入
+                        dest += WriteRawUnsafe(str.Slice(from, i - from), dest);
+                    }
+                    dest += WriteEscapedCharUnsafe(c, dest);
+                    from = i + 1;
+                }
+            }
+            if (from < str.Length)
+            {
+                dest += WriteRawUnsafe(str[from..], dest);
+            }
+            return (int) (dest - originalPtr);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteRawUnsafe(ReadOnlySpan<char> src, char* dest)
+        {
+            fixed (char* srcPtr = src)
+            {
+                Unsafe.CopyBlockUnaligned(dest, srcPtr, (uint) src.Length * sizeof(char));
+            }
+            return src.Length;
+        }
+
+        #endregion
+    }
+
+    public unsafe ref struct JsonWriterUtf8<TBufferWriter> where TBufferWriter : class, IBufferWriter<byte>
+    {
+        private const int max_number_buffer_size = 32;
+
+        private readonly TBufferWriter m_BufferWriter;
+        private byte* m_BufferRef;
+        private int m_FreeSize;
+        private int m_AdvancedCount;
+
+        public JsonWriterUtf8(TBufferWriter writer)
+        {
+            m_BufferWriter = writer;
+            m_BufferRef = default;
+            m_FreeSize = 0;
+            m_AdvancedCount = 0;
+        }
+
+        #region Buffer Op
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte* GetSpanRef(int sizeHint)
+        {
+            if (m_FreeSize < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return m_BufferRef;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void RequestNewBuffer(int sizeHint)
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            var bufferRef = m_BufferWriter.GetSpan(sizeHint);
+            m_BufferRef = (byte*) Unsafe.AsPointer(ref bufferRef[0]);
+            m_FreeSize = bufferRef.Length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int count)
+        {
+            // if (count == 0) return;
+            // if (m_FreeSize - count < 0)
+            // {
+            //     SerdeException.ThrowInvalidAdvance();
+            // }
+            m_BufferRef += count;
+            m_AdvancedCount += count;
+            m_FreeSize -= count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Flush()
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+            }
+            m_BufferRef = default;
+            m_FreeSize = 0;
+            m_AdvancedCount = 0;
+        }
+
+        #endregion
+
+        #region Write Indent
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteIndent(int count)
+        {
+            var span = GetSpanRef(count);
+            for (var i = 0; i < count; i++)
+            {
+                span[i] = (byte) ' ';
+            }
+            Advance(count);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNewLine()
+        {
+            *GetSpanRef(1) = (byte) '\n';
+            m_BufferRef += 1;
+            m_AdvancedCount += 1;
+            Advance(1);
+        }
+
+        #endregion
+
+        #region Write Literal
+
+        /// <summary>写入一个英文冒号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteKeyEnding()
+        {
+            *GetSpanRef(1) = (byte) ':';
+            Advance(1);
+        }
+
+        /// <summary>写入一个英文逗号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueEnding()
+        {
+            *GetSpanRef(1) = (byte) ',';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginObject()
+        {
+            *GetSpanRef(1) = (byte) '{';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndObject()
+        {
+            *GetSpanRef(1) = (byte) '}';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginArray()
+        {
+            *GetSpanRef(1) = (byte) '[';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndArray()
+        {
+            *GetSpanRef(1) = (byte) ']';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteDoubleQuote()
+        {
+            *GetSpanRef(1) = (byte) '"';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNull()
+        {
+            // 性能测试表明, 少量字节拷贝的速度远不如直接一个一个赋值..
+            var s = GetSpanRef(4);
+            s[0] = (byte) 'n';
+            s[1] = (byte) 'u';
+            s[2] = (byte) 'l';
+            s[3] = (byte) 'l';
+            Advance(4);
+        }
+
+        #endregion
+
+        #region Write Primitive
+
+        private const byte space = (byte) ' ';
+        private const byte new_line = (byte) '\n';
+        private const byte double_quote = (byte) '"';
+        private const byte left_brace = (byte) '{';
+        private const byte right_brace = (byte) '}';
+        private const byte left_bracket = (byte) '[';
+        private const byte right_bracket = (byte) ']';
+        private const byte comma = (byte) ',';
+        private const byte colon = (byte) ':';
+        private const byte negative = (byte) '-';
+        private const byte reverse_solidus = (byte) '\\';
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBool(string name, bool value, bool writeComma = true)
+        {
+            var length = value ? 4 : 5;
+            length = length + name.Length + 2 + (writeComma ? 1 : 0);
+            var span = GetSpanRef(length);
+            var pos = 0;
+            span[pos++] = double_quote;
+            var bytesWritten = WriteStringUtf8();
+            span += bytesWritten;
+            if (value)
+            {
+                span[0] = (byte) 't';
+                span[1] = (byte) 'r';
+                span[2] = (byte) 'u';
+                span[3] = (byte) 'e';
+                Advance(4);
+            }
+            else
+            {
+                span[0] = (byte) 'f';
+                span[1] = (byte) 'a';
+                span[2] = (byte) 'l';
+                span[3] = (byte) 's';
+                span[4] = (byte) 'e';
+                Advance(5);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt8(sbyte value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt16(short value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt32(int value) => WriteInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteInt64(long value)
+        {
+            if (value < 0)
+            {
+                *GetSpanRef(1) = (byte) '-';
+                Advance(1);
+                value = unchecked(-value);
+            }
+            WriteUInt64((ulong) value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt8(byte value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt16(ushort value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt32(uint value) => WriteUInt64(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUInt64(ulong value)
+        {
+            WriteUInt64Utf8(value);
+        }
+
+        private void WriteUInt64Utf8(ulong value)
+        {
+            if (value < 10)
+            {
+                *GetSpanRef(1) = (byte) ('0' + value);
+                Advance(1);
+                return;
+            }
+            var digits = MathUtil.CountDigits(value);
+            var span = GetSpanRef(digits);
+            for (var i = digits; i > 0; i--)
+            {
+                var temp = '0' + value;
+                value /= 10;
+                span[i - 1] = (byte) (temp - value * 10);
+            }
+            Advance(digits);
+        }
+
+        public void WriteFloat(float value, string format = null)
+        {
+            if (float.IsInfinity(value))
+            {
+                throw new ArgumentException("Infinity float point value is invalid in json.", nameof(value));
+            }
+            var tempPtr = stackalloc byte[max_number_buffer_size];
+            var tempSpan = new Span<byte>(tempPtr, max_number_buffer_size);
+            Utf8Formatter.TryFormat(value, tempSpan, out var bytesWritten, StandardFormat.Parse(format));
+            var dest = GetSpanRef(bytesWritten);
+            // temp[..bytesWritten].CopyTo(dest);
+            Unsafe.CopyBlockUnaligned(dest, tempPtr, (uint) bytesWritten);
+            Advance(bytesWritten);
+        }
+
+        public void WriteDouble(double value, string format = null)
+        {
+            if (double.IsInfinity(value))
+            {
+                throw new ArgumentException("Infinity float point value is invalid in json.", nameof(value));
+            }
+            var tempPtr = stackalloc byte[max_number_buffer_size];
+            var tempSpan = new Span<byte>(tempPtr, max_number_buffer_size);
+            Utf8Formatter.TryFormat(value, tempSpan, out var bytesWritten, StandardFormat.Parse(format));
+            var dest = GetSpanRef(bytesWritten);
+            // temp[..bytesWritten].CopyTo(dest);
+            Unsafe.CopyBlockUnaligned(dest, tempPtr, (uint) bytesWritten);
+            Advance(bytesWritten);
+        }
+
+        public void WriteDecimal(decimal value, string format = null)
+        {
+            var tempPtr = stackalloc byte[max_number_buffer_size];
+            var tempSpan = new Span<byte>(tempPtr, max_number_buffer_size);
+            Utf8Formatter.TryFormat(value, tempSpan, out var bytesWritten, StandardFormat.Parse(format.AsSpan()));
+            var dest = GetSpanRef(bytesWritten);
+            // temp[..bytesWritten].CopyTo(dest);
+            Unsafe.CopyBlockUnaligned(dest, tempPtr, (uint) bytesWritten);
+            Advance(bytesWritten);
+        }
+
+        #endregion
+
+        #region Write Char & String
+
+        /// <summary>写入一个char, 按照string的方式写入.</summary>
+        public void WriteChar(char value)
+        {
+            WriteDoubleQuote();
+            if (value < 0x20 || value is '"' or '\\') // 转义控制字符和特殊字符
+            {
+                WriteEscapedChar(value);
+            }
+            else if (value < 0x80) // ASCII范围内的字符, UTF8编码就是ASCII编码
+            {
+                *GetSpanRef(1) = (byte) value;
+                Advance(1);
+            }
+            else // 非ASCII范围内(127, 0x7F)但在Char范围内(65535, 0xFFFF)的UTF8字符, 需要占用2-3字节, 这里方便起见, 直接当调包侠
+            {
+                // var srcSpan = MemoryMarshal.CreateReadOnlySpan(ref value, 1);
+                var destSpan = GetSpanRef(3);
+                // .net5之后可以使用Utf8.FromUtf16()代替.
+                var bytesWritten = Encoding.UTF8.GetBytes((char*) Unsafe.AsPointer(ref value), 1, destSpan, 3);
+                Advance(bytesWritten);
+            }
+            WriteDoubleQuote();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteString(string str)
+        {
+            if (str == null)
+            {
+                WriteNull();
+                return;
+            }
+            WriteDoubleQuote();
+            WriteStringUtf8(str.AsSpan());
+            WriteDoubleQuote();
+        }
+
+        /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
+        // ReSharper disable once CognitiveComplexity
+        private void WriteEscapedChar(char value)
+        {
+            switch (value)
+            {
+                case '"':
+                    WriteSingleEscapedChar('"');
+                    break;
+                case '\\':
+                    WriteSingleEscapedChar('\\');
+                    break;
+                case '\b':
+                    WriteSingleEscapedChar('b');
+                    break;
+                case '\f':
+                    WriteSingleEscapedChar('f');
+                    break;
+                case '\n':
+                    WriteSingleEscapedChar('n');
+                    break;
+                case '\r':
+                    WriteSingleEscapedChar('r');
+                    break;
+                case '\t':
+                    WriteSingleEscapedChar('t');
+                    break;
+                // case < '\u001F':
+                //     WriteDoubleEscapedChar(value);
+                //     break;
+                case '\u0000':
+                    WriteDoubleEscapedChar('0', '0');
+                    break;
+                case '\u0001':
+                    WriteDoubleEscapedChar('0', '1');
+                    break;
+                case '\u0002':
+                    WriteDoubleEscapedChar('0', '2');
+                    break;
+                case '\u0003':
+                    WriteDoubleEscapedChar('0', '3');
+                    break;
+                case '\u0004':
+                    WriteDoubleEscapedChar('0', '4');
+                    break;
+                case '\u0005':
+                    WriteDoubleEscapedChar('0', '5');
+                    break;
+                case '\u0006':
+                    WriteDoubleEscapedChar('0', '6');
+                    break;
+                case '\u0007':
+                    WriteDoubleEscapedChar('0', '7');
+                    break;
+                case '\u000B':
+                    WriteDoubleEscapedChar('0', 'B');
+                    break;
+                case '\u000E':
+                    WriteDoubleEscapedChar('0', 'E');
+                    break;
+                case '\u000F':
+                    WriteDoubleEscapedChar('0', 'F');
+                    break;
+                case '\u0010':
+                    WriteDoubleEscapedChar('1', '0');
+                    break;
+                case '\u0011':
+                    WriteDoubleEscapedChar('1', '1');
+                    break;
+                case '\u0012':
+                    WriteDoubleEscapedChar('1', '2');
+                    break;
+                case '\u0013':
+                    WriteDoubleEscapedChar('1', '3');
+                    break;
+                case '\u0014':
+                    WriteDoubleEscapedChar('1', '4');
+                    break;
+                case '\u0015':
+                    WriteDoubleEscapedChar('1', '5');
+                    break;
+                case '\u0016':
+                    WriteDoubleEscapedChar('1', '6');
+                    break;
+                case '\u0017':
+                    WriteDoubleEscapedChar('1', '7');
+                    break;
+                case '\u0018':
+                    WriteDoubleEscapedChar('1', '8');
+                    break;
+                case '\u0019':
+                    WriteDoubleEscapedChar('1', '9');
+                    break;
+                case '\u001A':
+                    WriteDoubleEscapedChar('1', 'A');
+                    break;
+                case '\u001B':
+                    WriteDoubleEscapedChar('1', 'B');
+                    break;
+                case '\u001C':
+                    WriteDoubleEscapedChar('1', 'C');
+                    break;
+                case '\u001D':
+                    WriteDoubleEscapedChar('1', 'D');
+                    break;
+                case '\u001E':
+                    WriteDoubleEscapedChar('1', 'E');
+                    break;
+                case '\u001F':
+                    WriteDoubleEscapedChar('1', 'F');
+                    break;
+            }
+        }
+
+        /// <summary>写入\x类型的转义字符.这种字符在文本中占2个位置</summary>
+        private void WriteSingleEscapedChar(char toEscape)
+        {
+            var span = GetSpanRef(2);
+            span[0] = (byte) '\\';
+            span[1] = (byte) toEscape;
+            Advance(2);
+        }
+
+        /// <summary>写入\u00xx类型的转义字符.这种字符在文本中占6个位置</summary>
+        private void WriteDoubleEscapedChar(char firstToEscape, char secondToEscape)
+        {
+            // 需要转移的控制字符范围是\u0000到\u001F, 所以可以固定前四位一定是\u00
+            var s = GetSpanRef(6);
+            s[0] = (byte) '\\';
+            s[1] = (byte) 'u';
+            s[2] = (byte) '0';
+            s[3] = (byte) '0';
+            s[4] = (byte) firstToEscape;
+            s[5] = (byte) secondToEscape;
+            Advance(6);
+        }
+
+        /// <summary>将<see cref="string"/>转换成UTF8编码后写入Buffer.</summary>
+        /// <remarks>会考虑到转义字符.</remarks>
+        /// <returns>bytesWritten</returns>
+        private int WriteStringUtf8(ReadOnlySpan<char> str, byte* dest)
+        {
+            // 需要考虑到转义字符, 所以必须遍历来找到转义字符, 并且单独写入.
+            var bytesWritten = 0;
+            var from = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                ref readonly var c = ref str[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    if (i - from > 0)
+                    {
+                        bytesWritten += WriteUtf8StringNoEscape(str.Slice(from, i - from));
+                    }
+                    WriteEscapedChar(c);
+                    from = i + 1;
+                }
+            }
+            if (from < str.Length)
+            {
+                WriteUtf8StringNoEscape(str[from..]);
+            }
+            return bytesWritten;
+        }
+
+        /// <summary>
+        /// 在不考虑转义字符的情况下写入UTF8序列.
+        /// 如果字符串内有需要转义的字符，则结果会异常.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteUtf8StringNoEscape(ReadOnlySpan<char> str, byte* dest)
+        {
+            var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+            var destSpan = new Span<byte>(destPtr, maxByteCount);
+            // .Net5开始可以使用Utf8.FromUtf16()来加速
+            var bytesWritten = Encoding.UTF8.GetBytes(str, destSpan);
+            Advance(bytesWritten);
+        }
+
+        #endregion
+    }
+}

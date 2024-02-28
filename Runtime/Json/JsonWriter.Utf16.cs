@@ -1,0 +1,321 @@
+﻿using System;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+
+namespace PeroTools2.Serde.Json
+{
+    public unsafe ref partial struct JsonWriter<TSymbol, TBufferWriter>
+    {
+        public void WriteValueUtf16<T>(string key, T value, bool writeComma = true)
+        {
+            // TODO 写入Format时长度会加一个空格
+            var requiredSize = key.Length + GetValueRequiredSizeUtf16(value) + 2; // 2 是 : 和 , 的大小
+            var destSpan = GetSpan<char>(requiredSize);
+            fixed (char* fixedPtr = destSpan)
+            {
+                var destPtr = fixedPtr;
+                destPtr += WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                destPtr += WriteKeyEndingUnsafeUtf16(destPtr);
+
+                destPtr += WriteValueUnsafeUtf16(destPtr, value);
+
+                if (writeComma)
+                    destPtr += WriteValueEndingUnsafeUtf16(destPtr);
+                Advance((int) (destPtr - fixedPtr));
+            }
+        }
+
+        private static int WriteValueUnsafeUtf16<T>(char* dest, T value)
+        {
+            return value switch
+            {
+                bool v => WriteBoolUnsafeUtf16(dest, v),
+                sbyte v => WriteInt64UnsafeUtf16(dest, v),
+                short v => WriteInt64UnsafeUtf16(dest, v),
+                int v => WriteInt64UnsafeUtf16(dest, v),
+                long v => WriteInt64UnsafeUtf16(dest, v),
+                byte v => WriteUInt64UnsafeUtf16(dest, v),
+                ushort v => WriteUInt64UnsafeUtf16(dest, v),
+                uint v => WriteUInt64UnsafeUtf16(dest, v),
+                ulong v => WriteUInt64UnsafeUtf16(dest, v),
+                float v => WriteFloatUnsafeUtf16(dest, v),
+                double v => WriteDoubleUnsafeUtf16(dest, v),
+                decimal v => WriteDecimalUnsafeUtf16(dest, v),
+                char v => WriteCharUnsafeUtf16(dest, v),
+                string v => WriteStringUnsafeUtf16(dest, v),
+                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
+            };
+        }
+
+        private static int GetValueRequiredSizeUtf16<T>(T value)
+        {
+            return value switch
+            {
+                bool v => v ? 4 : 5,
+                byte => 3, // 0 ~ 255
+                sbyte => 4, // -128 ~ 127
+                ushort => 5, // 0 到 65535
+                short => 6, // -32768 到 32767
+                uint => 10, // 0 到 4294967295
+                int => 11, // -2147483648 到 2147483647
+                ulong => 20, // 0 到 18446744073709551615
+                long => 20, // -9223372036854775808 到 9223372036854775807
+                float => NumberHelper.max_float_string_length,
+                double => NumberHelper.max_double_string_length,
+                decimal => NumberHelper.max_decimal_string_length,
+                char v => 2 + (v < 0x20 || v is '"' or '\\' ? 6 : 1),
+                string v => v == null ? 4 : v.Length + 2,
+                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
+            };
+        }
+
+        #region Unsafe Write Primitive
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteBoolUnsafeUtf16(char* dest, bool value)
+        {
+            if (value)
+            {
+                dest[0] = 't';
+                dest[1] = 'r';
+                dest[2] = 'u';
+                dest[3] = 'e';
+                return 4;
+            }
+            else
+            {
+                dest[0] = 'f';
+                dest[1] = 'a';
+                dest[2] = 'l';
+                dest[3] = 's';
+                dest[4] = 'e';
+                return 5;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteInt64UnsafeUtf16(char* dest, long value) =>
+            NumberHelper.ToUtf16StringUnsafe(value, dest);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteUInt64UnsafeUtf16(char* dest, ulong value) =>
+            NumberHelper.ToUtf16StringUnsafe(value, dest);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteFloatUnsafeUtf16(char* dest, float value) =>
+            NumberHelper.ToUtf16StringUnsafe(value, dest);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteDoubleUnsafeUtf16(char* dest, double value)
+            => NumberHelper.ToUtf16StringUnsafe(value, dest);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteDecimalUnsafeUtf16(char* dest, decimal value)
+        {
+            // return NumberHelper.ToUtf16StringUnsafe(value, dest);
+            var destSpan = new Span<char>(dest, NumberHelper.max_decimal_string_length);
+            value.TryFormat(destSpan, out var charsWritten, default, CultureInfo.InvariantCulture);
+            return charsWritten;
+        }
+
+        #endregion
+
+        #region Unsafe Write Char
+
+        private static int WriteCharUnsafeUtf16(char* dest, char value)
+        {
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            if (value < 0x20 || value is '"' or '\\') // 转义控制字符和特殊字符
+            {
+                dest += WriteEscapedCharUnsafeUtf16(value, dest);
+            }
+            else
+            {
+                *dest = value;
+                dest += 1;
+            }
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            return (int) (dest - start);
+        }
+
+        /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
+        // ReSharper disable once CognitiveComplexity
+        private static int WriteEscapedCharUnsafeUtf16(char value, char* dest)
+        {
+            return value switch
+            {
+                '"' => WriteSingleEscapedChar(dest, '"'),
+                '\\' => WriteSingleEscapedChar(dest, '\\'),
+                '\u0000' => WriteDoubleEscapedChar(dest, '0', '0'),
+                '\u0001' => WriteDoubleEscapedChar(dest, '0', '1'),
+                '\u0002' => WriteDoubleEscapedChar(dest, '0', '2'),
+                '\u0003' => WriteDoubleEscapedChar(dest, '0', '3'),
+                '\u0004' => WriteDoubleEscapedChar(dest, '0', '4'),
+                '\u0005' => WriteDoubleEscapedChar(dest, '0', '5'),
+                '\u0006' => WriteDoubleEscapedChar(dest, '0', '6'),
+                '\u0007' => WriteDoubleEscapedChar(dest, '0', '7'),
+                '\b' => WriteSingleEscapedChar(dest, 'b'),
+                '\t' => WriteSingleEscapedChar(dest, 't'),
+                '\n' => WriteSingleEscapedChar(dest, 'n'),
+                '\u000B' => WriteDoubleEscapedChar(dest, '0', 'B'),
+                '\f' => WriteSingleEscapedChar(dest, 'f'),
+                '\r' => WriteSingleEscapedChar(dest, 'r'),
+                '\u000E' => WriteDoubleEscapedChar(dest, '0', 'E'),
+                '\u000F' => WriteDoubleEscapedChar(dest, '0', 'F'),
+                '\u0010' => WriteDoubleEscapedChar(dest, '1', '0'),
+                '\u0011' => WriteDoubleEscapedChar(dest, '1', '1'),
+                '\u0012' => WriteDoubleEscapedChar(dest, '1', '2'),
+                '\u0013' => WriteDoubleEscapedChar(dest, '1', '3'),
+                '\u0014' => WriteDoubleEscapedChar(dest, '1', '4'),
+                '\u0015' => WriteDoubleEscapedChar(dest, '1', '5'),
+                '\u0016' => WriteDoubleEscapedChar(dest, '1', '6'),
+                '\u0017' => WriteDoubleEscapedChar(dest, '1', '7'),
+                '\u0018' => WriteDoubleEscapedChar(dest, '1', '8'),
+                '\u0019' => WriteDoubleEscapedChar(dest, '1', '9'),
+                '\u001A' => WriteDoubleEscapedChar(dest, '1', 'A'),
+                '\u001B' => WriteDoubleEscapedChar(dest, '1', 'B'),
+                '\u001C' => WriteDoubleEscapedChar(dest, '1', 'C'),
+                '\u001D' => WriteDoubleEscapedChar(dest, '1', 'D'),
+                '\u001E' => WriteDoubleEscapedChar(dest, '1', 'E'),
+                '\u001F' => WriteDoubleEscapedChar(dest, '1', 'F'),
+                _ => throw SerdeException.ThrowInvalidEscapedChar(value)
+            };
+
+            // 写入\x类型的转义字符.这种字符在文本中占2个位置
+            static int WriteSingleEscapedChar(char* dest, char toEscape)
+            {
+                dest[0] = '\\';
+                dest[1] = toEscape;
+                return 2;
+            }
+
+            // 写入\u00xx类型的转义字符.这种字符在文本中占6个位置
+            static int WriteDoubleEscapedChar(char* dest, char firstToEscape, char secondToEscape)
+            {
+                // 需要转移的控制字符范围是\u0000到\u001F, 所以可以固定前四位一定是\u00
+                dest[0] = '\\';
+                dest[1] = 'u';
+                dest[2] = '0';
+                dest[3] = '0';
+                dest[4] = firstToEscape;
+                dest[5] = secondToEscape;
+                return 6;
+            }
+        }
+
+        #endregion
+
+        #region Unsafe Write String
+
+        private static int WriteStringUnsafeUtf16(char* dest, string value)
+        {
+            if (value == null)
+                return WriteNullUnsafeUtf16(dest);
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            dest += WriteStringValueUnsafeUtf16(value.AsSpan(), dest);
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            return (int) (dest - start);
+        }
+
+        /// <summary>在不考虑转义字符的情况下写入字符串</summary>
+        /// <return>charsWritten</return>
+        /// <remarks>需要自己保证不会出现内存越界</remarks>
+        private static int WriteStringNoEscapeUnsafeUtf16(char* dest, string str)
+        {
+            if (str == null)
+                return WriteNullUnsafeUtf16(dest);
+            var start = dest;
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            dest += WriteRawUnsafeUtf16(str.AsSpan(), dest);
+            dest += WriteDoubleQuoteUnsafeUtf16(dest);
+            return (int) (dest - start);
+        }
+
+        /// <summary>将<see cref="string"/>写入UTF16 Buffer.</summary>
+        /// <returns>charsWritten</returns>
+        /// <remarks>会考虑到转义字符.</remarks>
+        private static int WriteStringValueUnsafeUtf16(ReadOnlySpan<char> str, char* dest)
+        {
+            // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
+            var originalPtr = dest;
+            var from = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                ref readonly var c = ref str[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    if (i - from > 0)
+                    {
+                        // 字符串本身就是UTF16编码, 在不考虑大端序小端序的情况下可以直接写入
+                        dest += WriteRawUnsafeUtf16(str.Slice(from, i - from), dest);
+                    }
+                    dest += WriteEscapedCharUnsafeUtf16(c, dest);
+                    from = i + 1;
+                }
+            }
+            if (from < str.Length)
+            {
+                dest += WriteRawUnsafeUtf16(str[from..], dest);
+            }
+            return (int) (dest - originalPtr);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteRawUnsafeUtf16(ReadOnlySpan<char> src, char* dest)
+        {
+            fixed (char* srcPtr = src)
+            {
+                Unsafe.CopyBlockUnaligned(dest, srcPtr, (uint) src.Length * sizeof(char));
+            }
+            return src.Length;
+        }
+
+        #endregion
+
+        #region Unsafe Write Literal
+
+        /// <summary>写入一个英文冒号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteKeyEndingUnsafeUtf16(char* dest)
+        {
+            *dest = ':';
+            return 1;
+        }
+
+        /// <summary>写入一个英文逗号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteValueEndingUnsafeUtf16(char* dest)
+        {
+            *dest = ',';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteDoubleQuoteUnsafeUtf16(char* dest)
+        {
+            *dest = '"';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteSpaceUnsafeUtf16(char* dest)
+        {
+            *dest = ' ';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int WriteNullUnsafeUtf16(char* dest)
+        {
+            dest[0] = 'n';
+            dest[1] = 'u';
+            dest[2] = 'l';
+            dest[3] = 'l';
+            return 4;
+        }
+
+        #endregion
+    }
+}
