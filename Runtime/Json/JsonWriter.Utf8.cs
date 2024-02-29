@@ -11,19 +11,14 @@ namespace PeroTools2.Serde.Json
         {
             // TODO 写入Format时长度会加一个空格
             var requiredSize = key.Length + GetValueRequiredSizeUtf8(value) + 2; // 2 是 : 和 , 的大小
-            var destSpan = GetSpan<byte>(requiredSize);
-            fixed (byte* fixedPtr = destSpan)
-            {
-                var destPtr = fixedPtr;
-                destPtr += WriteStringNoEscapeUnsafeUtf8(destPtr, key);
-                destPtr += WriteKeyEndingUnsafeUtf8(destPtr);
-
-                destPtr += WriteValueUnsafeUtf8(destPtr, value);
-
-                if (writeComma)
-                    destPtr += WriteValueEndingUnsafeUtf8(destPtr);
-                Advance((int) (destPtr - fixedPtr));
-            }
+            var destPtr = GetSpanPtr<byte>(requiredSize);
+            var startPtr = destPtr;
+            destPtr += WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+            destPtr += WriteKeyEndingUnsafeUtf8(destPtr);
+            destPtr += WriteValueUnsafeUtf8(destPtr, value);
+            if (writeComma)
+                destPtr += WriteValueEndingUnsafeUtf8(destPtr);
+            Advance((int) (destPtr - startPtr));
         }
 
         private static int WriteValueUnsafeUtf8<T>(byte* dest, T value)

@@ -24,7 +24,6 @@ namespace PeroTools2.Serde.Json
         private int m_AdvancedCount;
         private int m_WrittenCount;
         private readonly bool m_WriteUtf8;
-        private readonly JsonCode<TSymbol> m_JsonCode;
 
         // TODO Options
 
@@ -35,31 +34,9 @@ namespace PeroTools2.Serde.Json
             m_AdvancedCount = 0;
             m_WrittenCount = 0;
             m_WriteUtf8 = typeof(TSymbol) == typeof(byte);
-            m_JsonCode = JsonCode.Get<TSymbol>();
         }
 
         #region Buffer Op
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref TSymbol GetSpanRef(int sizeHint)
-        {
-            if (m_BufferRef.Length < sizeHint)
-            {
-                RequestNewBuffer(sizeHint);
-            }
-            // 这里使用MemoryMarshal.GetReference()获取引用会慢很多
-            return ref m_BufferRef[0];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Span<TSymbol> GetSpan(int sizeHint)
-        {
-            if (m_BufferRef.Length < sizeHint)
-            {
-                RequestNewBuffer(sizeHint);
-            }
-            return m_BufferRef;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref T GetSpanRef<T>(int sizeHint) where T : unmanaged
@@ -72,13 +49,13 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe Span<T> GetSpan<T>(int sizeHint)
+        private unsafe T* GetSpanPtr<T>(int sizeHint) where T : unmanaged
         {
             if (m_BufferRef.Length < sizeHint)
             {
                 RequestNewBuffer(sizeHint);
             }
-            return new Span<T>(Unsafe.AsPointer(ref m_BufferRef.GetPinnableReference()), m_BufferRef.Length);
+            return (T*) Unsafe.AsPointer(ref m_BufferRef.GetPinnableReference());
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -134,40 +111,34 @@ namespace PeroTools2.Serde.Json
         #region Write Literal
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBeginObject()
+        public void WriteBeginObject() => WriteSingleChar('{');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndObject() => WriteSingleChar('}');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginArray() => WriteSingleChar('[');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndArray() => WriteSingleChar(']');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteSingleChar(char c)
         {
-            GetSpanRef(1) = m_JsonCode.leftBrace;
+            if (m_WriteUtf8)
+                GetSpanRef<byte>(1) = (byte) c;
+            else
+                GetSpanRef<char>(1) = c;
             Advance(1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteEndObject()
-        {
-            GetSpanRef(1) = m_JsonCode.rightBrace;
-            Advance(1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBeginArray()
-        {
-            GetSpanRef(1) = m_JsonCode.leftBracket;
-            Advance(1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteEndArray()
-        {
-            GetSpanRef(1) = m_JsonCode.rightBracket;
-            Advance(1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteNull()
+        public unsafe void WriteNull()
         {
             // 性能测试表明, 少量字节拷贝的速度远不如直接一个一个赋值..
             if (m_WriteUtf8)
             {
-                var s = GetSpan<byte>(4);
+                var s = GetSpanPtr<byte>(4);
                 s[0] = (byte) 'n';
                 s[1] = (byte) 'u';
                 s[2] = (byte) 'l';
@@ -175,7 +146,7 @@ namespace PeroTools2.Serde.Json
             }
             else
             {
-                var s = GetSpan<char>(4);
+                var s = GetSpanPtr<char>(4);
                 s[0] = 'n';
                 s[1] = 'u';
                 s[2] = 'l';

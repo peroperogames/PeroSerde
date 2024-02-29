@@ -17,10 +17,6 @@ public sealed partial class TypeMeta
 {
     public TypeMeta(INamedTypeSymbol symbol, ReferenceSymbols references)
     {
-        var dictionary = new Dictionary<int, int>();
-        foreach (var keyValuePair in dictionary) {
-            
-        }
     }
 }
 
