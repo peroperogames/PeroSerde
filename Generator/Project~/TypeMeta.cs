@@ -15,8 +15,133 @@ namespace PeroTools2.Serde.Generator;
 
 public sealed partial class TypeMeta
 {
-    public TypeMeta(INamedTypeSymbol symbol, ReferenceSymbols references)
+    private readonly ReferenceSymbols m_References;
+    public INamedTypeSymbol symbol { get; }
+    public string typeName { get; }
+
+    // 所有可被序列化的成员
+    public MemberMeta[] members { get; }
+    public IMethodSymbol? constructor { get; }
+    public bool isUseEmptyConstructor => constructor == null || constructor.Parameters.IsEmpty;
+
+    // 不为null代表类型的构造函数有问题.
+    private DiagnosticDescriptor? m_CtorInvalidErr;
+
+    public static bool TryNew(ref GeneratorExecutionContext context, TypeDeclarationSyntax typeSyntax, INamedTypeSymbol typeSymbol, ReferenceSymbols references, out TypeMeta? typeMeta)
     {
+        if (!PreValidate(ref context, typeSyntax, typeSymbol, references))
+        {
+            typeMeta = default;
+            return false;
+        }
+        typeMeta = new TypeMeta(typeSymbol, references);
+        if (typeMeta.PostValidate(ref context, typeSyntax))
+        {
+            return true;
+        }
+        typeMeta = null;
+        return false;
+    }
+
+    private TypeMeta(INamedTypeSymbol symbol, ReferenceSymbols references)
+    {
+        this.symbol = symbol;
+        m_References = references;
+        typeName = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        (constructor, m_CtorInvalidErr) = ChooseConstructor(symbol, references);
+        members = symbol.GetAllMembers()
+            // 仅包含用户定义的, 非静态的field和property
+            .Where(static s => s is (IFieldSymbol or IPropertySymbol) and { IsStatic: false, IsImplicitlyDeclared: false, CanBeReferencedByName: true })
+            // 过滤掉仅set的property和indexer
+            .Where(static s => !(s is IPropertySymbol p && (p.GetMethod == null || p.IsIndexer)))
+            // 根据可访问性和include/ignore标签过滤
+            .Where(s =>
+            {
+                var include = s.ContainsAttribute(references.serdeJsonIncludeMemberAttribute);
+                var ignore = s.ContainsAttribute(references.serdeJsonIgnoreMemberAttribute);
+                if (ignore) return false;
+                if (include) return true;
+                return s.DeclaredAccessibility is Accessibility.Public;
+            })
+            .DistinctBy(static m => m.Name)
+            .Select((s, i) => new MemberMeta(s, constructor, references, i))
+            .OrderBy(static s => s.order)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// 为了节约性能, 能在生成TypeMeta前做的检查放在前面做.
+    /// </summary>
+    private static bool PreValidate(
+        ref GeneratorExecutionContext context,
+        TypeDeclarationSyntax typeSyntax,
+        INamedTypeSymbol typeSymbol,
+        ReferenceSymbols referenceSymbols
+    )
+    {
+        // ref struct 没法序列化
+        if (typeSymbol.IsRefLikeType)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.refStructNotAllow,
+                typeSyntax.Identifier.GetLocation(),
+                typeSymbol.Name
+            ));
+            return false;
+        }
+        // abstract class / interface 没法序列化.
+        if (typeSymbol.IsAbstract)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.abstractClassOrInterfaceNotAllow,
+                typeSyntax.Identifier.GetLocation(),
+                typeSymbol.Name
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    private bool PostValidate(ref GeneratorExecutionContext context, TypeDeclarationSyntax typeSyntax)
+    {
+        // 构造函数有问题
+        if (m_CtorInvalidErr != null)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                m_CtorInvalidErr,
+                typeSyntax.Identifier.GetLocation(),
+                symbol.Name
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    private static (IMethodSymbol? ctor, DiagnosticDescriptor? ctorInvalidErr) ChooseConstructor(INamedTypeSymbol symbol, ReferenceSymbols references)
+    {
+        var ctors = symbol.InstanceConstructors
+            .Where(static ctor => !ctor.IsImplicitlyDeclared)
+            .ToArray();
+        switch (ctors.Length)
+        {
+            case 0: // 没有显式声明的ctor
+                return (null, null);
+            case 1: // 只有一个ctor, 就是你了
+                return (ctors[0], null);
+            default:
+            {
+                // 多个ctor的情况, 需要显式指定[SerdeJsonConstructor]标签
+                var ctorWithAttrs = ctors
+                    .Where(ctor => ctor.ContainsAttribute(references.serdeJsonConstructorAttribute))
+                    .ToArray();
+                return ctorWithAttrs.Length switch
+                {
+                    0 => (null, DiagnosticDescriptors.multipleCtorWithoutAttribute),
+                    1 => (ctorWithAttrs[0], null),
+                    _ => (null, DiagnosticDescriptors.multipleCtorWithAttribute)
+                };
+            }
+        }
     }
 }
 

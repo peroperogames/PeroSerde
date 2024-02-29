@@ -59,7 +59,7 @@ namespace PeroTools2.Serde.Json
                 double => NumberHelper.max_double_string_length,
                 decimal => NumberHelper.max_decimal_string_length,
                 char v => 2 + (v < 0x20 || v is '"' or '\\' ? 6 : 1),
-                string v => v == null ? 4 : v.Length + 2,
+                string v => v.Length + 2,
                 _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
             };
         }

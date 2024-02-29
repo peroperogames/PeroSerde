@@ -26,6 +26,11 @@ namespace PeroTools2.Serde.Json
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public sealed class SerdeJsonIncludeMemberAttribute : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public sealed class SerdeJsonIgnoreMemberAttribute : Attribute
     {
     }

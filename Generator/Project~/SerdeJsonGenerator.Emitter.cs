@@ -15,6 +15,11 @@ namespace PeroTools2.Serde.Generator;
 
 public partial class SerdeJsonGenerator
 {
+    private static readonly SymbolDisplayFormat s_TypeFullNameDisplayFormat = new(
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
+    );
+
     private static void Generate(ref GeneratorExecutionContext context, TypeDeclarationSyntax typeSyntax)
     {
         var semanticModel = context.Compilation.GetSemanticModel(typeSyntax.SyntaxTree);
@@ -35,7 +40,10 @@ public partial class SerdeJsonGenerator
             return;
         }
         var reference = new ReferenceSymbols(context.Compilation);
-        // var typeMeta = new TypeMeta(typeSymbol, reference);
+        if (!TypeMeta.TryNew(ref context, typeSyntax, typeSymbol, reference, out var typeMeta))
+        {
+            return;
+        }
         var ns = typeSymbol.ContainingNamespace;
         var accessibilityStr = typeSymbol.DeclaredAccessibility switch
         {
@@ -50,29 +58,30 @@ public partial class SerdeJsonGenerator
         };
         var classOrStructOrRecordStr = (typeSymbol.IsRecord, typeSymbol.IsValueType) switch
         {
-            (true, true) => "record struct",
-            (true, false) => "record",
-            (false, true) => "struct",
             (false, false) => "class",
+            (false, true) => "struct",
+            (true, false) => "record",
+            (true, true) => "record struct",
         };
         var typeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        
+        var typeFullName = typeSymbol.ToDisplayString(s_TypeFullNameDisplayFormat);
+
         var sb = new StringBuilder();
         if (ns != null && !ns.IsGlobalNamespace)
         {
             sb.AppendLine($"namespace {ns} {{");
         }
         sb.AppendLine($$"""
-        {{accessibilityStr}} partial {{classOrStructOrRecordStr}} {{typeName}}
-        {
-        }
-        """);
+            {{accessibilityStr}} partial {{classOrStructOrRecordStr}} {{typeName}}
+            {
+            }
+            """);
         if (ns != null && !ns.IsGlobalNamespace)
         {
             sb.AppendLine("}");
         }
         var src = sb.ToString();
-        context.AddSource($"{typeSymbol.Name}.SerdeJsonSerializer.g.cs", src);
+        context.AddSource($"{typeFullName}.SerdeJsonSerializer.g.cs", src);
     }
 
     private static bool IsPartial(TypeDeclarationSyntax typeSyntax) =>

@@ -6,6 +6,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -50,6 +51,48 @@ public static class Extensions
                 }
                 return false;
             });
+        }
+    }
+
+    public static bool ContainsAttribute(this ISymbol symbol, INamedTypeSymbol attrSymbol) =>
+        symbol
+            .GetAttributes()
+            .Any(attrData => SymbolEqualityComparer.Default.Equals(attrData.AttributeClass, attrSymbol));
+
+    public static IEnumerable<ISymbol> GetAllMembers(this INamedTypeSymbol symbol, bool withoutOverride = true)
+    {
+        if (symbol.BaseType != null)
+        {
+            foreach (var parentMember in GetAllMembers(symbol.BaseType))
+            {
+                // 如果不限制override, override成员会被统计多次
+                if (!withoutOverride || !parentMember.IsOverride)
+                {
+                    yield return parentMember;
+                }
+            }
+        }
+        foreach (var member in symbol.GetMembers())
+        {
+            if (!withoutOverride || !member.IsOverride)
+            {
+                yield return member;
+            }
+        }
+    }
+
+    public static IEnumerable<T> DistinctBy<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector, IEqualityComparer<TKey>? comparer = null)
+    {
+        using var enumerator = source.GetEnumerator();
+        var set = new HashSet<TKey>(comparer);
+        while (enumerator.MoveNext())
+        {
+            var element = enumerator.Current;
+            var key = keySelector.Invoke(element);
+            if (set.Add(key))
+            {
+                yield return element;
+            }
         }
     }
 }

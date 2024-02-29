@@ -18,6 +18,7 @@ public sealed class ReferenceSymbols
     // Serde Json Attributes
     public INamedTypeSymbol serdeJsonSerializableAttribute { get; }
     public INamedTypeSymbol serdeJsonMemberAttribute { get; }
+    public INamedTypeSymbol serdeJsonIncludeMemberAttribute { get; }
     public INamedTypeSymbol serdeJsonIgnoreMemberAttribute { get; }
     public INamedTypeSymbol serdeJsonConstructorAttribute { get; }
     public INamedTypeSymbol serdeJsonCustomFormatterAttribute { get; }
@@ -29,6 +30,7 @@ public sealed class ReferenceSymbols
 
         serdeJsonSerializableAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_serializable_attr_fullname);
         serdeJsonMemberAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_member_attr_fullname);
+        serdeJsonIncludeMemberAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_include_member_attr_fullname);
         serdeJsonIgnoreMemberAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_ignore_member_attr_fullname);
         serdeJsonConstructorAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_constructor_attr_fullname);
         serdeJsonCustomFormatterAttribute = GetTypeByMetaDataName(SerdeJsonGenerator.serde_json_custom_formatter_attr_fullname);

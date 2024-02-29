@@ -29,12 +29,12 @@
       <UnityOutDir>$(ProjectDir)..\Plugins</UnityOutDir>
     </PropertyGroup>
     <ItemGroup>
-      <UnityOutFiles Include="$(UnityOutDir)\*.*"></UnityOutFiles>
-      <ProjDlls Include="$(OutputPath)$(ProjectName).dll"></ProjDlls>
-      <ProjDlls Include="$(OutputPath)$(ProjectName).mdb" Condition="Exists('$(OutputPath)$(ProjectName).mdb')"></ProjDlls>
-      <ProjDlls Include="$(OutputPath)$(ProjectName).pdb" Condition="Exists('$(OutputPath)$(ProjectName).pdb')"></ProjDlls>
+      <UnityOutFiles Include="$(UnityOutDir)\*.*"/>
+      <ProjDlls Include="$(OutputPath)$(ProjectName).dll"/>
+      <ProjDlls Include="$(OutputPath)$(ProjectName).mdb" Condition="Exists('$(OutputPath)$(ProjectName).mdb')"/>
+      <ProjDlls Include="$(OutputPath)$(ProjectName).pdb" Condition="Exists('$(OutputPath)$(ProjectName).pdb')"/>
     </ItemGroup>
-    <Copy SourceFiles="@(ProjDlls)" DestinationFolder="$(UnityOutDir)" SkipUnchangedFiles="true" Condition=" $(DotNetVer) == $(UnitySupportVer) "></Copy>
+    <Copy SourceFiles="@(ProjDlls)" DestinationFolder="$(UnityOutDir)" SkipUnchangedFiles="true" Condition=" $(DotNetVer) == $(UnitySupportVer) "/>
 </Target>
 
 

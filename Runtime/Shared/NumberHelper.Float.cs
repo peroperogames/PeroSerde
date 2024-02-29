@@ -66,7 +66,7 @@ namespace PeroTools2.Serde
             {
                 s_PositiveExponents[i] = Math.Pow(10, i);
             }
-            // 初始化
+            // 初始化negativeExponents
             s_NegativeExponents = new double[SlowGetFractionalLength(min_positive_double_value)];
             for (var i = 0; i < s_NegativeExponents.Length; i++)
             {

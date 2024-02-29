@@ -18,12 +18,14 @@ public partial class SerdeJsonGenerator : ISourceGenerator
     public const string serde_json_namespace = "PeroTools2.Serde.Json";
     public const string serde_json_serializable_attr_name = "SerdeJsonSerializableAttribute";
     public const string serde_json_member_attr_name = "SerdeJsonMemberAttribute";
+    public const string serde_json_include_member_attr_name = "SerdeJsonIncludeMemberAttribute";
     public const string serde_json_ignore_member_attr_name = "SerdeJsonIgnoreMemberAttribute";
     public const string serde_json_constructor_attr_name = "SerdeJsonConstructorAttribute";
     public const string serde_json_custom_formatter_attr_name = "SerdeJsonCustomFormatterAttribute";
 
     public const string serde_json_serializable_attr_fullname = $"{serde_json_namespace}.{serde_json_serializable_attr_name}";
     public const string serde_json_member_attr_fullname = $"{serde_json_namespace}.{serde_json_member_attr_name}";
+    public const string serde_json_include_member_attr_fullname = $"{serde_json_namespace}.{serde_json_include_member_attr_name}";
     public const string serde_json_ignore_member_attr_fullname = $"{serde_json_namespace}.{serde_json_ignore_member_attr_name}";
     public const string serde_json_constructor_attr_fullname = $"{serde_json_namespace}.{serde_json_constructor_attr_name}";
     public const string serde_json_custom_formatter_attr_fullname = $"{serde_json_namespace}.{serde_json_custom_formatter_attr_name}";

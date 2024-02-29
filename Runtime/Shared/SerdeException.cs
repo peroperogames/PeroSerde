@@ -21,22 +21,12 @@ namespace PeroTools2.Serde
         }
 
         [DoesNotReturn]
-        public static void ThrowInvalidAdvance()
-        {
+        public static void ThrowInvalidAdvance() =>
             throw new SerdeException("Cannot advance past the end of the buffer.");
-        }
 
         [DoesNotReturn]
-        public static void ThrowInvalidTSymbol<TSymbol>() where TSymbol : unmanaged
-        {
-            throw new SerdeException($"TSymbol can only be char or byte, but {typeof(TSymbol).Name}");
-        }
-
-        [DoesNotReturn]
-        public static void ThrowInvalidFloatPoint()
-        {
+        public static void ThrowInvalidFloatPoint() =>
             throw new SerdeException("Nan or infinity float point value is invalid in json.");
-        }
 
         public static SerdeException ThrowInvalidEscapedChar(char ch) =>
             new($"Invalid Escaped Char: {ch}");
