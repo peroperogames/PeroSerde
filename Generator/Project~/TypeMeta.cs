@@ -6,49 +6,52 @@
  */
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PeroTools2.Serde.Generator;
 
-public sealed partial class TypeMeta
+public sealed class TypeMeta
 {
-    private readonly ReferenceSymbols m_References;
     public INamedTypeSymbol symbol { get; }
     public string typeName { get; }
+    private readonly ReferenceSymbols m_References;
 
     // 所有可被序列化的成员
     public MemberMeta[] members { get; }
     public IMethodSymbol? constructor { get; }
     public bool isUseEmptyConstructor => constructor == null || constructor.Parameters.IsEmpty;
 
-    // 不为null代表类型的构造函数有问题.
-    private DiagnosticDescriptor? m_CtorInvalidErr;
+    // 在运行构造函数时收集到的诊断. 若不为null则意味着TypeMeta构造失败
+    private readonly Diagnostic? m_CtorDiagnostic;
 
-    public static bool TryNew(ref GeneratorExecutionContext context, TypeDeclarationSyntax typeSyntax, INamedTypeSymbol typeSymbol, ReferenceSymbols references, out TypeMeta? typeMeta)
+    public static bool TryNew(
+        TypeDeclarationSyntax typeSyntax,
+        INamedTypeSymbol typeSymbol,
+        ReferenceSymbols references,
+        [NotNullWhen(true)]
+        out TypeMeta? typeMeta,
+        [NotNullWhen(false)]
+        out Diagnostic? diagnostic
+    )
     {
-        if (!PreValidate(ref context, typeSyntax, typeSymbol, references))
-        {
-            typeMeta = default;
-            return false;
-        }
-        typeMeta = new TypeMeta(typeSymbol, references);
-        if (typeMeta.PostValidate(ref context, typeSyntax))
-        {
-            return true;
-        }
         typeMeta = null;
-        return false;
+        if (!PreValidate(typeSymbol, typeSyntax, out diagnostic))
+            return false;
+        typeMeta = new TypeMeta(typeSymbol, typeSyntax, references);
+        if (!PostValidate(typeMeta, typeSyntax, out diagnostic))
+            return false;
+        return true;
     }
 
-    private TypeMeta(INamedTypeSymbol symbol, ReferenceSymbols references)
+    private TypeMeta(INamedTypeSymbol symbol, TypeDeclarationSyntax typeSyntax, ReferenceSymbols references)
     {
         this.symbol = symbol;
         m_References = references;
         typeName = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-        (constructor, m_CtorInvalidErr) = ChooseConstructor(symbol, references);
+        (constructor, m_CtorDiagnostic) = ChooseConstructor(typeSyntax, symbol, references);
         members = symbol.GetAllMembers()
             // 仅包含用户定义的, 非静态的field和property
             .Where(static s => s is (IFieldSymbol or IPropertySymbol) and { IsStatic: false, IsImplicitlyDeclared: false, CanBeReferencedByName: true })
@@ -69,57 +72,116 @@ public sealed partial class TypeMeta
             .ToArray();
     }
 
+    private static bool PostValidate(TypeMeta typeMeta, TypeDeclarationSyntax typeSyntax, [NotNullWhen(false)] out Diagnostic? diagnostic)
+    {
+        if (typeMeta.m_CtorDiagnostic != null)
+        {
+            diagnostic = typeMeta.m_CtorDiagnostic;
+            return false;
+        }
+        // 判断ctor的每个参数是不是都有对应的member
+        if (typeMeta.constructor != null)
+        {
+            foreach (var parameter in typeMeta.constructor.Parameters)
+            {
+                var hasMatchingMember = typeMeta.members.Any(member =>
+                    member.isConstructorParameter
+                    && string.Equals(parameter.Name, member.constructorParameterName, StringComparison.OrdinalIgnoreCase)
+                );
+                if (!hasMatchingMember)
+                {
+                    var location =
+                        parameter.Locations.FirstOrDefault() ??
+                        typeMeta.constructor.Locations.FirstOrDefault() ??
+                        typeSyntax.Identifier.GetLocation();
+                    diagnostic = Diagnostic.Create(
+                        DiagnosticDescriptors.ctorHasNoMatchedParameter,
+                        location,
+                        typeMeta.typeName, parameter.Name
+                    );
+                    return false;
+                }
+            }
+        }
+        // 判断是否有只读Field, 并且不是构造函数参数
+        foreach (var member in typeMeta.members)
+        {
+            if (member.symbol is IFieldSymbol field && field.IsReadOnly && !member.isConstructorParameter)
+            {
+                diagnostic = Diagnostic.Create(
+                    DiagnosticDescriptors.readonlyFieldMustBeCtorMember,
+                    member.GetLocation(typeSyntax),
+                    typeMeta.typeName, member.name
+                );
+                return false;
+            }
+        }
+        // TODO 不能包含不能序列化的Member
+        diagnostic = null;
+        return true;
+    }
+
     /// <summary>
     /// 为了节约性能, 能在生成TypeMeta前做的检查放在前面做.
     /// </summary>
-    private static bool PreValidate(
-        ref GeneratorExecutionContext context,
-        TypeDeclarationSyntax typeSyntax,
-        INamedTypeSymbol typeSymbol,
-        ReferenceSymbols referenceSymbols
-    )
+    private static bool PreValidate(INamedTypeSymbol typeSymbol, TypeDeclarationSyntax typeSyntax, [NotNullWhen(false)] out Diagnostic? diagnostic)
     {
+        if (!typeSyntax.IsPartial())
+        {
+            diagnostic = Diagnostic.Create(
+                DiagnosticDescriptors.mustBePartial,
+                typeSyntax.Identifier.GetLocation(),
+                typeSymbol.Name
+            );
+            return false;
+        }
+        if (typeSyntax.IsNested())
+        {
+            diagnostic = Diagnostic.Create(
+                DiagnosticDescriptors.nestedNotAllow,
+                typeSyntax.Identifier.GetLocation(),
+                typeSymbol.Name
+            );
+            return false;
+        }
+        if (typeSyntax.IsStatic())
+        {
+            diagnostic = Diagnostic.Create(
+                DiagnosticDescriptors.staticClassNotAllow,
+                typeSyntax.Identifier.GetLocation(),
+                typeSymbol.Name
+            );
+            return false;
+        }
         // ref struct 没法序列化
         if (typeSymbol.IsRefLikeType)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            diagnostic = Diagnostic.Create(
                 DiagnosticDescriptors.refStructNotAllow,
                 typeSyntax.Identifier.GetLocation(),
                 typeSymbol.Name
-            ));
+            );
             return false;
         }
         // abstract class / interface 没法序列化.
         if (typeSymbol.IsAbstract)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            diagnostic = Diagnostic.Create(
                 DiagnosticDescriptors.abstractClassOrInterfaceNotAllow,
                 typeSyntax.Identifier.GetLocation(),
                 typeSymbol.Name
-            ));
+            );
             return false;
         }
+        diagnostic = null;
         return true;
     }
 
-    private bool PostValidate(ref GeneratorExecutionContext context, TypeDeclarationSyntax typeSyntax)
+    private static (IMethodSymbol? ctor, Diagnostic?) ChooseConstructor(
+        TypeDeclarationSyntax typeSyntax, INamedTypeSymbol typeSymbol, ReferenceSymbols references
+    )
     {
-        // 构造函数有问题
-        if (m_CtorInvalidErr != null)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                m_CtorInvalidErr,
-                typeSyntax.Identifier.GetLocation(),
-                symbol.Name
-            ));
-            return false;
-        }
-        return true;
-    }
-
-    private static (IMethodSymbol? ctor, DiagnosticDescriptor? ctorInvalidErr) ChooseConstructor(INamedTypeSymbol symbol, ReferenceSymbols references)
-    {
-        var ctors = symbol.InstanceConstructors
+        var ctors = typeSymbol.InstanceConstructors
             .Where(static ctor => !ctor.IsImplicitlyDeclared)
             .ToArray();
         switch (ctors.Length)
@@ -136,9 +198,9 @@ public sealed partial class TypeMeta
                     .ToArray();
                 return ctorWithAttrs.Length switch
                 {
-                    0 => (null, DiagnosticDescriptors.multipleCtorWithoutAttribute),
+                    0 => (null, Diagnostic.Create(DiagnosticDescriptors.multipleCtorWithoutAttribute, typeSyntax.GetLocation(), typeSymbol.Name)),
                     1 => (ctorWithAttrs[0], null),
-                    _ => (null, DiagnosticDescriptors.multipleCtorWithAttribute)
+                    _ => (null, Diagnostic.Create(DiagnosticDescriptors.multipleCtorWithAttribute, typeSyntax.GetLocation(), typeSymbol.Name))
                 };
             }
         }
@@ -279,8 +341,8 @@ public sealed partial class MemberMeta
         {
             return MemberKind.Primitive;
         }
-        // 查找静态序列化方法
-        // if ()
+        // // TODO 查找静态序列化方法
+        // if (memberType)
         // {
         //     
         // }

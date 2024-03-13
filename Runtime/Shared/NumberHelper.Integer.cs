@@ -39,10 +39,10 @@ namespace PeroTools2.Serde
             if (value < 0)
             {
                 *dest = '-';
-                dest += 1;
                 value = unchecked(-value);
+                return 1 + ToUtf16StringUnsafe((ulong) value, dest + 1);
             }
-            return 1 + ToUtf16StringUnsafe((ulong) value, dest);
+            return ToUtf16StringUnsafe((ulong) value, dest);
         }
 
         public static unsafe int ToUtf8StringUnsafe(ulong value, byte* dest)
@@ -67,10 +67,10 @@ namespace PeroTools2.Serde
             if (value < 0)
             {
                 *dest = (byte) '-';
-                dest += 1;
                 value = unchecked(-value);
+                return 1 + ToUtf8StringUnsafe((ulong) value, dest + 1);
             }
-            return 1 + ToUtf8StringUnsafe((ulong) value, dest);
+            return ToUtf8StringUnsafe((ulong) value, dest);
         }
 
         /// <summary>获取十进制整数的长度</summary>

@@ -6,6 +6,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -25,37 +26,13 @@ public partial class SerdeJsonGenerator
         var semanticModel = context.Compilation.GetSemanticModel(typeSyntax.SyntaxTree);
         var typeSymbol = semanticModel.GetDeclaredSymbol(typeSyntax, context.CancellationToken);
         if (typeSymbol == null) return;
-        if (!IsPartial(typeSyntax))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                DiagnosticDescriptors.mustBePartial, typeSyntax.Identifier.GetLocation(), typeSymbol.Name
-            ));
-            return;
-        }
-        if (IsNested(typeSyntax))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                DiagnosticDescriptors.nestedNotAllow, typeSyntax.Identifier.GetLocation(), typeSymbol.Name
-            ));
-            return;
-        }
         var reference = new ReferenceSymbols(context.Compilation);
-        if (!TypeMeta.TryNew(ref context, typeSyntax, typeSymbol, reference, out var typeMeta))
+        if (!TypeMeta.TryNew(typeSyntax, typeSymbol, reference, out var typeMeta, out var diagnostic))
         {
+            context.ReportDiagnostic(diagnostic);
             return;
         }
         var ns = typeSymbol.ContainingNamespace;
-        var accessibilityStr = typeSymbol.DeclaredAccessibility switch
-        {
-            Accessibility.NotApplicable => "",
-            Accessibility.Private => "private",
-            Accessibility.ProtectedAndInternal => "private protected",
-            Accessibility.Protected => "protected",
-            Accessibility.Internal => "internal",
-            Accessibility.ProtectedOrInternal => "protected internal",
-            Accessibility.Public => "public",
-            _ => throw new ArgumentOutOfRangeException()
-        };
         var classOrStructOrRecordStr = (typeSymbol.IsRecord, typeSymbol.IsValueType) switch
         {
             (false, false) => "class",
@@ -72,7 +49,7 @@ public partial class SerdeJsonGenerator
             sb.AppendLine($"namespace {ns} {{");
         }
         sb.AppendLine($$"""
-            {{accessibilityStr}} partial {{classOrStructOrRecordStr}} {{typeName}}
+            partial {{classOrStructOrRecordStr}} {{typeName}}
             {
             }
             """);
@@ -83,10 +60,4 @@ public partial class SerdeJsonGenerator
         var src = sb.ToString();
         context.AddSource($"{typeFullName}.SerdeJsonSerializer.g.cs", src);
     }
-
-    private static bool IsPartial(TypeDeclarationSyntax typeSyntax) =>
-        typeSyntax.Modifiers.Any(SyntaxKind.PartialKeyword);
-
-    private static bool IsNested(TypeDeclarationSyntax typeSyntax) =>
-        typeSyntax.Parent is TypeDeclarationSyntax;
 }

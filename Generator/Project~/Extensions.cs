@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PeroTools2.Serde.Generator;
 
@@ -53,6 +55,15 @@ public static class Extensions
             });
         }
     }
+
+    public static bool IsPartial(this TypeDeclarationSyntax typeSyntax) =>
+        typeSyntax.Modifiers.Any(SyntaxKind.PartialKeyword);
+
+    public static bool IsStatic(this TypeDeclarationSyntax typeSyntax) =>
+        typeSyntax.Modifiers.Any(SyntaxKind.StaticKeyword);
+
+    public static bool IsNested(this TypeDeclarationSyntax typeSyntax) =>
+        typeSyntax.Parent is TypeDeclarationSyntax;
 
     public static bool ContainsAttribute(this ISymbol symbol, INamedTypeSymbol attrSymbol) =>
         symbol

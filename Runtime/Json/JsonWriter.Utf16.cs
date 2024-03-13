@@ -4,70 +4,12 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde.Json
 {
-    public unsafe ref partial struct JsonWriter<TSymbol, TBufferWriter>
+    public static unsafe partial class JsonWriter
     {
-        public void WriteValueUtf16<T>(string key, T value, bool writeComma = true)
-        {
-            // TODO 写入Format时长度会加一个空格
-            var requiredSize = key.Length + GetValueRequiredSizeUtf16(value) + 2; // 2 是 : 和 , 的大小
-            var destPtr = GetSpanPtr<char>(requiredSize);
-            var startPtr = destPtr;
-            destPtr += WriteStringNoEscapeUnsafeUtf16(destPtr, key);
-            destPtr += WriteKeyEndingUnsafeUtf16(destPtr);
-            destPtr += WriteValueUnsafeUtf16(destPtr, value);
-            if (writeComma)
-                destPtr += WriteValueEndingUnsafeUtf16(destPtr);
-            Advance((int) (destPtr - startPtr));
-        }
-
-        private static int WriteValueUnsafeUtf16<T>(char* dest, T value)
-        {
-            return value switch
-            {
-                bool v => WriteBoolUnsafeUtf16(dest, v),
-                sbyte v => WriteInt64UnsafeUtf16(dest, v),
-                short v => WriteInt64UnsafeUtf16(dest, v),
-                int v => WriteInt64UnsafeUtf16(dest, v),
-                long v => WriteInt64UnsafeUtf16(dest, v),
-                byte v => WriteUInt64UnsafeUtf16(dest, v),
-                ushort v => WriteUInt64UnsafeUtf16(dest, v),
-                uint v => WriteUInt64UnsafeUtf16(dest, v),
-                ulong v => WriteUInt64UnsafeUtf16(dest, v),
-                float v => WriteFloatUnsafeUtf16(dest, v),
-                double v => WriteDoubleUnsafeUtf16(dest, v),
-                decimal v => WriteDecimalUnsafeUtf16(dest, v),
-                char v => WriteCharUnsafeUtf16(dest, v),
-                string v => WriteStringUnsafeUtf16(dest, v),
-                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
-            };
-        }
-
-        private static int GetValueRequiredSizeUtf16<T>(T value)
-        {
-            return value switch
-            {
-                bool v => v ? 4 : 5,
-                byte => 3, // 0 ~ 255
-                sbyte => 4, // -128 ~ 127
-                ushort => 5, // 0 到 65535
-                short => 6, // -32768 到 32767
-                uint => 10, // 0 到 4294967295
-                int => 11, // -2147483648 到 2147483647
-                ulong => 20, // 0 到 18446744073709551615
-                long => 20, // -9223372036854775808 到 9223372036854775807
-                float => NumberHelper.max_float_string_length,
-                double => NumberHelper.max_double_string_length,
-                decimal => NumberHelper.max_decimal_string_length,
-                char v => 2 + (v < 0x20 || v is '"' or '\\' ? 6 : 1),
-                string v => v.Length + 2,
-                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
-            };
-        }
-
         #region Unsafe Write Primitive
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteBoolUnsafeUtf16(char* dest, bool value)
+        public static int WriteBoolUnsafeUtf16(char* dest, bool value)
         {
             if (value)
             {
@@ -89,23 +31,23 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteInt64UnsafeUtf16(char* dest, long value) =>
+        public static int WriteInt64UnsafeUtf16(char* dest, long value) =>
             NumberHelper.ToUtf16StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteUInt64UnsafeUtf16(char* dest, ulong value) =>
+        public static int WriteUInt64UnsafeUtf16(char* dest, ulong value) =>
             NumberHelper.ToUtf16StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteFloatUnsafeUtf16(char* dest, float value) =>
+        public static int WriteFloatUnsafeUtf16(char* dest, float value) =>
             NumberHelper.ToUtf16StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteDoubleUnsafeUtf16(char* dest, double value)
+        public static int WriteDoubleUnsafeUtf16(char* dest, double value)
             => NumberHelper.ToUtf16StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteDecimalUnsafeUtf16(char* dest, decimal value)
+        public static int WriteDecimalUnsafeUtf16(char* dest, decimal value)
         {
             // return NumberHelper.ToUtf16StringUnsafe(value, dest);
             var destSpan = new Span<char>(dest, NumberHelper.max_decimal_string_length);
@@ -117,7 +59,7 @@ namespace PeroTools2.Serde.Json
 
         #region Unsafe Write Char
 
-        private static int WriteCharUnsafeUtf16(char* dest, char value)
+        public static int WriteCharUnsafeUtf16(char* dest, char value)
         {
             var start = dest;
             dest += WriteDoubleQuoteUnsafeUtf16(dest);
@@ -136,7 +78,7 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
         // ReSharper disable once CognitiveComplexity
-        private static int WriteEscapedCharUnsafeUtf16(char value, char* dest)
+        public static int WriteEscapedCharUnsafeUtf16(char value, char* dest)
         {
             return value switch
             {
@@ -203,7 +145,7 @@ namespace PeroTools2.Serde.Json
 
         #region Unsafe Write String
 
-        private static int WriteStringUnsafeUtf16(char* dest, string value)
+        public static int WriteStringUnsafeUtf16(char* dest, string value)
         {
             if (value == null)
                 return WriteNullUnsafeUtf16(dest);
@@ -217,7 +159,7 @@ namespace PeroTools2.Serde.Json
         /// <summary>在不考虑转义字符的情况下写入字符串</summary>
         /// <return>charsWritten</return>
         /// <remarks>需要自己保证不会出现内存越界</remarks>
-        private static int WriteStringNoEscapeUnsafeUtf16(char* dest, string str)
+        public static int WriteStringNoEscapeUnsafeUtf16(char* dest, string str)
         {
             if (str == null)
                 return WriteNullUnsafeUtf16(dest);
@@ -231,7 +173,7 @@ namespace PeroTools2.Serde.Json
         /// <summary>将<see cref="string"/>写入UTF16 Buffer.</summary>
         /// <returns>charsWritten</returns>
         /// <remarks>会考虑到转义字符.</remarks>
-        private static int WriteStringValueUnsafeUtf16(ReadOnlySpan<char> str, char* dest)
+        public static int WriteStringValueUnsafeUtf16(ReadOnlySpan<char> str, char* dest)
         {
             // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
             var originalPtr = dest;
@@ -258,7 +200,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteRawUnsafeUtf16(ReadOnlySpan<char> src, char* dest)
+        public static int WriteRawUnsafeUtf16(ReadOnlySpan<char> src, char* dest)
         {
             fixed (char* srcPtr = src)
             {
@@ -273,7 +215,7 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入一个英文冒号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteKeyEndingUnsafeUtf16(char* dest)
+        public static int WriteKeyEndingUnsafeUtf16(char* dest)
         {
             *dest = ':';
             return 1;
@@ -281,34 +223,69 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入一个英文逗号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteValueEndingUnsafeUtf16(char* dest)
+        public static int WriteValueEndingUnsafeUtf16(char* dest)
         {
             *dest = ',';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteDoubleQuoteUnsafeUtf16(char* dest)
+        public static int WriteDoubleQuoteUnsafeUtf16(char* dest)
         {
             *dest = '"';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteSpaceUnsafeUtf16(char* dest)
+        public static int WriteSpaceUnsafeUtf16(char* dest)
         {
             *dest = ' ';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteNullUnsafeUtf16(char* dest)
+        public static int WriteBeginArrayUnsafeUtf16(char* dest)
+        {
+            *dest = '[';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteEndArrayUnsafeUtf16(char* dest)
+        {
+            *dest = ']';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteNullUnsafeUtf16(char* dest)
         {
             dest[0] = 'n';
             dest[1] = 'u';
             dest[2] = 'l';
             dest[3] = 'l';
             return 4;
+        }
+
+        #endregion
+
+        #region Unsafe Write Indent
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteIndentUnsafe(int count, char* dest)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                dest[i] = ' ';
+            }
+            return count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteNewLineUnsafe(char* dest)
+        {
+            *dest = '\n';
+            return 1;
         }
 
         #endregion

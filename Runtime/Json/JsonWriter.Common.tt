@@ -1,0 +1,332 @@
+﻿<#@ template language="C#"#>
+<#@ output extension=".cs" encoding="utf-8"#>
+using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using PeroTools2.Serde.Json.Formatter;
+
+namespace PeroTools2.Serde.Json
+{
+<#
+    foreach (var utf in new[] { "Utf8", "Utf16" }) {
+        var charType = utf == "Utf8" ? "byte" : "char";
+        var castStr = utf == "Utf8" ? "(byte) " : "";
+#>
+    public ref struct JsonWriter<#= utf #><TBufferWriter>
+        where TBufferWriter : class, IBufferWriter<<#= charType #>>
+    {
+        private readonly TBufferWriter m_BufferWriter;
+
+        // C# 10之后可以使用 private ref <#= charType #> m_BufferRef;
+        private Span<<#= charType #>> m_BufferRef;
+        private int m_AdvancedCount;
+        private int m_WrittenCount;
+
+        // TODO Options
+
+        public JsonWriter<#= utf #>(TBufferWriter writer)
+        {
+            m_BufferWriter = writer;
+            m_BufferRef = default;
+            m_AdvancedCount = 0;
+            m_WrittenCount = 0;
+        }
+
+        #region Buffer Op
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ref <#= charType #> GetSpanRef(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return ref m_BufferRef.GetPinnableReference();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Span<<#= charType #>> GetSpan(int sizeHint)
+        {
+            if (m_BufferRef.Length < sizeHint)
+            {
+                RequestNewBuffer(sizeHint);
+            }
+            return m_BufferRef;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void RequestNewBuffer(int sizeHint)
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = m_BufferWriter.GetSpan(sizeHint);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int count)
+        {
+            if (count == 0) return;
+            if (m_BufferRef.Length - count < 0)
+            {
+                SerdeException.ThrowInvalidAdvance();
+            }
+            m_BufferRef = m_BufferRef.Slice(count);
+            m_AdvancedCount += count;
+            m_WrittenCount += count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Flush()
+        {
+            if (m_AdvancedCount != 0)
+            {
+                m_BufferWriter.Advance(m_AdvancedCount);
+                m_AdvancedCount = 0;
+            }
+            m_BufferRef = default;
+            m_WrittenCount = 0;
+        }
+
+        #endregion
+
+        #region Write Value
+
+        public unsafe void WriteNamedValue<T>(string key, T value, SerdeJsonFormatter<T> formatter, bool writeComma = true)
+        {
+            if (formatter.isUnsafeFormatter)
+            {
+                var requiredSize = key.Length + formatter.GetMaxRequiredSize<#= utf #>(value) + 2; // 2 是 : 和 , 的大小
+                fixed (<#= charType #>* startPtr = GetSpan(requiredSize))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    destPtr += formatter.Serialize<#= utf #>Unsafe(value, destPtr);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
+            }
+            else
+            {
+                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
+                formatter.Serialize<#= utf #>(value, ref this);
+                if (writeComma)
+                    WriteValueEnding();
+            }
+        }
+
+        public unsafe void WriteNamedValue<T>(string key, T value, bool writeComma = true)
+        {
+            var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
+            if (formatter.isUnsafeFormatter)
+            {
+                var requiredSize = key.Length + formatter.GetMaxRequiredSize<#= utf #>(value) + 2; // 2 是 : 和 , 的大小
+                fixed (<#= charType #>* startPtr = GetSpan(requiredSize))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    destPtr += formatter.Serialize<#= utf #>Unsafe(value, destPtr);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
+            }
+            else
+            {
+                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
+                formatter.Serialize<#= utf #>(value, ref this);
+                if (writeComma)
+                    WriteValueEnding();
+            }
+        }
+
+        public unsafe void WriteValue<T>(T value, SerdeJsonFormatter<T> formatter)
+        {
+            if (formatter.isUnsafeFormatter)
+            {
+                var requiredSize = formatter.GetMaxRequiredSize<#= utf #>(value) + 1;
+                fixed (<#= charType #>* destPtr = GetSpan(requiredSize))
+                {
+                    var <#= charType #>sWritten = formatter.Serialize<#= utf #>Unsafe(value, destPtr);
+                    Advance(<#= charType #>sWritten);
+                }
+            }
+            else
+            {
+                formatter.Serialize<#= utf #>(value, ref this);
+            }
+        }
+
+        public unsafe void WriteValue<T>(T value)
+        {
+            var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
+            if (formatter.isUnsafeFormatter)
+            {
+                var requiredSize = formatter.GetMaxRequiredSize<#= utf #>(value) + 1;
+                fixed (<#= charType #>* destPtr = GetSpan(requiredSize))
+                {
+                    var <#= charType #>sWritten = formatter.Serialize<#= utf #>Unsafe(value, destPtr);
+                    Advance(<#= charType #>sWritten);
+                }
+            }
+            else
+            {
+                formatter.Serialize<#= utf #>(value, ref this);
+            }
+        }
+
+        #endregion
+
+        #region Write Array
+<#
+        foreach (var arrayType in new[] { "T[]", "IList<T>", "IReadOnlyList<T>" }) {
+            var countProp = arrayType == "T[]" ? "Length" : "Count";
+#>
+
+        public unsafe void WriteArray<T>(<#= arrayType #> value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+            if (value.<#= countProp #> == 0)
+            {
+                var dest = GetSpan(2);
+                dest[0] = <#= castStr #>'[';
+                dest[1] = <#= castStr #>']';
+                Advance(2);
+                return;
+            }
+            var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
+            if (formatter.isUnsafeFormatter)
+            {
+                var requiredLength = value.<#= countProp #> * (formatter.GetMaxRequiredSize<#= utf #>(value[0]) + 1) + 2;
+                fixed (<#= charType #>* startPtr = GetSpan(requiredLength))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteBeginArrayUnsafe<#= utf #>(destPtr);
+                    for (var i = 0; i < value.<#= countProp #>; i++)
+                    {
+                        destPtr += formatter.Serialize<#= utf #>Unsafe(value[i], destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndArrayUnsafe<#= utf #>(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+            }
+            else
+            {
+                WriteBeginArray();
+                for (var i = 0; i < value.<#= countProp #> - 1; i++)
+                {
+                    formatter.Serialize<#= utf #>(value[i], ref this);
+                    WriteValueEnding();
+                }
+                formatter.Serialize<#= utf #>(value[^1], ref this);
+                WriteEndArray();
+            }
+        }
+<#
+        }
+#>
+
+        #endregion
+
+        #region Write Literal
+
+        /// <summary>写入一个英文冒号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteKeyEnding()
+        {
+            GetSpanRef(1) = <#= castStr #>':';
+            Advance(1);
+        }
+
+        /// <summary>写入一个英文逗号</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueEnding()
+        {
+            GetSpanRef(1) = <#= castStr #>',';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteDoubleQuote()
+        {
+            GetSpanRef(1) = <#= castStr #>'"';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteSpace()
+        {
+            GetSpanRef(1) = <#= castStr #>' ';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginObject()
+        {
+            GetSpanRef(1) = <#= castStr #>'{';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndObject()
+        {
+            GetSpanRef(1) = <#= castStr #>'}';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBeginArray()
+        {
+            GetSpanRef(1) = <#= castStr #>'[';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteEndArray()
+        {
+            GetSpanRef(1) = <#= castStr #>']';
+            Advance(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteNull()
+        {
+            var dest = GetSpan(4);
+            dest[0] = <#= castStr #>'n';
+            dest[1] = <#= castStr #>'u';
+            dest[2] = <#= castStr #>'l';
+            dest[3] = <#= castStr #>'l';
+            Advance(4);
+        }
+
+        #endregion
+    }
+
+<#
+    }
+#>
+}

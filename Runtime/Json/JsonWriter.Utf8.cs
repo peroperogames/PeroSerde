@@ -5,69 +5,11 @@ using System.Text;
 
 namespace PeroTools2.Serde.Json
 {
-    public unsafe ref partial struct JsonWriter<TSymbol, TBufferWriter>
+    public static unsafe partial class JsonWriter
     {
-        public void WriteValueUtf8<T>(string key, T value, bool writeComma)
-        {
-            // TODO 写入Format时长度会加一个空格
-            var requiredSize = key.Length + GetValueRequiredSizeUtf8(value) + 2; // 2 是 : 和 , 的大小
-            var destPtr = GetSpanPtr<byte>(requiredSize);
-            var startPtr = destPtr;
-            destPtr += WriteStringNoEscapeUnsafeUtf8(destPtr, key);
-            destPtr += WriteKeyEndingUnsafeUtf8(destPtr);
-            destPtr += WriteValueUnsafeUtf8(destPtr, value);
-            if (writeComma)
-                destPtr += WriteValueEndingUnsafeUtf8(destPtr);
-            Advance((int) (destPtr - startPtr));
-        }
-
-        private static int WriteValueUnsafeUtf8<T>(byte* dest, T value)
-        {
-            return value switch
-            {
-                bool v => WriteBoolUnsafeUtf8(dest, v),
-                sbyte v => WriteInt64UnsafeUtf8(dest, v),
-                short v => WriteInt64UnsafeUtf8(dest, v),
-                int v => WriteInt64UnsafeUtf8(dest, v),
-                long v => WriteInt64UnsafeUtf8(dest, v),
-                byte v => WriteUInt64UnsafeUtf8(dest, v),
-                ushort v => WriteUInt64UnsafeUtf8(dest, v),
-                uint v => WriteUInt64UnsafeUtf8(dest, v),
-                ulong v => WriteUInt64UnsafeUtf8(dest, v),
-                float v => WriteFloatUnsafeUtf8(dest, v),
-                double v => WriteDoubleUnsafeUtf8(dest, v),
-                decimal v => WriteDecimalUnsafeUtf8(dest, v),
-                char v => WriteCharUnsafeUtf8(dest, v),
-                string v => WriteStringUnsafeUtf8(dest, v),
-                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
-            };
-        }
-
-        private static int GetValueRequiredSizeUtf8<T>(T value)
-        {
-            return value switch
-            {
-                bool v => v ? 4 : 5,
-                byte => 3, // 0 ~ 255
-                sbyte => 4, // -128 ~ 127
-                ushort => 5, // 0 到 65535
-                short => 6, // -32768 到 32767
-                uint => 10, // 0 到 4294967295
-                int => 11, // -2147483648 到 2147483647
-                ulong => NumberHelper.max_uint64_numbers_length, // 0 到 18446744073709551615
-                long => NumberHelper.max_int64_numbers_length, // -9223372036854775808 到 9223372036854775807
-                float => NumberHelper.max_float_string_length,
-                double => NumberHelper.max_double_string_length,
-                decimal => NumberHelper.max_decimal_string_length,
-                char v => 2 + (v < 0x20 || v is '"' or '\\' ? 6 : 1),
-                string v => Encoding.UTF8.GetMaxByteCount(v.Length) + 2,
-                _ => throw new NotSupportedException($"{value.GetType()} Is Not Supported.")
-            };
-        }
-
         #region Unsafe Write String
 
-        private static int WriteStringUnsafeUtf8(byte* dest, string value)
+        public static int WriteStringUnsafeUtf8(byte* dest, string value)
         {
             if (value == null)
                 return WriteNullUnsafeUtf8(dest);
@@ -78,7 +20,7 @@ namespace PeroTools2.Serde.Json
             return (int) (dest - start);
         }
 
-        private static int WriteStringNoEscapeUnsafeUtf8(byte* dest, string value)
+        public static int WriteStringNoEscapeUnsafeUtf8(byte* dest, string value)
         {
             if (value == null)
                 return WriteNullUnsafeUtf8(dest);
@@ -89,7 +31,7 @@ namespace PeroTools2.Serde.Json
             return (int) (dest - start);
         }
 
-        private static int WriteStringValueUnsafeUtf8(ReadOnlySpan<char> str, byte* dest)
+        public static int WriteStringValueUnsafeUtf8(ReadOnlySpan<char> str, byte* dest)
         {
             // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
             var from = 0;
@@ -123,7 +65,7 @@ namespace PeroTools2.Serde.Json
         /// 2. dest的可用长度必须大于<c>Encoding.UTF8.GetMaxByteCount(str.Length)</c>
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteStringValueNoEscapeUtf8(ReadOnlySpan<char> str, byte* dest)
+        public static int WriteStringValueNoEscapeUtf8(ReadOnlySpan<char> str, byte* dest)
         {
             var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
             var destSpan = new Span<byte>(dest, maxByteCount);
@@ -136,7 +78,7 @@ namespace PeroTools2.Serde.Json
         #region Unsafe Write Primitive
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteBoolUnsafeUtf8(byte* dest, bool value)
+        public static int WriteBoolUnsafeUtf8(byte* dest, bool value)
         {
             if (value)
             {
@@ -158,23 +100,23 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteInt64UnsafeUtf8(byte* dest, long value) =>
+        public static int WriteInt64UnsafeUtf8(byte* dest, long value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteUInt64UnsafeUtf8(byte* dest, ulong value) =>
+        public static int WriteUInt64UnsafeUtf8(byte* dest, ulong value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteFloatUnsafeUtf8(byte* dest, float value) =>
+        public static int WriteFloatUnsafeUtf8(byte* dest, float value) =>
             // TODO 格式值按照字符串或者默认值写入？
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
-        private static int WriteDoubleUnsafeUtf8(byte* dest, double value) =>
+        public static int WriteDoubleUnsafeUtf8(byte* dest, double value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteDecimalUnsafeUtf8(byte* dest, decimal value)
+        public static int WriteDecimalUnsafeUtf8(byte* dest, decimal value)
         {
             Utf8Formatter.TryFormat(
                 value,
@@ -184,7 +126,7 @@ namespace PeroTools2.Serde.Json
             return bytesWritten;
         }
 
-        private static int WriteCharUnsafeUtf8(byte* dest, char value)
+        public static int WriteCharUnsafeUtf8(byte* dest, char value)
         {
             var start = dest;
             dest += WriteDoubleQuoteUnsafeUtf8(dest);
@@ -203,7 +145,7 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
         // ReSharper disable once CognitiveComplexity
-        private static int WriteEscapedCharUnsafeUtf8(char value, byte* dest)
+        public static int WriteEscapedCharUnsafeUtf8(char value, byte* dest)
         {
             return value switch
             {
@@ -272,7 +214,7 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入一个英文冒号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteKeyEndingUnsafeUtf8(byte* dest)
+        public static int WriteKeyEndingUnsafeUtf8(byte* dest)
         {
             *dest = (byte) ':';
             return 1;
@@ -280,34 +222,83 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入一个英文逗号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteValueEndingUnsafeUtf8(byte* dest)
+        public static int WriteValueEndingUnsafeUtf8(byte* dest)
         {
             *dest = (byte) ',';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteDoubleQuoteUnsafeUtf8(byte* dest)
+        public static int WriteDoubleQuoteUnsafeUtf8(byte* dest)
         {
             *dest = (byte) '"';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteSpaceUnsafeUtf8(byte* dest)
+        public static int WriteSpaceUnsafeUtf8(byte* dest)
         {
             *dest = (byte) ' ';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int WriteNullUnsafeUtf8(byte* dest)
+        public static int WriteBeginObjectUnsafeUtf8(byte* dest)
+        {
+            *dest = (byte) '{';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteEndObjectUnsafeUtf8(byte* dest)
+        {
+            *dest = (byte) '}';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteBeginArrayUnsafeUtf8(byte* dest)
+        {
+            *dest = (byte) '[';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteEndArrayUnsafeUtf8(byte* dest)
+        {
+            *dest = (byte) ']';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteNullUnsafeUtf8(byte* dest)
         {
             dest[0] = (byte) 'n';
             dest[1] = (byte) 'u';
             dest[2] = (byte) 'l';
             dest[3] = (byte) 'l';
             return 4;
+        }
+
+        #endregion
+
+        #region Unsafe Write Indent
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteIndentUnsafe(int count, byte* dest)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                dest[i] = (byte) ' ';
+            }
+            return count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteNewLineUnsafe(byte* dest)
+        {
+            *dest = (byte) '\n';
+            return 1;
         }
 
         #endregion

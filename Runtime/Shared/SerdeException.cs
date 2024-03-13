@@ -30,5 +30,9 @@ namespace PeroTools2.Serde
 
         public static SerdeException ThrowInvalidEscapedChar(char ch) =>
             new($"Invalid Escaped Char: {ch}");
+
+        [DoesNotReturn]
+        public static void ThrowFormatterNotFound(Type type) =>
+            throw new SerdeException($"Cannot found formatter for type \"{type.Name}\".");
     }
 }
