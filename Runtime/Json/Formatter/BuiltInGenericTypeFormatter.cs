@@ -57,16 +57,16 @@ namespace PeroTools2.Serde.Json.Formatter
         public override void SerializeUtf8<TBufferWriter>(KeyValuePair<TK, TV> value, ref JsonWriterUtf8<TBufferWriter> writer)
         {
             writer.WriteBeginObject();
-            writer.WriteNamedValue("k", value.Key);
-            writer.WriteNamedValue("v", value.Value, writeComma: false);
+            writer.WriteNamedValue("key", value.Key);
+            writer.WriteNamedValue("value", value.Value, false);
             writer.WriteEndObject();
         }
 
         public override void SerializeUtf16<TBufferWriter>(KeyValuePair<TK, TV> value, ref JsonWriterUtf16<TBufferWriter> writer)
         {
             writer.WriteBeginObject();
-            writer.WriteNamedValue("k", value.Key);
-            writer.WriteNamedValue("v", value.Value, writeComma: false);
+            writer.WriteNamedValue("key", value.Key);
+            writer.WriteNamedValue("value", value.Value, false);
             writer.WriteEndObject();
         }
     }

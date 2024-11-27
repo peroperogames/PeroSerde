@@ -356,8 +356,8 @@ namespace PeroTools2.Serde.Json.Formatter
     public sealed class CharFormatter : SerdeJsonFormatter<char>
     {
         public override bool isUnsafeFormatter => true;
-        public override int GetMaxRequiredSizeUtf8(char value) => 2 + (value < 0x20 || value is '"' or '\\' ? 6 : 1);
-        public override int GetMaxRequiredSizeUtf16(char value) => 2 + (value < 0x20 || value is '"' or '\\' ? 6 : 1);
+        public override int GetMaxRequiredSizeUtf8(char value) => 8; // 8 是 Unicode 转义 + 引号
+        public override int GetMaxRequiredSizeUtf16(char value) => 8; // 8 是 Unicode 转义 + 引号
         public override unsafe int SerializeUtf8Unsafe(char value, byte* dest) => JsonWriter.WriteCharUnsafeUtf8(dest, value);
         public override unsafe int SerializeUtf16Unsafe(char value, char* dest) => JsonWriter.WriteCharUnsafeUtf16(dest, value);
     }
@@ -365,8 +365,8 @@ namespace PeroTools2.Serde.Json.Formatter
     public sealed class NullableCharFormatter : SerdeJsonFormatter<char?>
     {
         public override bool isUnsafeFormatter => true;
-        public override int GetMaxRequiredSizeUtf8(char? value) => value == null ? 4 : (value < 0x20 || value is '"' or '\\' ? 6 : 1) + 2;
-        public override int GetMaxRequiredSizeUtf16(char? value) => value == null ? 4 : (value < 0x20 || value is '"' or '\\' ? 6 : 1) + 2;
+        public override int GetMaxRequiredSizeUtf8(char? value) => 8; // 8 是 Unicode 转义 + 引号
+        public override int GetMaxRequiredSizeUtf16(char? value) => 8; // 8 是 Unicode 转义 + 引号
 
         public override unsafe int SerializeUtf8Unsafe(char? value, byte* dest) =>
             value == null
@@ -381,11 +381,11 @@ namespace PeroTools2.Serde.Json.Formatter
 
     public sealed class StringFormatter : SerdeJsonFormatter<string>
     {
-        public override bool isUnsafeFormatter => true;
-        public override int GetMaxRequiredSizeUtf8(string value) => System.Text.Encoding.UTF8.GetMaxByteCount(value.Length) + 2;
-        public override int GetMaxRequiredSizeUtf16(string value) => value.Length + 2;
-        public override unsafe int SerializeUtf8Unsafe(string value, byte* dest) => JsonWriter.WriteStringUnsafeUtf8(dest, value);
-        public override unsafe int SerializeUtf16Unsafe(string value, char* dest) => JsonWriter.WriteStringUnsafeUtf16(dest, value);
+        public override bool isUnsafeFormatter => false;
+
+        // public override void SerializeUtf8<TBufferWriter>(string value, ref JsonWriterUtf8<TBufferWriter> writer) => writer.WriteString(value);
+
+        public override void SerializeUtf16<TBufferWriter>(string value, ref JsonWriterUtf16<TBufferWriter> writer) => writer.WriteString(value);
     }
 
 }
