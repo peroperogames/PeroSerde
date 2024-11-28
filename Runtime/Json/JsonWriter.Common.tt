@@ -13,17 +13,13 @@ namespace PeroTools2.Serde.Json
         var charType = utf == "Utf8" ? "byte" : "char";
         var castStr = utf == "Utf8" ? "(byte) " : "";
 #>
-    public ref struct JsonWriter<#= utf #><TBufferWriter>
-        where TBufferWriter : class, IBufferWriter<<#= charType #>>
+    public ref struct JsonWriter<#= utf #><TBufferWriter> where TBufferWriter : class, IBufferWriter<<#= charType #>>
     {
         private readonly TBufferWriter m_BufferWriter;
 
-        // C# 10之后可以使用 private ref <#= charType #> m_BufferRef;
         private Span<<#= charType #>> m_BufferRef;
         private int m_AdvancedCount;
         private int m_WrittenCount;
-
-        // TODO Options
 
         public JsonWriter<#= utf #>(TBufferWriter writer)
         {
@@ -195,20 +191,21 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region Write Array
-<#
-        foreach (var arrayType in new[] { "T[]", "IList<T>", "IReadOnlyList<T>" }) {
-            var countProp = arrayType == "T[]" ? "Length" : "Count";
-#>
+        #region Write List
 
-        public unsafe void WriteArray<T>(<#= arrayType #> value)
+<#
+        foreach (var listType in new[] { "IList<T>", "IReadOnlyList<T>" })
+        {
+            var isReadonly = listType == "IReadOnlyList<T>";
+#>
+        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>List<T>(string key, <#= listType #> value)
         {
             if (value == null)
             {
                 WriteNull();
                 return;
             }
-            if (value.<#= countProp #> == 0)
+            if (value.Count == 0)
             {
                 var dest = GetSpan(2);
                 dest[0] = <#= castStr #>'[';
@@ -219,12 +216,71 @@ namespace PeroTools2.Serde.Json
             var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
             if (formatter.isUnsafeFormatter)
             {
-                var requiredLength = value.<#= countProp #> * (formatter.GetMaxRequiredSize<#= utf #>(value[0]) + 1) + 2;
+                // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSize<#= utf #>(value[0]) + 1) + 6;
+                fixed (<#= charType #>* startPtr = GetSpan(requiredSize))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    destPtr += JsonWriter.WriteBeginArrayUnsafe<#= utf #>(destPtr);
+                    for (var i = 0; i < value.Count; i++)
+                    {
+                        destPtr += formatter.Serialize<#= utf #>Unsafe(value[i], destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndArrayUnsafe<#= utf #>(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+            }
+            else
+            {
+                // 4 是双引号和 : 和 , 的大小
+                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 4))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteBeginArray();
+                for (var i = 0; i < value.Count - 1; i++)
+                {
+                    formatter.Serialize<#= utf #>(value[i], ref this);
+                    WriteValueEnding();
+                }
+                // 覆盖最后一个逗号
+                formatter.Serialize<#= utf #>(value[^1], ref this);
+                WriteEndArray();
+            }
+        }
+
+        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>List<T>(<#= listType #> value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+            if (value.Count == 0)
+            {
+                var dest = GetSpan(2);
+                dest[0] = <#= castStr #>'[';
+                dest[1] = <#= castStr #>']';
+                Advance(2);
+                return;
+            }
+            var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
+            if (formatter.isUnsafeFormatter)
+            {
+                // + 1 是 逗号, + 2 是 [ 和 ]
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSize<#= utf #>(value[0]) + 1) + 2;
                 fixed (<#= charType #>* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
                     destPtr += JsonWriter.WriteBeginArrayUnsafe<#= utf #>(destPtr);
-                    for (var i = 0; i < value.<#= countProp #>; i++)
+                    for (var i = 0; i < value.Count; i++)
                     {
                         destPtr += formatter.Serialize<#= utf #>Unsafe(value[i], destPtr);
                         destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
@@ -237,7 +293,7 @@ namespace PeroTools2.Serde.Json
             else
             {
                 WriteBeginArray();
-                for (var i = 0; i < value.<#= countProp #> - 1; i++)
+                for (var i = 0; i < value.Count - 1; i++)
                 {
                     formatter.Serialize<#= utf #>(value[i], ref this);
                     WriteValueEnding();
@@ -246,13 +302,190 @@ namespace PeroTools2.Serde.Json
                 WriteEndArray();
             }
         }
+
 <#
         }
 #>
+        #endregion
 
+        #region Write Dictionary
+
+<#
+        foreach (var dicType in new[] {"IDictionary<TKey, TValue>", "IReadOnlyDictionary<TKey, TValue>"})
+        {
+            var isReadonly = dicType == "IReadOnlyDictionary<TKey, TValue>";
+#>
+        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(string key, <#= dicType #> value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+            if (value.Count == 0)
+            {
+                var dest = GetSpan(2);
+                dest[0] = <#= castStr #>'{';
+                dest[1] = <#= castStr #>'}';
+                Advance(2);
+                return;
+            }
+
+            var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
+            var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
+            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
+            if (valueFormatter.isUnsafeFormatter)
+            {
+                var index = 0;
+                WriteString(key);
+                WriteBeginObject();
+                foreach (var kv in value)
+                {
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
+                    var length = keyFormatter.GetMaxRequiredSize<#= utf #>(kv.Key) + valueFormatter.GetMaxRequiredSize<#= utf #>(kv.Value) + 4;
+                    // 每一次迭代都要确保可分配的内存是足够的
+                    fixed (<#= charType #>* startPtr = GetSpan(length))
+                    {
+                        var destPtr = startPtr;
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                        destPtr += valueFormatter.Serialize<#= utf #>Unsafe(kv.Value, destPtr);
+                        // 不写入最后一个逗号
+                        if (index++ != value.Count - 1)
+                        {
+                            destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                        }
+                        Advance((int) (destPtr - startPtr));
+                    }
+                }
+                WriteEndObject();
+            }
+            else
+            {
+                WriteBeginObject();
+                var index = 0;
+                foreach (var kv in value)
+                {
+                    // 写入 Key
+                    fixed (<#= charType #>* startPtr = GetSpan(key.Length + 4))
+                    {
+                        var destPtr = startPtr;
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                        destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                        Advance((int) (destPtr - startPtr));
+                    }
+
+                    // 写入 Value
+                    valueFormatter.Serialize<#= utf #>(kv.Value, ref this);
+                    // 不写入最后一个逗号
+                    if (index++ != value.Count - 1)
+                    {
+                        WriteValueEnding();
+                    }
+                }
+                WriteEndObject();
+            }
+        }
+
+        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(<#= dicType #> value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+            if (value.Count == 0)
+            {
+                var dest = GetSpan(2);
+                dest[0] = <#= castStr #>'{';
+                dest[1] = <#= castStr #>'}';
+                Advance(2);
+                return;
+            }
+
+            var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
+            var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
+            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
+            if (valueFormatter.isUnsafeFormatter)
+            {
+                var index = 0;
+                WriteBeginObject();
+                foreach (var kv in value)
+                {
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
+                    var length = keyFormatter.GetMaxRequiredSize<#= utf #>(kv.Key) + valueFormatter.GetMaxRequiredSize<#= utf #>(kv.Value) + 4;
+                    // 每一次迭代都要确保可分配的内存是足够的
+                    fixed (<#= charType #>* startPtr = GetSpan(length))
+                    {
+                        var destPtr = startPtr;
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                        destPtr += valueFormatter.Serialize<#= utf #>Unsafe(kv.Value, destPtr);
+                        // 不写入最后一个逗号
+                        if (index++ != value.Count - 1)
+                        {
+                            destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
+                        }
+                        Advance((int) (destPtr - startPtr));
+                    }
+                }
+                WriteEndObject();
+            }
+            else
+            {
+                WriteBeginObject();
+                var index = 0;
+                foreach (var kv in value)
+                {
+                    // 写入 Key
+                    var key = kv.Key.ToString();
+                    fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
+                    {
+                        var destPtr = startPtr;
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
+                        destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                        Advance((int) (destPtr - startPtr));
+                    }
+
+                    // 写入 Value
+                    valueFormatter.Serialize<#= utf #>(kv.Value, ref this);
+                    // 不写入最后一个逗号
+                    if (index++ != value.Count - 1)
+                    {
+                        WriteValueEnding();
+                    }
+                }
+                WriteEndObject();
+            }
+        }
+
+<#
+        }
+#>
         #endregion
 
         #region Write Literal
+
+        /// <summary>写入一个字符串</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteString(string value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+            var length = value.Length + 2;
+            fixed (<#= charType #>* desPtr = GetSpan(length))
+            {
+                JsonWriter.WriteDoubleQuoteUnsafe<#= utf #>(desPtr);
+                JsonWriter.WriteStringValueUnsafe<#= utf #>(value.AsSpan(), desPtr);
+                JsonWriter.WriteDoubleQuoteUnsafe<#= utf #>(desPtr);
+                Advance(length);
+            }
+        }
 
         /// <summary>写入一个英文冒号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
