@@ -498,14 +498,20 @@ namespace PeroTools2.Serde
         public static bool IsAsciiString(string str)
         {
             var length = str.Length;
+            // ASCII 的最大范围: U+0000 ~ U+007F
+            const ushort asciiMax = 0x7f;
+            // 4 个字符的最大 ASCII 范围表示: 0b1111111110000000 0b1111111110000000 0b1111111110000000 0b1111111110000000
+            const ulong ascii4Max = 0xff80ff80ff80ff80;
 
             ref var first = ref GetRawStringData(str);
+            // 使用 SIMD 加速（如果可以的话），且仅在当前字符串长度大于等于 SIMD 支持的位宽时使用，否则会 out of range
             if (Vector.IsHardwareAccelerated && length >= Vector<ushort>.Count)
             {
-                var comparison = new Vector<ushort>(0x7f);
+                var comparison = new Vector<ushort>(asciiMax);
 
                 do
                 {
+                    // 单个字符检查是否超出范围
                     if (Vector.GreaterThan(Unsafe.As<char, Vector<ushort>>(ref first), comparison) != Vector<ushort>.Zero)
                     {
                         return false;
@@ -516,9 +522,13 @@ namespace PeroTools2.Serde
                 } while (length >= Vector<ushort>.Count);
             }
 
+            // 如果 SIMD 未满，则处理剩下的字符。如果不使用 SIMD，则从头判断
+            // 一次性判断 4 个字符
             while (length >= 4)
             {
-                if ((Unsafe.As<char, ulong>(ref first) & 0xff80ff80ff80ff80) != 0)
+                // & 操作 =0 表明在范围内
+                // 如果这四个字符中有任何一个设置了非 ASCII 位，我们就看到了非 ASCII 数据
+                if ((Unsafe.As<char, ulong>(ref first) & ascii4Max) != 0)
                 {
                     return false;
                 }
@@ -527,11 +537,11 @@ namespace PeroTools2.Serde
                 first = ref Unsafe.Add(ref first, 4);
             }
 
-            if (length > 0 && Unsafe.Add(ref first, 0) > 0x7f)
+            if (length > 0 && Unsafe.Add(ref first, 0) > asciiMax)
                 return false;
-            if (length > 1 && Unsafe.Add(ref first, 1) > 0x7f)
+            if (length > 1 && Unsafe.Add(ref first, 1) > asciiMax)
                 return false;
-            if (length > 2 && Unsafe.Add(ref first, 2) > 0x7f)
+            if (length > 2 && Unsafe.Add(ref first, 2) > asciiMax)
                 return false;
 
             return true;
