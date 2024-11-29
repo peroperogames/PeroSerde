@@ -244,6 +244,20 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteBeginObjectUnsafeUtf16(char* dest)
+        {
+            *dest = '{';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteEndObjectUnsafeUtf16(char* dest)
+        {
+            *dest = '}';
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteBeginArrayUnsafeUtf16(char* dest)
         {
             *dest = '[';

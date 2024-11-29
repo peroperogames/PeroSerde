@@ -21,8 +21,8 @@ namespace PeroTools2.Serde.Json.Formatter
     {
         public override bool isUnsafeFormatter => true;
 
-        public override int GetMaxRequiredSizeUtf8(Guid value) => 38; // 36 + 2引号
-        public override int GetMaxRequiredSizeUtf16(Guid value) => 38;
+        public override int GetMaxRequiredSizeUtf8() => 38; // 36 + 2引号
+        public override int GetMaxRequiredSizeUtf16() => 38;
 
         public override unsafe int SerializeUtf8Unsafe(Guid value, byte* dest)
         {

@@ -88,7 +88,7 @@ namespace PeroTools2.Serde.Json
         {
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf8(value) + 2; // 2 是 : 和 , 的大小
+                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf8() + 2; // 2 是 : 和 , 的大小
                 fixed (byte* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -120,7 +120,7 @@ namespace PeroTools2.Serde.Json
             var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf8(value) + 2; // 2 是 : 和 , 的大小
+                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf8() + 2; // 2 是 : 和 , 的大小
                 fixed (byte* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -151,7 +151,7 @@ namespace PeroTools2.Serde.Json
         {
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = formatter.GetMaxRequiredSizeUtf8(value) + 1;
+                var requiredSize = formatter.GetMaxRequiredSizeUtf8() + 1;
                 fixed (byte* destPtr = GetSpan(requiredSize))
                 {
                     var bytesWritten = formatter.SerializeUtf8Unsafe(value, destPtr);
@@ -169,7 +169,7 @@ namespace PeroTools2.Serde.Json
             var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = formatter.GetMaxRequiredSizeUtf8(value) + 1;
+                var requiredSize = formatter.GetMaxRequiredSizeUtf8() + 1;
                 fixed (byte* destPtr = GetSpan(requiredSize))
                 {
                     var bytesWritten = formatter.SerializeUtf8Unsafe(value, destPtr);
@@ -205,7 +205,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
-                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf8(value[0]) + 1) + 6;
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf8() + 1) + 6;
                 fixed (byte* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -263,7 +263,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 2 是 [ 和 ]
-                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf8(value[0]) + 1) + 2;
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf8() + 1) + 2;
                 fixed (byte* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
@@ -310,7 +310,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
-                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf8(value[0]) + 1) + 6;
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf8() + 1) + 6;
                 fixed (byte* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -368,7 +368,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 2 是 [ 和 ]
-                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf8(value[0]) + 1) + 2;
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf8() + 1) + 2;
                 fixed (byte* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
@@ -418,22 +418,51 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // 第二个 + 4 { } 和 Key 的双引号的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf8() + valueFormatter.GetMaxRequiredSizeUtf8() + 4) + key.Length + 4;
+                fixed (byte* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafeUtf8(destPtr);
+                    foreach (var kv in value)
+                    {
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf8(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf8(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteString(key);
-                WriteBeginObject();
+                // 写入 Key
+                fixed (byte* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
+                    var curKey = kv.Key.ToString();
                     // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf8(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf8(kv.Value) + 4;
+                    var length = curKey.Length + valueFormatter.GetMaxRequiredSizeUtf8() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (byte* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
                         destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
@@ -444,24 +473,32 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
                 WriteBeginObject();
                 var index = 0;
+                // 写入 Key
+                fixed (byte* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
-                    // 写入 Key
-                    fixed (byte* startPtr = GetSpan(key.Length + 4))
+                    // Key
+                    var curKey = kv.Key.ToString();
+                    fixed (byte* startPtr = GetSpan(curKey.Length + 2))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf8(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -491,22 +528,46 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // + 2 { } 的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf8() + valueFormatter.GetMaxRequiredSizeUtf8() + 4) + 2;
+                fixed (byte* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    JsonWriter.WriteBeginObjectUnsafeUtf8(destPtr);
+                    foreach (var kv in value)
+                    {
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        // Value
+                        destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf8(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf8(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteBeginObject();
                 foreach (var kv in value)
                 {
-                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf8(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf8(kv.Value) + 4;
+                    var key = kv.Key.ToString();
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的长度
+                    var length = key.Length + valueFormatter.GetMaxRequiredSizeUtf8() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (byte* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        // Value
                         destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
                         if (index++ != value.Count - 1)
@@ -516,7 +577,6 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
@@ -524,7 +584,8 @@ namespace PeroTools2.Serde.Json
                 var index = 0;
                 foreach (var kv in value)
                 {
-                    // 写入 Key
+                    // Key
+
                     var key = kv.Key.ToString();
                     fixed (byte* startPtr = GetSpan(key.Length + 2))
                     {
@@ -534,7 +595,7 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf8(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -564,22 +625,51 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // 第二个 + 4 { } 和 Key 的双引号的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf8() + valueFormatter.GetMaxRequiredSizeUtf8() + 4) + key.Length + 4;
+                fixed (byte* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafeUtf8(destPtr);
+                    foreach (var kv in value)
+                    {
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf8(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf8(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteString(key);
-                WriteBeginObject();
+                // 写入 Key
+                fixed (byte* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
+                    var curKey = kv.Key.ToString();
                     // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf8(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf8(kv.Value) + 4;
+                    var length = curKey.Length + valueFormatter.GetMaxRequiredSizeUtf8() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (byte* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
                         destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
@@ -590,24 +680,32 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
                 WriteBeginObject();
                 var index = 0;
+                // 写入 Key
+                fixed (byte* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
-                    // 写入 Key
-                    fixed (byte* startPtr = GetSpan(key.Length + 4))
+                    // Key
+                    var curKey = kv.Key.ToString();
+                    fixed (byte* startPtr = GetSpan(curKey.Length + 2))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf8(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -637,22 +735,46 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // + 2 { } 的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf8() + valueFormatter.GetMaxRequiredSizeUtf8() + 4) + 2;
+                fixed (byte* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    JsonWriter.WriteBeginObjectUnsafeUtf8(destPtr);
+                    foreach (var kv in value)
+                    {
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        // Value
+                        destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf8(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf8(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteBeginObject();
                 foreach (var kv in value)
                 {
-                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf8(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf8(kv.Value) + 4;
+                    var key = kv.Key.ToString();
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的长度
+                    var length = key.Length + valueFormatter.GetMaxRequiredSizeUtf8() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (byte* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, kv.Key.ToString());
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf8(destPtr, key);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf8(destPtr);
+                        // Value
                         destPtr += valueFormatter.SerializeUtf8Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
                         if (index++ != value.Count - 1)
@@ -662,7 +784,6 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
@@ -670,7 +791,8 @@ namespace PeroTools2.Serde.Json
                 var index = 0;
                 foreach (var kv in value)
                 {
-                    // 写入 Key
+                    // Key
+
                     var key = kv.Key.ToString();
                     fixed (byte* startPtr = GetSpan(key.Length + 2))
                     {
@@ -680,7 +802,7 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf8(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -869,7 +991,7 @@ namespace PeroTools2.Serde.Json
         {
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf16(value) + 2; // 2 是 : 和 , 的大小
+                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf16() + 2; // 2 是 : 和 , 的大小
                 fixed (char* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -901,7 +1023,7 @@ namespace PeroTools2.Serde.Json
             var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf16(value) + 2; // 2 是 : 和 , 的大小
+                var requiredSize = key.Length + formatter.GetMaxRequiredSizeUtf16() + 2; // 2 是 : 和 , 的大小
                 fixed (char* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -932,7 +1054,7 @@ namespace PeroTools2.Serde.Json
         {
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = formatter.GetMaxRequiredSizeUtf16(value) + 1;
+                var requiredSize = formatter.GetMaxRequiredSizeUtf16() + 1;
                 fixed (char* destPtr = GetSpan(requiredSize))
                 {
                     var charsWritten = formatter.SerializeUtf16Unsafe(value, destPtr);
@@ -950,7 +1072,7 @@ namespace PeroTools2.Serde.Json
             var formatter = SerdeJsonFormatterProvider.GetFormatter<T>();
             if (formatter.isUnsafeFormatter)
             {
-                var requiredSize = formatter.GetMaxRequiredSizeUtf16(value) + 1;
+                var requiredSize = formatter.GetMaxRequiredSizeUtf16() + 1;
                 fixed (char* destPtr = GetSpan(requiredSize))
                 {
                     var charsWritten = formatter.SerializeUtf16Unsafe(value, destPtr);
@@ -986,7 +1108,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
-                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf16(value[0]) + 1) + 6;
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf16() + 1) + 6;
                 fixed (char* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -1044,7 +1166,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 2 是 [ 和 ]
-                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf16(value[0]) + 1) + 2;
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf16() + 1) + 2;
                 fixed (char* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
@@ -1091,7 +1213,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
-                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf16(value[0]) + 1) + 6;
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSizeUtf16() + 1) + 6;
                 fixed (char* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -1149,7 +1271,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 2 是 [ 和 ]
-                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf16(value[0]) + 1) + 2;
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSizeUtf16() + 1) + 2;
                 fixed (char* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
@@ -1199,22 +1321,51 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // 第二个 + 4 { } 和 Key 的双引号的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf16() + valueFormatter.GetMaxRequiredSizeUtf16() + 4) + key.Length + 4;
+                fixed (char* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafeUtf16(destPtr);
+                    foreach (var kv in value)
+                    {
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf16(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf16(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteString(key);
-                WriteBeginObject();
+                // 写入 Key
+                fixed (char* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
+                    var curKey = kv.Key.ToString();
                     // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf16(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf16(kv.Value) + 4;
+                    var length = curKey.Length + valueFormatter.GetMaxRequiredSizeUtf16() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (char* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
                         destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
@@ -1225,24 +1376,32 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
                 WriteBeginObject();
                 var index = 0;
+                // 写入 Key
+                fixed (char* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
-                    // 写入 Key
-                    fixed (char* startPtr = GetSpan(key.Length + 4))
+                    // Key
+                    var curKey = kv.Key.ToString();
+                    fixed (char* startPtr = GetSpan(curKey.Length + 2))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf16(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -1272,22 +1431,46 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // + 2 { } 的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf16() + valueFormatter.GetMaxRequiredSizeUtf16() + 4) + 2;
+                fixed (char* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    JsonWriter.WriteBeginObjectUnsafeUtf16(destPtr);
+                    foreach (var kv in value)
+                    {
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        // Value
+                        destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf16(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf16(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteBeginObject();
                 foreach (var kv in value)
                 {
-                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf16(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf16(kv.Value) + 4;
+                    var key = kv.Key.ToString();
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的长度
+                    var length = key.Length + valueFormatter.GetMaxRequiredSizeUtf16() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (char* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        // Value
                         destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
                         if (index++ != value.Count - 1)
@@ -1297,7 +1480,6 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
@@ -1305,7 +1487,8 @@ namespace PeroTools2.Serde.Json
                 var index = 0;
                 foreach (var kv in value)
                 {
-                    // 写入 Key
+                    // Key
+
                     var key = kv.Key.ToString();
                     fixed (char* startPtr = GetSpan(key.Length + 2))
                     {
@@ -1315,7 +1498,7 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf16(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -1345,22 +1528,51 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // 第二个 + 4 { } 和 Key 的双引号的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf16() + valueFormatter.GetMaxRequiredSizeUtf16() + 4) + key.Length + 4;
+                fixed (char* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafeUtf16(destPtr);
+                    foreach (var kv in value)
+                    {
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf16(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf16(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteString(key);
-                WriteBeginObject();
+                // 写入 Key
+                fixed (char* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
+                    var curKey = kv.Key.ToString();
                     // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf16(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf16(kv.Value) + 4;
+                    var length = curKey.Length + valueFormatter.GetMaxRequiredSizeUtf16() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (char* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
                         destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
@@ -1371,24 +1583,32 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
                 WriteBeginObject();
                 var index = 0;
+                // 写入 Key
+                fixed (char* startPtr = GetSpan(key.Length + 2))
+                {
+                    var destPtr = startPtr;
+                    destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                    destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                    Advance((int) (destPtr - startPtr));
+                }
                 foreach (var kv in value)
                 {
-                    // 写入 Key
-                    fixed (char* startPtr = GetSpan(key.Length + 4))
+                    // Key
+                    var curKey = kv.Key.ToString();
+                    fixed (char* startPtr = GetSpan(curKey.Length + 2))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, curKey);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf16(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)
@@ -1418,22 +1638,46 @@ namespace PeroTools2.Serde.Json
 
             var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
             var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            // Key 最后一定是以字符串的方式序列化，所以不需要判断 keyFormatter
-            if (valueFormatter.isUnsafeFormatter)
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
+                // + 2 { } 的长度
+                var length = value.Count * (keyFormatter.GetMaxRequiredSizeUtf16() + valueFormatter.GetMaxRequiredSizeUtf16() + 4) + 2;
+                fixed (char* startPtr = GetSpan(length))
+                {
+                    var destPtr = startPtr;
+                    JsonWriter.WriteBeginObjectUnsafeUtf16(destPtr);
+                    foreach (var kv in value)
+                    {
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        // Value
+                        destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
+                        destPtr += JsonWriter.WriteValueEndingUnsafeUtf16(destPtr);
+                    }
+                    // 覆盖最后一个逗号
+                    JsonWriter.WriteEndObjectUnsafeUtf16(destPtr - 1);
+                    Advance((int) (destPtr - startPtr));
+                }
+                WriteEndObject();
+            }
+            else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
-                WriteBeginObject();
                 foreach (var kv in value)
                 {
-                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
-                    // Value 不需要担心长度问题，因为 Formatter 会自己计算
-                    var length = keyFormatter.GetMaxRequiredSizeUtf16(kv.Key) + valueFormatter.GetMaxRequiredSizeUtf16(kv.Value) + 4;
+                    var key = kv.Key.ToString();
+                    // + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的长度
+                    var length = key.Length + valueFormatter.GetMaxRequiredSizeUtf16() + 4;
                     // 每一次迭代都要确保可分配的内存是足够的
                     fixed (char* startPtr = GetSpan(length))
                     {
                         var destPtr = startPtr;
-                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, kv.Key.ToString());
+                        // Key
+                        destPtr += JsonWriter.WriteStringNoEscapeUnsafeUtf16(destPtr, key);
                         destPtr += JsonWriter.WriteKeyEndingUnsafeUtf16(destPtr);
+                        // Value
                         destPtr += valueFormatter.SerializeUtf16Unsafe(kv.Value, destPtr);
                         // 不写入最后一个逗号
                         if (index++ != value.Count - 1)
@@ -1443,7 +1687,6 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
-                WriteEndObject();
             }
             else
             {
@@ -1451,7 +1694,8 @@ namespace PeroTools2.Serde.Json
                 var index = 0;
                 foreach (var kv in value)
                 {
-                    // 写入 Key
+                    // Key
+
                     var key = kv.Key.ToString();
                     fixed (char* startPtr = GetSpan(key.Length + 2))
                     {
@@ -1461,7 +1705,7 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
 
-                    // 写入 Value
+                    // Value
                     valueFormatter.SerializeUtf16(kv.Value, ref this);
                     // 不写入最后一个逗号
                     if (index++ != value.Count - 1)

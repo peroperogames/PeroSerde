@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace PeroTools2.Serde.Json.Formatter
 {
@@ -21,14 +22,25 @@ namespace PeroTools2.Serde.Json.Formatter
 
         public static readonly bool isFlags = typeof(T).IsDefined(typeof(FlagsAttribute), false);
 
+        public static readonly int maxUTF16StringLength;
+        public static readonly int maxUTF8StringLength;
+
         static EnumInfo()
         {
             var values = (T[]) Enum.GetValues(typeof(T));
             items = new Dictionary<T, (ulong, string)>(values.Length);
+            var utf8MaxLength = 0;
+            var utf16MaxLength = 0;
             for (var i = 0; i < values.Length; i++)
             {
-                items[values[i]] = (EnumHelper.AsUInt64(values[i]), Enum.GetName(typeof(T), values[i]));
+                var value = EnumHelper.AsUInt64(values[i]);
+                var name = Enum.GetName(typeof(T), values[i])!;
+                items[values[i]] = (value, name);
+                utf16MaxLength = Math.Max(name.Length, utf16MaxLength);
+                utf8MaxLength = Math.Max(Encoding.UTF8.GetMaxByteCount(name.Length), utf8MaxLength);
             }
+            maxUTF8StringLength = utf8MaxLength;
+            maxUTF16StringLength = utf16MaxLength;
         }
     }
 
@@ -69,7 +81,7 @@ namespace PeroTools2.Serde.Json.Formatter
     {
         public override bool isUnsafeFormatter => true;
 
-        public override int GetMaxRequiredSizeUtf8(T value) =>
+        public override int GetMaxRequiredSizeUtf8() =>
             Unsafe.SizeOf<T>() switch
             {
                 1 => 4,
@@ -78,7 +90,7 @@ namespace PeroTools2.Serde.Json.Formatter
                 _ => NumberHelper.max_uint64_numbers_length
             };
 
-        public override int GetMaxRequiredSizeUtf16(T value) =>
+        public override int GetMaxRequiredSizeUtf16() =>
             Unsafe.SizeOf<T>() switch
             {
                 1 => 4,
@@ -122,17 +134,9 @@ namespace PeroTools2.Serde.Json.Formatter
     {
         public override bool isUnsafeFormatter => true;
 
-        public override int GetMaxRequiredSizeUtf8(T value)
-        {
-            var name = EnumInfo<T>.items[value].name;
-            return System.Text.Encoding.UTF8.GetMaxByteCount(name.Length) + 2;
-        }
+        public override int GetMaxRequiredSizeUtf8() => EnumInfo<T>.maxUTF8StringLength + 2;
 
-        public override int GetMaxRequiredSizeUtf16(T value)
-        {
-            var name = EnumInfo<T>.items[value].name;
-            return name.Length + 2;
-        }
+        public override int GetMaxRequiredSizeUtf16() => EnumInfo<T>.maxUTF16StringLength + 2;
 
         public override unsafe int SerializeUtf8Unsafe(T value, byte* dest)
         {

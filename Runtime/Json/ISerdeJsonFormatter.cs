@@ -12,13 +12,13 @@ namespace PeroTools2.Serde.Json
 {
     public interface IUnsafeSerdeJsonFormatterUtf8<T>
     {
-        int GetMaxRequiredSizeUtf8(T value);
+        int GetMaxRequiredSizeUtf8();
         unsafe int SerializeUtf8Unsafe(T value, byte* dest);
     }
 
     public interface IUnsafeSerdeJsonFormatterUtf16<T>
     {
-        int GetMaxRequiredSizeUtf16(T value);
+        int GetMaxRequiredSizeUtf16();
         unsafe int SerializeUtf16Unsafe(T value, char* dest);
     }
 
@@ -44,10 +44,10 @@ namespace PeroTools2.Serde.Json
     {
         public abstract bool isUnsafeFormatter { get; }
 
-        public virtual int GetMaxRequiredSizeUtf8(T value) => throw new NotImplementedException();
+        public virtual int GetMaxRequiredSizeUtf8() => throw new NotImplementedException();
         public virtual unsafe int SerializeUtf8Unsafe(T value, byte* dest) => throw new NotImplementedException();
 
-        public virtual int GetMaxRequiredSizeUtf16(T value) => throw new NotImplementedException();
+        public virtual int GetMaxRequiredSizeUtf16() => throw new NotImplementedException();
         public virtual unsafe int SerializeUtf16Unsafe(T value, char* dest) => throw new NotImplementedException();
 
         public virtual void SerializeUtf8<TBufferWriter>(T value, ref JsonWriterUtf8<TBufferWriter> writer) where TBufferWriter : class, IBufferWriter<byte>
