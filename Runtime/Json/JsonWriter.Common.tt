@@ -198,7 +198,7 @@ namespace PeroTools2.Serde.Json
         {
             var isReadonly = listType == "IReadOnlyList<T>";
 #>
-        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>List<T>(string key, <#= listType #> value)
+        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>List<T>(string key, <#= listType #> value, bool writeComma = true)
         {
             if (value == null)
             {
@@ -217,7 +217,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 6 是双引号和 : 和 [ 和 ] 的大小
-                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSize<#= utf #>() + 1) + 6;
+                var requiredSize = key.Length + value.Count * (formatter.GetMaxRequiredSize<#= utf #>() + 1) + 6 + (writeComma ? 0 : 1);
                 fixed (<#= charType #>* startPtr = GetSpan(requiredSize))
                 {
                     var destPtr = startPtr;
@@ -231,6 +231,8 @@ namespace PeroTools2.Serde.Json
                     }
                     // 覆盖最后一个逗号
                     JsonWriter.WriteEndArrayUnsafe<#= utf #>(destPtr - 1);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
             }
@@ -253,10 +255,12 @@ namespace PeroTools2.Serde.Json
                 // 覆盖最后一个逗号
                 formatter.Serialize<#= utf #>(value[^1], ref this);
                 WriteEndArray();
+                if (writeComma)
+                    WriteValueEnding();
             }
         }
 
-        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>List<T>(<#= listType #> value)
+        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>List<T>(<#= listType #> value, bool writeComma = true)
         {
             if (value == null)
             {
@@ -275,7 +279,7 @@ namespace PeroTools2.Serde.Json
             if (formatter.isUnsafeFormatter)
             {
                 // + 1 是 逗号, + 2 是 [ 和 ]
-                var requiredLength = value.Count * (formatter.GetMaxRequiredSize<#= utf #>() + 1) + 2;
+                var requiredLength = value.Count * (formatter.GetMaxRequiredSize<#= utf #>() + 1) + 2 + (writeComma ? 0 : 1);
                 fixed (<#= charType #>* startPtr = GetSpan(requiredLength))
                 {
                     var destPtr = startPtr;
@@ -287,6 +291,8 @@ namespace PeroTools2.Serde.Json
                     }
                     // 覆盖最后一个逗号
                     JsonWriter.WriteEndArrayUnsafe<#= utf #>(destPtr - 1);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
             }
@@ -300,6 +306,8 @@ namespace PeroTools2.Serde.Json
                 }
                 formatter.Serialize<#= utf #>(value[^1], ref this);
                 WriteEndArray();
+                if (writeComma)
+                    WriteValueEnding();
             }
         }
 
@@ -315,7 +323,7 @@ namespace PeroTools2.Serde.Json
         {
             var isReadonly = dicType == "IReadOnlyDictionary<TKey, TValue>";
 #>
-        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(string key, <#= dicType #> value)
+        public unsafe void WriteNamed<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(string key, <#= dicType #> value, bool writeComma = true)
         {
             if (value == null)
             {
@@ -337,7 +345,7 @@ namespace PeroTools2.Serde.Json
             {
                 // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
                 // 第二个 + 4 { } 和 Key 的双引号的长度
-                var length = value.Count * (keyFormatter.GetMaxRequiredSize<#= utf #>() + valueFormatter.GetMaxRequiredSize<#= utf #>() + 4) + key.Length + 4;
+                var length = value.Count * (keyFormatter.GetMaxRequiredSize<#= utf #>() + valueFormatter.GetMaxRequiredSize<#= utf #>() + 4) + key.Length + 4 + (writeComma ? 0 : 1);
                 fixed (<#= charType #>* startPtr = GetSpan(length))
                 {
                     var destPtr = startPtr;
@@ -353,19 +361,21 @@ namespace PeroTools2.Serde.Json
                     }
                     // 覆盖最后一个逗号
                     JsonWriter.WriteEndObjectUnsafe<#= utf #>(destPtr - 1);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
-                WriteEndObject();
             }
             else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
                 // 写入 Key
-                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
+                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 3))
                 {
                     var destPtr = startPtr;
                     destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
                     destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
                 foreach (var kv in value)
@@ -388,17 +398,20 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
+                WriteEndObject();
+                if (writeComma)
+                    WriteValueEnding();
             }
             else
             {
-                WriteBeginObject();
                 var index = 0;
                 // 写入 Key
-                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
+                fixed (<#= charType #>* startPtr = GetSpan(key.Length + 3))
                 {
                     var destPtr = startPtr;
                     destPtr += JsonWriter.WriteStringNoEscapeUnsafe<#= utf #>(destPtr, key);
                     destPtr += JsonWriter.WriteKeyEndingUnsafe<#= utf #>(destPtr);
+                    destPtr += JsonWriter.WriteBeginObjectUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
                 foreach (var kv in value)
@@ -422,10 +435,12 @@ namespace PeroTools2.Serde.Json
                     }
                 }
                 WriteEndObject();
+                if (writeComma)
+                    WriteValueEnding();
             }
         }
 
-        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(<#= dicType #> value)
+        public unsafe void Write<#= isReadonly ? "Readonly" : "" #>Dictionary<TKey, TValue>(<#= dicType #> value, bool writeComma = true)
         {
             if (value == null)
             {
@@ -447,7 +462,7 @@ namespace PeroTools2.Serde.Json
             {
                 // 第一个 + 4 是 Key 作为非字符串时 "x2 :x1 ,x1 的保险长度
                 // + 2 { } 的长度
-                var length = value.Count * (keyFormatter.GetMaxRequiredSize<#= utf #>() + valueFormatter.GetMaxRequiredSize<#= utf #>() + 4) + 2;
+                var length = value.Count * (keyFormatter.GetMaxRequiredSize<#= utf #>() + valueFormatter.GetMaxRequiredSize<#= utf #>() + 4) + 2 + (writeComma ? 0 : 1);
                 fixed (<#= charType #>* startPtr = GetSpan(length))
                 {
                     var destPtr = startPtr;
@@ -463,13 +478,15 @@ namespace PeroTools2.Serde.Json
                     }
                     // 覆盖最后一个逗号
                     JsonWriter.WriteEndObjectUnsafe<#= utf #>(destPtr - 1);
+                    if (writeComma)
+                        destPtr += JsonWriter.WriteValueEndingUnsafe<#= utf #>(destPtr);
                     Advance((int) (destPtr - startPtr));
                 }
-                WriteEndObject();
             }
             else if (valueFormatter.isUnsafeFormatter)
             {
                 var index = 0;
+                WriteBeginObject();
                 foreach (var kv in value)
                 {
                     var key = kv.Key.ToString();
@@ -492,6 +509,9 @@ namespace PeroTools2.Serde.Json
                         Advance((int) (destPtr - startPtr));
                     }
                 }
+                WriteEndObject();
+                if (writeComma)
+                    WriteValueEnding();
             }
             else
             {
@@ -519,6 +539,8 @@ namespace PeroTools2.Serde.Json
                     }
                 }
                 WriteEndObject();
+                if (writeComma)
+                    WriteValueEnding();
             }
         }
 
