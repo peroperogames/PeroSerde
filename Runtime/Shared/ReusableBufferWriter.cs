@@ -105,23 +105,6 @@ namespace PeroTools2.Serde
             return result;
         }
 
-        // public async ValueTask WriteToStreamAndResetAsync(Stream stream, CancellationToken ct)
-        // {
-        //     if (totalWritten == 0) return;
-        //     if (m_OldBuffers.Count != 0)
-        //     {
-        //         foreach (var buffer in m_OldBuffers)
-        //         {
-        //             await stream.WriteAsync(MemoryMarshal.Cast<T, byte>(buffer.writtenMemory), ct).ConfigureAwait(false);
-        //         }
-        //     }
-        //     if (!m_CurrentBuffer.isNull)
-        //     {
-        //         await stream.WriteAsync(m_CurrentBuffer.writtenMemory, ct).ConfigureAwait(false);
-        //     }
-        //     Reset();
-        // }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {

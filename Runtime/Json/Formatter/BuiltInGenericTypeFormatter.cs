@@ -7,25 +7,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
-namespace PeroTools2.Serde.Json.Formatter
+namespace PeroTools2.Serde.Json
 {
-    static partial class SerdeJsonFormatterProvider
+    public sealed class NullableStructFormatter<T> : ISerdeJsonFormatter<T?> where T : struct
     {
-        private static Dictionary<Type, Type> s_BuiltInGenericTypeFormatters = new()
+        public JsonType jsonType => SerdeJsonFormatterProvider.GetFormatter<T>().jsonType;
+
+        public bool isFixedFormatter
         {
-            // TODO 对于IL2CPP, 自动生成注册泛型Formatter的代码来防止被裁剪
-            [typeof(Nullable<>)] = typeof(NullableStructFormatter<>),
-            [typeof(KeyValuePair<,>)] = typeof(KeyValuePairFormatter<,>),
-            [typeof(Lazy<>)] = typeof(LazyFormatter<>),
-        };
-    }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => false;
+        }
 
-    public sealed class NullableStructFormatter<T> : SerdeJsonFormatter<T?> where T : struct
-    {
-        public override bool isUnsafeFormatter => false;
-
-        public override void SerializeUtf8<TBufferWriter>(T? value, ref JsonWriterUtf8<TBufferWriter> writer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf8(T? value, ref JsonWriterUtf8 writer)
         {
             if (value == null)
             {
@@ -37,7 +34,8 @@ namespace PeroTools2.Serde.Json.Formatter
             }
         }
 
-        public override void SerializeUtf16<TBufferWriter>(T? value, ref JsonWriterUtf16<TBufferWriter> writer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf16(T? value, ref JsonWriterUtf16 writer)
         {
             if (value == null)
             {
@@ -50,32 +48,45 @@ namespace PeroTools2.Serde.Json.Formatter
         }
     }
 
-    public sealed class KeyValuePairFormatter<TK, TV> : SerdeJsonFormatter<KeyValuePair<TK, TV>>
+    public sealed class KeyValuePairFormatter<TK, TV> : ISerdeJsonFormatter<KeyValuePair<TK, TV>>
     {
-        public override bool isUnsafeFormatter => false;
+        public bool isFixedFormatter
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => false;
+        }
 
-        public override void SerializeUtf8<TBufferWriter>(KeyValuePair<TK, TV> value, ref JsonWriterUtf8<TBufferWriter> writer)
+        public JsonType jsonType => JsonType.Object;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf8(KeyValuePair<TK, TV> value, ref JsonWriterUtf8 writer)
         {
             writer.WriteBeginObject();
-            writer.WriteNamedValue("key", value.Key);
-            writer.WriteNamedValue("value", value.Value, false);
+            writer.WriteNamedValue(value.Key.ToString(), value.Value, false);
             writer.WriteEndObject();
         }
 
-        public override void SerializeUtf16<TBufferWriter>(KeyValuePair<TK, TV> value, ref JsonWriterUtf16<TBufferWriter> writer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf16(KeyValuePair<TK, TV> value, ref JsonWriterUtf16 writer)
         {
             writer.WriteBeginObject();
-            writer.WriteNamedValue("key", value.Key);
-            writer.WriteNamedValue("value", value.Value, false);
+            writer.WriteNamedValue(value.Key.ToString(), value.Value, false);
             writer.WriteEndObject();
         }
     }
 
-    public sealed class LazyFormatter<T> : SerdeJsonFormatter<Lazy<T>>
+    public sealed class LazyFormatter<T> : ISerdeJsonFormatter<Lazy<T>>
     {
-        public override bool isUnsafeFormatter => false;
+        public bool isFixedFormatter
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => false;
+        }
 
-        public override void SerializeUtf8<TBufferWriter>(Lazy<T> value, ref JsonWriterUtf8<TBufferWriter> writer)
+        public JsonType jsonType => SerdeJsonFormatterProvider.GetFormatter<T>().jsonType;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf8(Lazy<T> value, ref JsonWriterUtf8 writer)
         {
             if (value.IsValueCreated)
             {
@@ -87,7 +98,8 @@ namespace PeroTools2.Serde.Json.Formatter
             }
         }
 
-        public override void SerializeUtf16<TBufferWriter>(Lazy<T> value, ref JsonWriterUtf16<TBufferWriter> writer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf16(Lazy<T> value, ref JsonWriterUtf16 writer)
         {
             if (value.IsValueCreated)
             {

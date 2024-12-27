@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: AidenMX
+ * Created On: 2024/01/20
+ */
+
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -13,24 +19,43 @@ namespace PeroTools2.Serde
     /// 4. 直接使用指针操作
     /// 5. 能缓存尽量缓存
     /// </remarks>
-    public static unsafe class StringHelper
+    public static unsafe partial class StringHelper
     {
         private const ulong hash_seed = 0x97121819UL;
 
         #region Equals
 
+        /// <summary>判断 utf-8 和 utf-16 字符串是否相等，不考虑对齐。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool EqualsUnaligned(ReadOnlySpan<byte> utf8, ReadOnlySpan<char> utf16)
+        {
+            if (utf8.Length != utf16.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < utf8.Length; i++)
+            {
+                if (utf8[i] != utf16[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>判断两个 utf-16 字符串是否相等。</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Equals(Span<char> utf16X, Span<char> utf16Y)
+        public static bool Equals(ReadOnlySpan<char> utf16, ReadOnlySpan<char> utf16Y)
         {
-            if (utf16X.Length != utf16Y.Length) return false;
+            if (utf16.Length != utf16Y.Length) return false;
 
-            fixed (char* fixedPtrX = utf16X)
+            fixed (char* fixedPtrX = utf16)
             fixed (char* fixedPtrY = utf16Y)
             {
                 var x = (ulong*) fixedPtrX;
                 var y = (ulong*) fixedPtrY;
-                var length = utf16X.Length;
+                var length = utf16.Length;
 
                 while (length >= 4)
                 {
@@ -50,7 +75,7 @@ namespace PeroTools2.Serde
 
         /// <summary>判断两个 utf-8 字符串是否相等。</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Equals(Span<byte> utf8X, Span<byte> utf8Y)
+        public static bool Equals(ReadOnlySpan<byte> utf8X, ReadOnlySpan<byte> utf8Y)
         {
             if (utf8X.Length != utf8Y.Length) return false;
 

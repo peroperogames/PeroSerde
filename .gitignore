@@ -1,6 +1,7 @@
 #IDE configs
 /.idea
 /.vs
+/Generator/Project~/.idea
 
 # Build results
 [Dd]ebug

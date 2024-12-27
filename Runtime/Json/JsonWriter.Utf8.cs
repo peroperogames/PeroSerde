@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: AidenMX
+ * Created On: 2024/03/05
+ */
+
+using System;
 using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -7,31 +13,31 @@ namespace PeroTools2.Serde.Json
 {
     public static unsafe partial class JsonWriter
     {
-        #region Unsafe Write String
+        #region Write String
 
-        public static int WriteStringUnsafeUtf8(byte* dest, string value)
+        public static int WriteStringUtf8(byte* dest, string value)
         {
             if (value == null)
-                return WriteNullUnsafeUtf8(dest);
+                return WriteNullUtf8(dest);
             var start = dest;
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
-            dest += WriteStringValueUnsafeUtf8(value.AsSpan(), dest);
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
+            dest += WriteDoubleQuoteUtf8(dest);
+            dest += WriteStringValueUtf8(value.AsSpan(), dest);
+            dest += WriteDoubleQuoteUtf8(dest);
             return (int) (dest - start);
         }
 
-        public static int WriteStringNoEscapeUnsafeUtf8(byte* dest, string value)
+        public static int WriteStringNoEscapeUtf8(byte* dest, string value)
         {
             if (value == null)
-                return WriteNullUnsafeUtf8(dest);
+                return WriteNullUtf8(dest);
             var start = dest;
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
+            dest += WriteDoubleQuoteUtf8(dest);
             dest += WriteStringValueNoEscapeUtf8(value.AsSpan(), dest);
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
+            dest += WriteDoubleQuoteUtf8(dest);
             return (int) (dest - start);
         }
 
-        public static int WriteStringValueUnsafeUtf8(ReadOnlySpan<char> str, byte* dest)
+        public static int WriteStringValueUtf8(ReadOnlySpan<char> str, byte* dest)
         {
             // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
             var from = 0;
@@ -45,7 +51,7 @@ namespace PeroTools2.Serde.Json
                     {
                         dest += WriteStringValueNoEscapeUtf8(str[from..(i - from)], dest);
                     }
-                    dest += WriteCharUnsafeUtf8(dest, c);
+                    dest += WriteCharUtf8(dest, c);
                     from = i + 1;
                 }
             }
@@ -75,48 +81,43 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region Unsafe Write Primitive
+        #region Write Primitive
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteBoolUnsafeUtf8(byte* dest, bool value)
+        public static int WriteBoolUtf8(byte* dest, bool value)
         {
+            // UTF8 不存在字节序问题
+            const uint eurt = 0x65757274U;
+            const uint slaf = 0x736C6166U;
+
             if (value)
             {
-                dest[0] = (byte) 't';
-                dest[1] = (byte) 'r';
-                dest[2] = (byte) 'u';
-                dest[3] = (byte) 'e';
+                *(uint*) dest = eurt;
                 return 4;
             }
-            else
-            {
-                dest[0] = (byte) 'f';
-                dest[1] = (byte) 'a';
-                dest[2] = (byte) 'l';
-                dest[3] = (byte) 's';
-                dest[4] = (byte) 'e';
-                return 5;
-            }
+            *(uint*) dest = slaf;
+            dest[4] = (byte) 'e';
+            return 5;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteInt64UnsafeUtf8(byte* dest, long value) =>
+        public static int WriteLongUtf8(byte* dest, long value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteUInt64UnsafeUtf8(byte* dest, ulong value) =>
+        public static int WriteUlongUtf8(byte* dest, ulong value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteFloatUnsafeUtf8(byte* dest, float value) =>
+        public static int WriteFloatUtf8(byte* dest, float value) =>
             // TODO 格式值按照字符串或者默认值写入？
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
-        public static int WriteDoubleUnsafeUtf8(byte* dest, double value) =>
+        public static int WriteDoubleUtf8(byte* dest, double value) =>
             NumberHelper.ToUtf8StringUnsafe(value, dest);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteDecimalUnsafeUtf8(byte* dest, decimal value)
+        public static int WriteDecimalUtf8(byte* dest, decimal value)
         {
             Utf8Formatter.TryFormat(
                 value,
@@ -126,26 +127,46 @@ namespace PeroTools2.Serde.Json
             return bytesWritten;
         }
 
-        public static int WriteCharUnsafeUtf8(byte* dest, char value)
+        public static int WriteCharUtf8(byte* dest, char value)
         {
             var start = dest;
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
+            dest += WriteDoubleQuoteUtf8(dest);
             if (value < 0x20 || value is '"' or '\\') // 转义控制字符和特殊字符
             {
-                dest += WriteEscapedCharUnsafeUtf8(value, dest);
+                dest += WriteEscapedCharUtf8(value, dest);
             }
-            else
+            else if (value < 0x80)
             {
                 *dest = (byte) value;
                 dest += 1;
             }
-            dest += WriteDoubleQuoteUnsafeUtf8(dest);
+            // 暂不支持代理对
+            else if (char.IsSurrogate(value))
+            {
+                throw SerdeException.ThrowInvalidSurrogateChar(value);
+            }
+            // 2-byte UTF-8 sequence
+            else if (value <= 0x7FF)
+            {
+                dest[0] = (byte) (0xC0 | (value >> 6));
+                dest[1] = (byte) (0x80 | (value & 0x3F));
+                dest += 2;
+            }
+            // 3-byte UTF-8 sequence
+            else
+            {
+                dest[0] = (byte) (0xE0 | (value >> 12));
+                dest[1] = (byte) (0x80 | ((value >> 6) & 0x3F));
+                dest[2] = (byte) (0x80 | (value & 0x3F));
+                dest += 3;
+            }
+            dest += WriteDoubleQuoteUtf8(dest);
             return (int) (dest - start);
         }
 
         /// <summary>写入转义字符, 支持UTF8和UTF16</summary>
         // ReSharper disable once CognitiveComplexity
-        public static int WriteEscapedCharUnsafeUtf8(char value, byte* dest)
+        public static int WriteEscapedCharUtf8(char value, byte* dest)
         {
             return value switch
             {
@@ -210,11 +231,11 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region Unsafe Write Literal
+        #region Write Literal
 
         /// <summary>写入一个英文冒号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteKeyEndingUnsafeUtf8(byte* dest)
+        public static int WriteKeyEndingUtf8(byte* dest)
         {
             *dest = (byte) ':';
             return 1;
@@ -222,70 +243,76 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>写入一个英文逗号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteValueEndingUnsafeUtf8(byte* dest)
+        public static int WriteValueEndingUtf8(byte* dest)
         {
             *dest = (byte) ',';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteDoubleQuoteUnsafeUtf8(byte* dest)
+        public static int WriteDoubleQuoteUtf8(byte* dest)
         {
             *dest = (byte) '"';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteSpaceUnsafeUtf8(byte* dest)
+        public static int WriteSpaceUtf8(byte* dest)
         {
             *dest = (byte) ' ';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteBeginObjectUnsafeUtf8(byte* dest)
+        public static int WriteBeginObjectUtf8(byte* dest)
         {
             *dest = (byte) '{';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteEndObjectUnsafeUtf8(byte* dest)
+        public static int WriteEndObjectUtf8(byte* dest)
         {
             *dest = (byte) '}';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteBeginArrayUnsafeUtf8(byte* dest)
+        public static int WriteBeginArrayUtf8(byte* dest)
         {
             *dest = (byte) '[';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteEndArrayUnsafeUtf8(byte* dest)
+        public static int WriteEndArrayUtf8(byte* dest)
         {
             *dest = (byte) ']';
             return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteNullUnsafeUtf8(byte* dest)
+        public static int WriteAscii(byte* dest, char ascii)
         {
-            dest[0] = (byte) 'n';
-            dest[1] = (byte) 'u';
-            dest[2] = (byte) 'l';
-            dest[3] = (byte) 'l';
+            *dest = (byte) ascii;
+            return 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteNullUtf8(byte* dest)
+        {
+            // Utf8 不需要考虑字节序问题
+            const uint llun = 0x6C6C756EU;
+            *(uint*) dest = llun;
             return 4;
         }
 
         #endregion
 
-        #region Unsafe Write Indent
+        #region Write Indent
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteIndentUnsafe(int count, byte* dest)
+        public static int WriteIndent(int count, byte* dest)
         {
             for (var i = 0; i < count; i++)
             {
@@ -295,7 +322,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteNewLineUnsafe(byte* dest)
+        public static int WriteNewLine(byte* dest)
         {
             *dest = (byte) '\n';
             return 1;

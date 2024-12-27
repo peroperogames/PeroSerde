@@ -15,20 +15,7 @@ namespace PeroTools2.Serde.Generator;
 [Generator(LanguageNames.CSharp)]
 public partial class SerdeJsonGenerator : ISourceGenerator
 {
-    public const string serde_json_namespace = "PeroTools2.Serde.Json";
-    public const string serde_json_serializable_attr_name = "SerdeJsonSerializableAttribute";
-    public const string serde_json_member_attr_name = "SerdeJsonMemberAttribute";
-    public const string serde_json_include_member_attr_name = "SerdeJsonIncludeMemberAttribute";
-    public const string serde_json_ignore_member_attr_name = "SerdeJsonIgnoreMemberAttribute";
-    public const string serde_json_constructor_attr_name = "SerdeJsonConstructorAttribute";
-    public const string serde_json_custom_formatter_attr_name = "SerdeJsonCustomFormatterAttribute";
-
-    public const string serde_json_serializable_attr_fullname = $"{serde_json_namespace}.{serde_json_serializable_attr_name}";
-    public const string serde_json_member_attr_fullname = $"{serde_json_namespace}.{serde_json_member_attr_name}";
-    public const string serde_json_include_member_attr_fullname = $"{serde_json_namespace}.{serde_json_include_member_attr_name}";
-    public const string serde_json_ignore_member_attr_fullname = $"{serde_json_namespace}.{serde_json_ignore_member_attr_name}";
-    public const string serde_json_constructor_attr_fullname = $"{serde_json_namespace}.{serde_json_constructor_attr_name}";
-    public const string serde_json_custom_formatter_attr_fullname = $"{serde_json_namespace}.{serde_json_custom_formatter_attr_name}";
+    private ReferenceSymbols m_ReferenceSymbols;
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -41,6 +28,7 @@ public partial class SerdeJsonGenerator : ISourceGenerator
         {
             return;
         }
+        m_ReferenceSymbols = new ReferenceSymbols(context.Compilation);
         foreach (var typeSyntax in receiver.typeDeclarations)
         {
             Generate(ref context, typeSyntax);
@@ -53,22 +41,25 @@ public partial class SerdeJsonGenerator : ISourceGenerator
 
         public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
         {
-            if (context.Node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax)
+            if (context.Node is not (ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax))
             {
-                // 处于性能考虑这里不使用SemanticModel.
-                // 另外, 使用SemanticModel还会导致具有多个partial部分的类被添加多次,
-                // 因为HashSet的默认比较器不适用于判断Syntax是否相等
-                var typeSyntax = (TypeDeclarationSyntax) context.Node;
-                if (typeSyntax.AttributeLists.Count == 0)
-                    return;
-                foreach (var attrList in typeSyntax.AttributeLists)
-                foreach (var attr in attrList.Attributes)
+                return;
+            }
+            // 处于性能考虑这里不使用SemanticModel.
+            // 另外, 使用SemanticModel还会导致具有多个 partial 部分的类被添加多次,
+            // 因为 HashSet 的默认比较器不适用于判断Syntax是否相等
+            var typeSyntax = (TypeDeclarationSyntax) context.Node;
+            if (typeSyntax.AttributeLists.Count == 0)
+            {
+                return;
+            }
+            foreach (var attrList in typeSyntax.AttributeLists)
+            foreach (var attr in attrList.Attributes)
+            {
+                var attrName = attr.Name.ToString();
+                if (attrName.Contains("SerdeJsonSerializable") || attrName.Contains("SerdeJsonCustomFormatter"))
                 {
-                    var attrName = attr.Name.ToString();
-                    if (attrName.Contains("SerdeJsonSerializable") || attrName.Contains("SerdeJsonCustomFormatter"))
-                    {
-                        typeDeclarations.Add((TypeDeclarationSyntax) context.Node);
-                    }
+                    typeDeclarations.Add((TypeDeclarationSyntax) context.Node);
                 }
             }
         }

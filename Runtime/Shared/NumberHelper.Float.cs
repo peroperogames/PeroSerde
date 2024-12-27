@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
-    public static partial class NumberHelper
+    static partial class NumberHelper
     {
         // 1, 10, 100, 1000, 1e4, 1e5, 1e6,... 1e308
         private static double[] s_PositiveExponents;
@@ -30,21 +30,21 @@ namespace PeroTools2.Serde
         private const double min_positive_double_value = 4.94065645841246544E-324;
 
         /// <summary>判断一个float值是否是特殊值: Nan, Inf, -Inf</summary>
-        public static bool IsSpecialValue(float value)
+        internal static bool IsSpecialValue(float value)
         {
             const uint specialValue = 0x7F800000;
             return (Unsafe.As<float, uint>(ref value) & specialValue) == specialValue;
         }
 
         /// <summary>判断一个double值是否是特殊值: Nan, Inf, -Inf</summary>
-        public static bool IsSpecialValue(double value)
+        internal static bool IsSpecialValue(double value)
         {
             const ulong specialValue = 0x7FF0000000000000;
             return (Unsafe.As<double, ulong>(ref value) & specialValue) == specialValue;
         }
 
         /// <summary>求浮点数x的y次幂</summary>
-        public static double Pow(double x, int y)
+        internal static double Pow(double x, int y)
         {
             if (y >= 0 && y < s_PositiveExponents.Length)
             {

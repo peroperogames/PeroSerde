@@ -1,0 +1,1 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PeroTools2.Serde.Editor.Tests")]

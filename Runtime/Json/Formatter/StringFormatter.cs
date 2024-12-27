@@ -1,11 +1,42 @@
-﻿namespace PeroTools2.Serde.Json.Formatter
+﻿/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2024/12/23
+ */
+
+using System;
+using System.Runtime.CompilerServices;
+using System.Text;
+
+namespace PeroTools2.Serde.Json
 {
-    public sealed class StringFormatter : SerdeJsonFormatter<string>
+    /// <summary>
+    /// 字符串 Json 格式化器
+    /// </summary>
+    public sealed class StringFormatter : ISerdeJsonFormatter<string>
     {
-        public override bool isUnsafeFormatter => false;
+        public JsonType jsonType => JsonType.Value;
+        public bool isFixedFormatter => false;
 
-        // public override void SerializeUtf8<TBufferWriter>(string value, ref JsonWriterUtf8<TBufferWriter> writer) => writer.WriteString(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf8(string value, ref JsonWriterUtf8 writer) => writer.WriteString(value);
 
-        public override void SerializeUtf16<TBufferWriter>(string value, ref JsonWriterUtf16<TBufferWriter> writer) => writer.WriteString(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf16(string value, ref JsonWriterUtf16 writer) => writer.WriteString(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string DeserializeUtf8(ref ReadOnlySpan<byte> span, ref JsonReaderUtf8 reader)
+        {
+            var result = reader.ReadUntilEnd();
+            if (SpanConverter.IsNull(result)) return null;
+            return SpanConverter.IsNull(result) ? null : Encoding.UTF8.GetString(result);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string DeserializeUtf16(ref ReadOnlySpan<char> span, ref JsonReaderUtf16 reader)
+        {
+            var result = reader.ReadUntilEnd();
+            return SpanConverter.IsNull(result) ? null : result.ToString();
+        }
     }
 }

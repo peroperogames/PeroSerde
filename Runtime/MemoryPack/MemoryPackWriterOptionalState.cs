@@ -43,7 +43,7 @@ namespace PeroTools2.Serde.MemoryPack
 
         internal MemoryPackWriterOptionalState()
         {
-            m_ObjToRef = new Dictionary<object, uint>(ReferenceEqualityComparer.instance);
+            m_ObjToRef = new Dictionary<object, uint>(ReferenceEqualityComparer.shared);
             options = null;
             m_NextId = 0;
         }

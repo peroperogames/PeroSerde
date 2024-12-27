@@ -1,0 +1,337 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2024/12/20
+ */
+
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+
+namespace PeroTools2.Serde.Json
+{
+<#
+    foreach (var utf in new[] {"Utf8", "Utf16"})
+    {
+        var charType = utf == "Utf8" ? "byte" : "char";
+        var castStr = utf == "Utf8" ? "(byte) " : "";
+#>
+    public ref struct JsonReader<#= utf #>
+    {
+        private bool m_IsIn;
+        private int m_Advanced;
+        private int m_LastIndex;
+        private readonly ReadOnlySpan<<#= charType #>> m_Json;
+        public readonly ReadOnlySpan<<#= charType #>> json => m_Json;
+
+        public ReadOnlySpan<<#= charType #>> remains
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Json.Slice(m_Advanced, m_Json.Length - m_Advanced);
+        }
+
+        public JsonReader<#= utf #>(ReadOnlySpan<<#= charType #>> json)
+        {
+            m_Advanced = 0;
+            m_LastIndex = 0;
+            m_IsIn = false;
+            m_Json = json;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int count) => m_Advanced += count;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe T ReadValue<T>(bool readComma, SerdeJsonFormatter<T> formatter)
+        {
+            T result;
+            if (formatter.isUnsafeFormatter)
+            {
+                var span = remains;
+                fixed (<#= charType #>* ptr = span)
+                {
+                    result = formatter.Deserialize<#= utf #>Unsafe(ptr, out var advance);
+                    Advance(advance);
+                }
+            }
+            else
+            {
+                var span = remains;
+                result = formatter.Deserialize<#= utf #>(ref span, ref this);
+            }
+            if (readComma) ReadComma();
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T[] ReadArray<T>(bool readComma, SerdeJsonFormatter<T> formatter)
+        {
+            var list = ListPool<T>.shared.Rent();
+            ReadCollection(list, readComma, formatter, out var isNull);
+            var results = isNull ? null : list.ToArray();
+            ListPool<T>.shared.Return(list);
+            return results;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TCollection ReadCollection<TCollection, T>(bool readComma, SerdeJsonFormatter<T> formatter) where TCollection : ICollection<T>, new()
+        {
+            var col = new TCollection();
+            ReadCollection(col, readComma, formatter, out var isNull);
+            return isNull ? default : col;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T ReadValue<T>(bool readComma) => ReadValue<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T[] ReadArray<T>(bool readComma) => ReadArray<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TCollection ReadCollection<TCollection, T>(bool readComma) where TCollection : ICollection<T>, new() => ReadCollection<TCollection, T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
+
+        private void ReadCollection<T>(ICollection<T> list, bool readComma, SerdeJsonFormatter<T> formatter, out bool isNull)
+        {
+            if (SpanConverter.IsNullable(m_Json.Slice(m_Advanced - 1, 4)))
+            {
+                isNull = true;
+                Advance(4);
+            }
+            else
+            {
+                ReadBeginArray();
+                while (true)
+                {
+                    list.Add(ReadValue<T>(false, formatter));
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced - 1] == <#= castStr #>',')
+                    {
+                        Advance(1);
+                    }
+                    else if (m_Json[m_Advanced - 1] == <#= castStr #>']')
+                    {
+                        Advance(1);
+                        break;
+                    }
+                }
+            }
+            if (readComma) ReadComma();
+            isNull = false;
+        }
+
+        public unsafe TDictionary ReadDictionary<TDictionary, TKey, TValue>(bool readComma) where TDictionary : IDictionary<TKey, TValue>, new()
+        {
+            var dic = new TDictionary();
+            var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
+            var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
+            ReadBeginObject();
+            if (keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                while (true)
+                {
+                    TKey key;
+                    TValue value;
+                    var strKey = ReadKey();
+                    fixed (<#= charType #>* k = strKey)
+                    {
+                        key = keyFormatter.Deserialize<#= utf #>Unsafe(k, out _);
+                    }
+                    fixed (<#= charType #>* v = remains)
+                    {
+                        value = valueFormatter.Deserialize<#= utf #>Unsafe(v, out var advance);
+                        Advance(advance);
+                    }
+                    dic.Add(key, value);
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced - 1] == <#= castStr #>',')
+                    {
+                        Advance(1);
+                    }
+                    else if (m_Json[m_Advanced - 1] == <#= castStr #>'}')
+                    {
+                        Advance(1);
+                        break;
+                    }
+                }
+            }
+            else if (keyFormatter.isUnsafeFormatter && !valueFormatter.isUnsafeFormatter)
+            {
+                while (true)
+                {
+                    TKey key;
+                    TValue value;
+                    var strKey = ReadKey();
+                    fixed (<#= charType #>* k = strKey)
+                    {
+                        key = keyFormatter.Deserialize<#= utf #>Unsafe(k, out _);
+                    }
+                    var span = remains;
+                    value = valueFormatter.Deserialize<#= utf #>(ref span, ref this);
+                    dic.Add(key, value);
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced - 1] == <#= castStr #>',')
+                    {
+                        Advance(1);
+                    }
+                    else if (m_Json[m_Advanced - 1] == <#= castStr #>'}')
+                    {
+                        Advance(1);
+                        break;
+                    }
+                }
+            }
+            else if (!keyFormatter.isUnsafeFormatter && valueFormatter.isUnsafeFormatter)
+            {
+                while (true)
+                {
+                    TKey key;
+                    TValue value;
+                    var strKey = ReadKey();
+                    key = keyFormatter.Deserialize<#= utf #>(ref strKey, ref this);
+                    fixed (<#= charType #>* v = remains)
+                    {
+                        value = valueFormatter.Deserialize<#= utf #>Unsafe(v, out var advance);
+                        Advance(advance);
+                    }
+                    dic.Add(key, value);
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced - 1] == <#= castStr #>',')
+                    {
+                        Advance(1);
+                    }
+                    else if (m_Json[m_Advanced - 1] == <#= castStr #>'}')
+                    {
+                        Advance(1);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                while (true)
+                {
+                    TKey key;
+                    TValue value;
+                    var strKey = ReadKey();
+                    key = keyFormatter.Deserialize<#= utf #>(ref strKey, ref this);
+                    var span = remains;
+                    value = valueFormatter.Deserialize<#= utf #>(ref span, ref this);
+                    dic.Add(key, value);
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced - 1] == <#= castStr #>',')
+                    {
+                        Advance(1);
+                    }
+                    else if (m_Json[m_Advanced - 1] == <#= castStr #>'}')
+                    {
+                        Advance(1);
+                        break;
+                    }
+                }
+            }
+            return dic;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe ReadOnlySpan<<#= charType #>> ReadUntilEnd()
+        {
+            var span = remains;
+            fixed(<#= charType #>* src = remains)
+            {
+                var result = JsonReader.ReadValueUntilEnd<#= utf #>(src, span.Length - 1, out var advance);
+                Advance(advance);
+                return result;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ReadWhiteSpace()
+        {
+            for (var i = m_Advanced; i < m_Json.Length; i++)
+            {
+                if (StringHelper.IsWhiteSpace(m_Json[i])) continue;
+                Advance(i - m_Advanced);
+                return;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadBeginObject() => ReadChar('{');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadEndObject() => ReadChar('}');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadBeginArray() => ReadChar('[');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadEndArray() => ReadChar(']');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadKeyBegin() => ReadChar(':');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadComma() => ReadChar(',');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<<#= charType #>> ReadKey()
+        {
+            ReadWhiteSpace();
+            var key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return key;
+        }
+
+        private ReadOnlySpan<<#= charType #>> ReadString()
+        {
+            if (m_Json[m_Advanced] != <#= castStr #>'"')
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            for (var i = m_Advanced + 1; i < m_Json.Length; i++)
+            {
+                if (m_Json[i].Equals(<#= castStr #>'"') && m_Json[i - 1] != <#= castStr #>'\\')
+                {
+                    var result = m_Json.Slice(m_Advanced + 1, i - 2);
+                    Advance(i + 1 - m_Advanced);
+                    return result;
+                }
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        /// <summary>
+        /// 持续读取字符，直到遇到第一个目标字符
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ReadChar(char c)
+        {
+            var length = m_Json.Length - m_Advanced;
+            var span = m_Json.Slice(m_Advanced, length);
+            if (!TryGetIndexFromSpan(ref span, length, <#= castStr #>c, out var index))
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            Advance(index + 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool TryGetIndexFromSpan(ref ReadOnlySpan<<#= charType #>> span, int length, <#= charType #> character, out int index)
+        {
+            fixed (<#= charType #>* ptr = span)
+            {
+                index = StringHelper.IndexOf(ptr, length, character);
+            }
+            return index != -1;
+        }
+    }
+<#
+    }
+#>
+}

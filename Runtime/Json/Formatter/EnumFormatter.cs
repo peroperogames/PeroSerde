@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace PeroTools2.Serde.Json.Formatter
+namespace PeroTools2.Serde.Json
 {
     public static class EnumInfo<T> where T : unmanaged, Enum
     {
@@ -77,11 +77,18 @@ namespace PeroTools2.Serde.Json.Formatter
         }
     }
 
-    public sealed class EnumIntFormatter<T> : SerdeJsonFormatter<T> where T : unmanaged, Enum
+    public sealed class EnumIntFormatter<T> : IFixedSerdeJsonFormatter<T> where T : unmanaged, Enum
     {
-        public override bool isUnsafeFormatter => true;
+        public JsonType jsonType => JsonType.Value;
 
-        public override int GetMaxRequiredSizeUtf8() =>
+        public bool isFixedFormatter
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf8() =>
             Unsafe.SizeOf<T>() switch
             {
                 1 => 4,
@@ -90,7 +97,8 @@ namespace PeroTools2.Serde.Json.Formatter
                 _ => NumberHelper.max_uint64_numbers_length
             };
 
-        public override int GetMaxRequiredSizeUtf16() =>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf16() =>
             Unsafe.SizeOf<T>() switch
             {
                 1 => 4,
@@ -99,55 +107,75 @@ namespace PeroTools2.Serde.Json.Formatter
                 _ => NumberHelper.max_uint64_numbers_length
             };
 
-        public override unsafe int SerializeUtf8Unsafe(T value, byte* dest) =>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf8Unsafe(T value, byte* dest) =>
             EnumInfo<T>.typeCode switch
             {
-                TypeCode.SByte => JsonWriter.WriteInt64UnsafeUtf8(dest, Unsafe.As<T, sbyte>(ref value)),
-                TypeCode.Byte => JsonWriter.WriteUInt64UnsafeUtf8(dest, Unsafe.As<T, byte>(ref value)),
-                TypeCode.Int16 => JsonWriter.WriteInt64UnsafeUtf8(dest, Unsafe.As<T, short>(ref value)),
-                TypeCode.UInt16 => JsonWriter.WriteUInt64UnsafeUtf8(dest, Unsafe.As<T, ushort>(ref value)),
-                TypeCode.Int32 => JsonWriter.WriteInt64UnsafeUtf8(dest, Unsafe.As<T, int>(ref value)),
-                TypeCode.UInt32 => JsonWriter.WriteUInt64UnsafeUtf8(dest, Unsafe.As<T, uint>(ref value)),
-                TypeCode.Int64 => JsonWriter.WriteInt64UnsafeUtf8(dest, Unsafe.As<T, long>(ref value)),
-                TypeCode.UInt64 => JsonWriter.WriteUInt64UnsafeUtf8(dest, Unsafe.As<T, ulong>(ref value)),
+                TypeCode.SByte => JsonWriter.WriteLongUtf8(dest, Unsafe.As<T, sbyte>(ref value)),
+                TypeCode.Byte => JsonWriter.WriteUlongUtf8(dest, Unsafe.As<T, byte>(ref value)),
+                TypeCode.Int16 => JsonWriter.WriteLongUtf8(dest, Unsafe.As<T, short>(ref value)),
+                TypeCode.UInt16 => JsonWriter.WriteUlongUtf8(dest, Unsafe.As<T, ushort>(ref value)),
+                TypeCode.Int32 => JsonWriter.WriteLongUtf8(dest, Unsafe.As<T, int>(ref value)),
+                TypeCode.UInt32 => JsonWriter.WriteUlongUtf8(dest, Unsafe.As<T, uint>(ref value)),
+                TypeCode.Int64 => JsonWriter.WriteLongUtf8(dest, Unsafe.As<T, long>(ref value)),
+                TypeCode.UInt64 => JsonWriter.WriteUlongUtf8(dest, Unsafe.As<T, ulong>(ref value)),
                 _ => throw new ArgumentException($"Enum {typeof(T).Name}'s UnderlyingType {Enum.GetUnderlyingType(typeof(T)).Name} is not support.")
             };
 
-        public override unsafe int SerializeUtf16Unsafe(T value, char* dest)
+        public unsafe T DeserializeUtf8Unsafe(byte* src, out int advance) => throw new NotImplementedException();
+
+        public unsafe T DeserializeUtf16Unsafe(char* span, out int advance) => throw new NotImplementedException();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf16Unsafe(T value, char* dest)
         {
             return EnumInfo<T>.typeCode switch
             {
-                TypeCode.SByte => JsonWriter.WriteInt64UnsafeUtf16(dest, Unsafe.As<T, sbyte>(ref value)),
-                TypeCode.Byte => JsonWriter.WriteUInt64UnsafeUtf16(dest, Unsafe.As<T, byte>(ref value)),
-                TypeCode.Int16 => JsonWriter.WriteInt64UnsafeUtf16(dest, Unsafe.As<T, short>(ref value)),
-                TypeCode.UInt16 => JsonWriter.WriteUInt64UnsafeUtf16(dest, Unsafe.As<T, ushort>(ref value)),
-                TypeCode.Int32 => JsonWriter.WriteInt64UnsafeUtf16(dest, Unsafe.As<T, int>(ref value)),
-                TypeCode.UInt32 => JsonWriter.WriteUInt64UnsafeUtf16(dest, Unsafe.As<T, uint>(ref value)),
-                TypeCode.Int64 => JsonWriter.WriteInt64UnsafeUtf16(dest, Unsafe.As<T, long>(ref value)),
-                TypeCode.UInt64 => JsonWriter.WriteUInt64UnsafeUtf16(dest, Unsafe.As<T, ulong>(ref value)),
+                TypeCode.SByte => JsonWriter.WriteLongUtf16(dest, Unsafe.As<T, sbyte>(ref value)),
+                TypeCode.Byte => JsonWriter.WriteUlongUtf16(dest, Unsafe.As<T, byte>(ref value)),
+                TypeCode.Int16 => JsonWriter.WriteLongUtf16(dest, Unsafe.As<T, short>(ref value)),
+                TypeCode.UInt16 => JsonWriter.WriteUlongUtf16(dest, Unsafe.As<T, ushort>(ref value)),
+                TypeCode.Int32 => JsonWriter.WriteLongUtf16(dest, Unsafe.As<T, int>(ref value)),
+                TypeCode.UInt32 => JsonWriter.WriteUlongUtf16(dest, Unsafe.As<T, uint>(ref value)),
+                TypeCode.Int64 => JsonWriter.WriteLongUtf16(dest, Unsafe.As<T, long>(ref value)),
+                TypeCode.UInt64 => JsonWriter.WriteUlongUtf16(dest, Unsafe.As<T, ulong>(ref value)),
                 _ => throw new ArgumentException($"Enum {typeof(T).Name}'s UnderlyingType {Enum.GetUnderlyingType(typeof(T)).Name} is not support.")
             };
         }
     }
 
-    public sealed class EnumStringFormatter<T> : SerdeJsonFormatter<T> where T : unmanaged, Enum
+    public sealed class EnumStringFormatter<T> : IFixedSerdeJsonFormatter<T> where T : unmanaged, Enum
     {
-        public override bool isUnsafeFormatter => true;
+        public JsonType jsonType => JsonType.Value;
 
-        public override int GetMaxRequiredSizeUtf8() => EnumInfo<T>.maxUTF8StringLength + 2;
-
-        public override int GetMaxRequiredSizeUtf16() => EnumInfo<T>.maxUTF16StringLength + 2;
-
-        public override unsafe int SerializeUtf8Unsafe(T value, byte* dest)
+        public bool isFixedFormatter
         {
-            var name = EnumInfo<T>.items[value].name;
-            return JsonWriter.WriteStringNoEscapeUnsafeUtf8(dest, name);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => true;
         }
 
-        public override unsafe int SerializeUtf16Unsafe(T value, char* dest)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf8() => EnumInfo<T>.maxUTF8StringLength + 2;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf16() => EnumInfo<T>.maxUTF16StringLength + 2;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf8Unsafe(T value, byte* dest)
         {
             var name = EnumInfo<T>.items[value].name;
-            return JsonWriter.WriteStringNoEscapeUnsafeUtf16(dest, name);
+            return JsonWriter.WriteStringNoEscapeUtf8(dest, name);
+        }
+
+        public unsafe T DeserializeUtf8Unsafe(byte* src, out int advance) => throw new NotImplementedException();
+
+        public unsafe T DeserializeUtf16Unsafe(char* span, out int advance) => throw new NotImplementedException();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf16Unsafe(T value, char* dest)
+        {
+            var name = EnumInfo<T>.items[value].name;
+            return JsonWriter.WriteStringNoEscapeUtf16(dest, name);
         }
     }
 }

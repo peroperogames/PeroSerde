@@ -5,11 +5,9 @@
  * Description: NumberHelper_Integer
  */
 
-using System.Runtime.CompilerServices;
-
 namespace PeroTools2.Serde
 {
-    public static partial class NumberHelper
+    static partial class NumberHelper
     {
         /*
          * 以下这些方法在Mono + .NetStandard2.1下比value.TryFormat快3-5倍,
@@ -93,19 +91,19 @@ namespace PeroTools2.Serde
                         else return 13;
                     else if (value >= 100000000000) return 12;
                     else return 11;
-                else if (value >= 10000000)
+                if (value >= 10000000)
                     if (value >= 1000000000) return 10;
                     else if (value >= 100000000) return 9;
                     else return 8;
-                else if (value >= 1000000) return 7;
-                else return 6;
+                if (value >= 1000000) return 7;
+                return 6;
             }
-            else if (value >= 100)
+            if (value >= 100)
                 if (value >= 10000) return 5;
                 else if (value >= 1000) return 4;
                 else return 3;
-            else if (value >= 10) return 2;
-            else return 1;
+            if (value >= 10) return 2;
+            return 1;
         }
     }
 }

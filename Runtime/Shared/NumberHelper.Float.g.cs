@@ -1,13 +1,20 @@
-﻿using System;
+﻿/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: AidenMX
+ * Created On: 2024/02/23
+ * Description: NumberHelper_Integer
+ */
+
+using System;
 using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde {
-    public static partial class NumberHelper {
+    internal static partial class NumberHelper {
         /// <summary>将一个float值格式化为utf16字符串.</summary>
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_float_string_length"/>个字节
         /// </remarks>
-        public static unsafe int ToUtf16StringUnsafe(float value, char* dest)
+        internal static unsafe int ToUtf16StringUnsafe(float value, char* dest)
         {
             // TODO 特殊值的处理？需要提供几种方式
             if (IsSpecialValue(value))
@@ -72,6 +79,21 @@ namespace PeroTools2.Serde {
                 }
                 dest += charsWritten;
             }
+            // 如果整数部分是 0，则先写入整数部分
+            else if (value < 1)
+            {
+                *dest = '0';
+                *(dest + 1) = dot_sign;
+                dest += 2;
+                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                ToUtf16StringUnsafe(mantissa, dest);
+                // 小数部分整体向后错一位, 来放小数点
+                for (var i = lengthOfFractional; i > 0;)
+                {
+                    dest[i] = dest[--i];
+                }
+                dest += lengthOfFractional;
+            }
             else
             {
                 // 有小数位的部分, 先按照整数写入, 再写入小数点
@@ -105,7 +127,7 @@ namespace PeroTools2.Serde {
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_float_string_length"/>个字节
         /// </remarks>
-        public static unsafe int ToUtf8StringUnsafe(float value, byte* dest)
+        internal static unsafe int ToUtf8StringUnsafe(float value, byte* dest)
         {
             // TODO 特殊值的处理？需要提供几种方式
             if (IsSpecialValue(value))
@@ -170,6 +192,21 @@ namespace PeroTools2.Serde {
                 }
                 dest += bytesWritten;
             }
+            // 如果整数部分是 0，则先写入整数部分
+            else if (value < 1)
+            {
+                *dest = (byte) '0';
+                *(dest + 1) = (byte) dot_sign;
+                dest += 2;
+                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                ToUtf8StringUnsafe(mantissa, dest);
+                // 小数部分整体向后错一位, 来放小数点
+                for (var i = lengthOfFractional; i > 0;)
+                {
+                    dest[i] = dest[--i];
+                }
+                dest += lengthOfFractional;
+            }
             else
             {
                 // 有小数位的部分, 先按照整数写入, 再写入小数点
@@ -203,7 +240,7 @@ namespace PeroTools2.Serde {
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_double_string_length"/>个字节
         /// </remarks>
-        public static unsafe int ToUtf16StringUnsafe(double value, char* dest)
+        internal static unsafe int ToUtf16StringUnsafe(double value, char* dest)
         {
             // TODO 特殊值的处理？需要提供几种方式
             if (IsSpecialValue(value))
@@ -301,7 +338,7 @@ namespace PeroTools2.Serde {
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_double_string_length"/>个字节
         /// </remarks>
-        public static unsafe int ToUtf8StringUnsafe(double value, byte* dest)
+        internal static unsafe int ToUtf8StringUnsafe(double value, byte* dest)
         {
             // TODO 特殊值的处理？需要提供几种方式
             if (IsSpecialValue(value))

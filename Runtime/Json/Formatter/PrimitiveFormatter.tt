@@ -7,14 +7,18 @@
  * Description: PrimitiveFormatter
  */
 
-namespace PeroTools2.Serde.Json.Formatter
+using System.Runtime.CompilerServices;
+
+namespace PeroTools2.Serde.Json
 {
 <#
-    var primitiveTypes = new[] {
+    var primitiveTypes = new[]
+    {
         "Bool", "Byte", "Sbyte", "Ushort", "Short", "Uint", "Int", "Ulong", "Long", "Float", "Double", "Decimal", "Char"
     };
 
-    string GetRequiredSize(string typeName, bool utf8Or16) {
+    string GetRequiredSize(string typeName, bool utf8Or16)
+    {
         return typeName.ToLower() switch {
             "bool" => "5", // true or false
             "byte" => "3", // 0 ~ 255
@@ -33,34 +37,40 @@ namespace PeroTools2.Serde.Json.Formatter
             };
     }
 
-    string GetNullableRequiredSize(string typeName, bool utf8Or16) {
+    string GetNullableRequiredSize(string typeName, bool utf8Or16)
+    {
         return typeName.ToLower() switch {
-            "bool" => "5", // null or true or false
+            "bool" => "5", // true or false
             "byte" => "4", // 0 ~ 255 or null
-            "sbyte" => "4", // -128 ~ 127 or null
-            "ushort" => "5", // 0 ~ 65535 or null
-            "short" => "6", // -32768 ~ 32767 or null
-            "uint" => "10", // 0 ~ 4294967295 or null
-            "int" => "11", // -2147483648 ~ 2147483647 or null
+            "sbyte" => "4", // -128 ~ 127
+            "ushort" => "5", // 0 ~ 65535
+            "short" => "6", // -32768 ~ 32767
+            "uint" => "10", // 0 ~ 4294967295
+            "int" => "11", // -2147483648 ~ 2147483647
+            "char" => "8", // 8 是 Unicode 转义 + 引号
             "ulong" => "NumberHelper.max_uint64_numbers_length", // 0 ~ 18446744073709551615
             "long" => "NumberHelper.max_int64_numbers_length", // -9223372036854775808 到 9223372036854775807
             "float" => "NumberHelper.max_float_string_length",
             "double" => "NumberHelper.max_double_string_length",
             "decimal" => "NumberHelper.max_decimal_string_length",
-            "char" => "8",
             _ => throw new ArgumentOutOfRangeException(nameof(typeName))
             };
     }
 
-    string GetFormatFunctionName(string typeName, bool utf8Or16) {
+    string GetDeserializerBody(string typeName, bool utf8Or16, bool isNull)
+    {
+        return $"JsonReader.Read{(isNull ? "Nullable" : string.Empty)}{typeName}{(utf8Or16 ? "Utf8" : "Utf16")}(src, out advance);";
+    }
+
+    string GetFormatFunctionName(string typeName, bool utf8Or16)
+    {
         return "JsonWriter.Write"
-            + typeName.ToLower() switch {
-                "bool" or "float" or "double" or "decimal" or "char" => typeName,
-                "byte" or "ushort" or "uint" or "ulong" => "UInt64",
-                "sbyte" or "short" or "int" or "long" => "Int64",
-                _ => throw new ArgumentOutOfRangeException(nameof(typeName))
-                }
-            + "Unsafe"
+            + typeName switch
+            {
+                "Byte" or "Ushort" or "Uint" or "Ulong" => "Ulong",
+                "Sbyte" or "Short" or "Int" or "Long" => "Long",
+                _ => typeName
+            }
             + (utf8Or16 ? "Utf8" : "Utf16");
     }
 #>
@@ -69,11 +79,16 @@ namespace PeroTools2.Serde.Json.Formatter
         static partial void RegisterPrimitiveFormatters()
         {
 <#
-    foreach (var typeName in primitiveTypes) {
+    foreach
+        (var typeName in
+            primitiveTypes
+        )
+    {
 #>
             Register(new <#= typeName #>Formatter());
 <#
-        if (typeName != "String") {
+        if (typeName != "String")
+        {
 #>
             Register(new Nullable<#= typeName #>Formatter());
 <#
@@ -84,36 +99,76 @@ namespace PeroTools2.Serde.Json.Formatter
     }
 
 <#
-    foreach (var typeName in primitiveTypes) {
+    foreach (var typeName in primitiveTypes)
+    {
         var typeNameLower = typeName.ToLower();
 #>
-    public sealed class <#= typeName #>Formatter : SerdeJsonFormatter<<#= typeNameLower #>>
+    public sealed class <#= typeName #>Formatter : IFixedSerdeJsonFormatter<<#= typeNameLower #>>
     {
-        public override bool isUnsafeFormatter => true;
-        public override int GetMaxRequiredSizeUtf8() => <#= GetRequiredSize(typeName, true) #>;
-        public override int GetMaxRequiredSizeUtf16() => <#= GetRequiredSize(typeName, false) #>;
-        public override unsafe int SerializeUtf8Unsafe(<#= typeNameLower #> value, byte* dest) => <#= GetFormatFunctionName(typeName, true) #>(dest, value);
-        public override unsafe int SerializeUtf16Unsafe(<#= typeNameLower #> value, char* dest) => <#= GetFormatFunctionName(typeName, false) #>(dest, value);
+        public JsonType jsonType => JsonType.Value;
+
+        public bool isFixedFormatter
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf8() => <#= GetRequiredSize(typeName, true) #>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf16() => <#= GetRequiredSize(typeName, false) #>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf8Unsafe(<#= typeNameLower #> value, byte* dest) => <#= GetFormatFunctionName(typeName, true) #>(dest, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf16Unsafe(<#= typeNameLower #> value, char* dest) => <#= GetFormatFunctionName(typeName, false) #>(dest, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe <#= typeNameLower #> DeserializeUtf8Unsafe(byte* src, out int advance) => <#= GetDeserializerBody(typeName, true, false) #>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe <#= typeNameLower #> DeserializeUtf16Unsafe(char* src, out int advance) => <#= GetDeserializerBody(typeName, false, false) #>
     }
 
 <#
-        if (typeName != "String") {
+        if (typeName != "String")
+        {
 #>
-    public sealed class Nullable<#= typeName #>Formatter : SerdeJsonFormatter<<#= typeNameLower #>?>
+    public sealed class Nullable<#= typeName #>Formatter : IFixedSerdeJsonFormatter<<#= typeNameLower #>?>
     {
-        public override bool isUnsafeFormatter => true;
-        public override int GetMaxRequiredSizeUtf8() => <#= GetNullableRequiredSize(typeName, true) #>;
-        public override int GetMaxRequiredSizeUtf16() => <#= GetNullableRequiredSize(typeName, false) #>;
+        public JsonType jsonType => JsonType.Value;
 
-        public override unsafe int SerializeUtf8Unsafe(<#= typeNameLower #>? value, byte* dest) =>
+        public bool isFixedFormatter
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf8() => <#= GetNullableRequiredSize(typeName, true) #>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetMaxRequiredSizeUtf16() => <#= GetNullableRequiredSize(typeName, false) #>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf8Unsafe(<#= typeNameLower #>? value, byte* dest) =>
             value == null
-                ? JsonWriter.WriteNullUnsafeUtf8(dest)
+                ? JsonWriter.WriteNullUtf8(dest)
                 : <#= GetFormatFunctionName(typeName, true) #>(dest, value.Value);
 
-        public override unsafe int SerializeUtf16Unsafe(<#= typeNameLower #>? value, char* dest) =>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe int SerializeUtf16Unsafe(<#= typeNameLower #>? value, char* dest) =>
             value == null
-                ? JsonWriter.WriteNullUnsafeUtf16(dest)
+                ? JsonWriter.WriteNullUtf16(dest)
                 : <#= GetFormatFunctionName(typeName, false) #>(dest, value.Value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe <#= typeNameLower #>? DeserializeUtf8Unsafe(byte* src, out int advance) => <#= GetDeserializerBody(typeName, true, true) #>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe <#= typeNameLower #>? DeserializeUtf16Unsafe(char* src, out int advance) => <#= GetDeserializerBody(typeName, false, true) #>
     }
 
 <#

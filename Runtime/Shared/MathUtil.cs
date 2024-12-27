@@ -5,10 +5,7 @@
  * Description: Utils
  */
 
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace System.Runtime.CompilerServices
 {
@@ -16,9 +13,7 @@ namespace System.Runtime.CompilerServices
     /// 让C#9的新特性init only setter在Unity中能正常工作
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    internal sealed class IsExternalInit
-    {
-    }
+    internal sealed class IsExternalInit { }
 }
 
 namespace PeroTools2.Serde
@@ -36,20 +31,5 @@ namespace PeroTools2.Serde
             }
             return newSize;
         }
-    }
-
-    internal sealed class ReferenceEqualityComparer : IEqualityComparer<object>, IEqualityComparer
-    {
-        public static ReferenceEqualityComparer instance { get; } = new();
-
-        private ReferenceEqualityComparer()
-        {
-        }
-
-        public new bool Equals(object x, object y)
-            => ReferenceEquals(x, y);
-
-        public int GetHashCode(object obj)
-            => RuntimeHelpers.GetHashCode(obj);
     }
 }
