@@ -15,9 +15,6 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     public sealed class StringFormatter : ISerdeJsonFormatter<string>
     {
-        public JsonType jsonType => JsonType.Value;
-        public bool isFixedFormatter => false;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SerializeUtf8(string value, ref JsonWriterUtf8 writer) => writer.WriteString(value);
 

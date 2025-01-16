@@ -11,16 +11,11 @@ using System.Runtime.InteropServices;
 
 namespace PeroTools2.Serde.Json
 {
+    /// <summary>
+    /// Guid 的格式化器
+    /// </summary>
     public sealed class GuidFormatter : IFixedSerdeJsonFormatter<Guid>
     {
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
-        public JsonType jsonType => JsonType.Value;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 38; // 36 + 2引号
 

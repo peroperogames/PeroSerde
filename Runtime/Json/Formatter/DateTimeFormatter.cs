@@ -10,22 +10,46 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde.Json
 {
-    // TODO: 按位序列化，不创建 string
+    /// <summary>
+    /// DateTime 格式化器
+    /// </summary>
     public sealed class DateTimeFormatter : ISerdeJsonFormatter<DateTime>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SerializeUtf8(DateTime value, ref JsonWriterUtf8 writer)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => false;
+            writer.WriteDoubleQuote();
+            writer.WriteValue(value.Year);
+            writer.WriteAscii('/');
+            writer.WriteValue(value.Month);
+            writer.WriteAscii('/');
+            writer.WriteValue(value.Day);
+            writer.WriteAscii(' ');
+            writer.WriteValue(value.Hour);
+            writer.WriteAscii(':');
+            writer.WriteValue(value.Minute);
+            writer.WriteAscii(':');
+            writer.WriteValue(value.Second);
+            writer.WriteDoubleQuote();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SerializeUtf8(DateTime value, ref JsonWriterUtf8 writer) => writer.WriteString(value.ToString(CultureInfo.CurrentCulture));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SerializeUtf16(DateTime value, ref JsonWriterUtf16 writer) => writer.WriteString(value.ToString(CultureInfo.CurrentCulture));
+        public void SerializeUtf16(DateTime value, ref JsonWriterUtf16 writer)
+        {
+            writer.WriteDoubleQuote();
+            writer.WriteValue(value.Year);
+            writer.WriteChar('/');
+            writer.WriteValue(value.Month);
+            writer.WriteChar('/');
+            writer.WriteValue(value.Day);
+            writer.WriteChar(' ');
+            writer.WriteValue(value.Hour);
+            writer.WriteChar(':');
+            writer.WriteValue(value.Minute);
+            writer.WriteChar(':');
+            writer.WriteValue(value.Second);
+            writer.WriteDoubleQuote();
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTime DeserializeUtf8(ref ReadOnlySpan<byte> span, ref JsonReaderUtf8 reader) => SpanConverter.ToDateTime(reader.ReadUntilEnd());
@@ -39,14 +63,6 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     public sealed unsafe class UnixSecondsFormatter : IFixedSerdeJsonFormatter<DateTime>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 10;
 
@@ -125,16 +141,8 @@ namespace PeroTools2.Serde.Json
     /// <summary>
     /// 毫秒级 Unix 时间戳格式化器
     /// </summary>
-    public sealed unsafe class UnixMillisecondFormatter : IFixedSerdeJsonFormatter<DateTime>
+    public sealed unsafe class UnixMillisecondsFormatter : IFixedSerdeJsonFormatter<DateTime>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 13;
 

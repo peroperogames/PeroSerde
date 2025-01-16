@@ -1,0 +1,72 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2025/01/15-16:49:18
+ */
+
+using System;
+using System.Globalization;
+using NUnit.Framework;
+
+namespace PeroTools2.Serde.Editor.Tests
+{
+    public sealed class SpanConverterTests
+    {<#
+    var types = new Dictionary<string, (string value1, string value2)>
+    {
+        {"Short", ("short.MaxValue", "short.MinValue")},
+        {"Int", ("int.MaxValue", "int.MinValue")},
+        {"Long", ("long.MaxValue", "long.MinValue")},
+        {"Byte", ("byte.MaxValue", "byte.MinValue")},
+        {"Ushort", ("ushort.MaxValue", "ushort.MinValue")},
+        {"Uint", ("uint.MaxValue", "uint.MinValue")},
+        {"Ulong", ("ulong.MaxValue", "ulong.MinValue")},
+        {"Sbyte", ("sbyte.MaxValue", "sbyte.MinValue")},
+        {"Double", ("0.0523d", "12.3E+3")},
+        {"Float", ("0.0523f", "12f")},
+        {"Decimal", ("1 / 3", "-1 / 3")},
+        {"Char", ("'O'", "'\u554a'")},
+        {"Bool", ("true", "false")},
+        {"String", ("\"This is a string\"", "\"\"")},
+    };
+    foreach (var kv in types)
+    {
+        var type = kv.Key;
+        var value1 = kv.Value.value1;
+        var value2 = kv.Value.value2;
+        var toString = type switch
+        {
+            "Bool"    => " ? \"true\" : \"false\"",
+            "Float"   => ".ToString(CultureInfo.InvariantCulture)",
+            "Double"  => ".ToString(CultureInfo.InvariantCulture)",
+            "Decimal" => ".ToString(CultureInfo.InvariantCulture)",
+            "String"  => "",
+            _         => ".ToString()"
+            };
+        // var canEquals = kv.Key is not ("Double" or "Float" or "Decimal");
+#>
+
+        [TestCase(Encoding.UTF8, <#= value1 #>)]
+        [TestCase(Encoding.UTF8, <#= value2 #>)]
+        [TestCase(Encoding.UTF16, <#= value1 #>)]
+        [TestCase(Encoding.UTF16, <#= value2 #>)]
+        public void ConvertTo<#= type #>Test(Encoding encoding, <#= type.ToLower() #> value)
+        {
+            if (encoding == Encoding.UTF8)
+            {
+                var result = System.Text.Encoding.UTF8.GetBytes(value<#= toString #>).AsSpan();
+                Assert.AreEqual(value, SpanConverter.To<#= type #>(result));
+            }
+            else
+            {
+                var result = value<#= toString #>.AsSpan();
+                Assert.AreEqual(value, SpanConverter.To<#= type #>(result));
+            }
+        }
+<#
+    }
+#>
+    }
+}

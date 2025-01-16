@@ -14,7 +14,7 @@ namespace PeroTools2.Serde.Json
     [PublicAPI]
     public static unsafe partial class JsonWriter
     {
-        #region  Write Primitive
+        #region Write Primitive
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteBoolUtf16(char* dest, bool value)
@@ -59,8 +59,7 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region  Write Char
-
+        #region Write Char
         public static int WriteCharUtf16(char* dest, char value)
         {
             var start = dest;
@@ -145,15 +144,15 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region  Write String
+        #region Write String
 
-        public static int WriteStringUtf16(char* dest, string value)
+        public static int WriteStringUtf16(char* dest, ReadOnlySpan<char> value)
         {
             if (value == null)
                 return WriteNullUtf16(dest);
             var start = dest;
             dest += WriteDoubleQuoteUtf16(dest);
-            dest += WriteStringValueUtf16(value.AsSpan(), dest);
+            dest += WriteStringValueUtf16(value, dest);
             dest += WriteDoubleQuoteUtf16(dest);
             return (int) (dest - start);
         }
@@ -161,13 +160,13 @@ namespace PeroTools2.Serde.Json
         /// <summary>在不考虑转义字符的情况下写入字符串</summary>
         /// <return>charsWritten</return>
         /// <remarks>需要自己保证不会出现内存越界</remarks>
-        public static int WriteStringNoEscapeUtf16(char* dest, string str)
+        public static int WriteStringNoEscapeUtf16(char* dest, ReadOnlySpan<char> str)
         {
             if (str == null)
                 return WriteNullUtf16(dest);
             var start = dest;
             dest += WriteDoubleQuoteUtf16(dest);
-            dest += WriteRawUtf16(str.AsSpan(), dest);
+            dest += WriteRawUtf16(dest, str);
             dest += WriteDoubleQuoteUtf16(dest);
             return (int) (dest - start);
         }
@@ -188,7 +187,7 @@ namespace PeroTools2.Serde.Json
                     if (i - from > 0)
                     {
                         // 字符串本身就是UTF16编码, 在不考虑大端序小端序的情况下可以直接写入
-                        dest += WriteRawUtf16(str.Slice(from, i - from), dest);
+                        dest += WriteRawUtf16(dest, str.Slice(from, i - from));
                     }
                     dest += WriteEscapedCharUtf16(c, dest);
                     from = i + 1;
@@ -196,13 +195,13 @@ namespace PeroTools2.Serde.Json
             }
             if (from < str.Length)
             {
-                dest += WriteRawUtf16(str[from..], dest);
+                dest += WriteRawUtf16(dest, str[from..]);
             }
             return (int) (dest - originalPtr);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteRawUtf16(ReadOnlySpan<char> src, char* dest)
+        public static int WriteRawUtf16(char* dest, ReadOnlySpan<char> src)
         {
             fixed (char* srcPtr = src)
             {
@@ -213,7 +212,7 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region  Write Literal
+        #region Write Literal
 
         /// <summary>写入一个英文冒号</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -274,20 +273,6 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteBeginBracketUtf16(char* dest)
-        {
-            *dest = '(';
-            return 1;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int WriteEndBracketUtf16(char* dest)
-        {
-            *dest = ')';
-            return 1;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteNullUtf16(char* dest)
         {
             // 小端
@@ -307,7 +292,7 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
-        #region  Write Indent
+        #region Write Indent
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteIndent(int count, char* dest)

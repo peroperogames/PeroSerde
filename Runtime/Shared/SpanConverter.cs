@@ -57,87 +57,87 @@ namespace PeroTools2.Serde
         #region UTF16
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static sbyte ToSbyte(in ReadOnlySpan<char> span) => sbyte.Parse(span);
+        public static sbyte ToSbyte(in ReadOnlySpan<char> span) => sbyte.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static byte ToByte(in ReadOnlySpan<char> span) => byte.Parse(span);
+        public static byte ToByte(in ReadOnlySpan<char> span) => byte.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static DateTime ToDateTime(in ReadOnlySpan<char> span) => DateTime.Parse(span);
+        public static DateTime ToDateTime(in ReadOnlySpan<char> span) => DateTime.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static string ToString(in ReadOnlySpan<char> span) => new string(span);
+        public static string ToString(in ReadOnlySpan<char> span) => new string(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static decimal ToDecimal(in ReadOnlySpan<char> span) => decimal.Parse(span);
+        public static decimal ToDecimal(in ReadOnlySpan<char> span) => decimal.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static double ToDouble(in ReadOnlySpan<char> span) => double.Parse(span);
+        public static double ToDouble(in ReadOnlySpan<char> span) => double.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static float ToFloat(in ReadOnlySpan<char> span) => float.Parse(span);
+        public static float ToFloat(in ReadOnlySpan<char> span) => float.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool ToBool(in ReadOnlySpan<char> span) => bool.Parse(span);
+        public static bool ToBool(in ReadOnlySpan<char> span) => bool.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static char ToChar(in ReadOnlySpan<char> span) => span[0];
+        public static char ToChar(in ReadOnlySpan<char> span) => span[0];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static short ToShort(in ReadOnlySpan<char> span) => short.Parse(span);
+        public static short ToShort(in ReadOnlySpan<char> span) => short.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ushort ToUshort(in ReadOnlySpan<char> span) => ushort.Parse(span);
+        public static ushort ToUshort(in ReadOnlySpan<char> span) => ushort.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int ToInt(in ReadOnlySpan<char> span) => int.Parse(span);
+        public static int ToInt(in ReadOnlySpan<char> span) => int.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint ToUint(in ReadOnlySpan<char> span) => ushort.Parse(span);
+        public static uint ToUint(in ReadOnlySpan<char> span) => uint.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long ToLong(in ReadOnlySpan<char> span) => long.Parse(span);
+        public static long ToLong(in ReadOnlySpan<char> span) => long.Parse(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ulong ToUlong(in ReadOnlySpan<char> span) => ulong.Parse(span);
+        public static ulong ToUlong(in ReadOnlySpan<char> span) => ulong.Parse(span);
 
         #endregion
 
         #region UTF8
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static sbyte ToSbyte(in ReadOnlySpan<byte> span)
+        public static sbyte ToSbyte(in ReadOnlySpan<byte> span)
         {
             var isNegative = span[0] == 45;
             if (isNegative)
             {
-                return (sbyte) (-span.Length switch
+                return (sbyte) -(span.Length switch
                 {
-                    2 => span[0],
-                    3 => NumberHelper.FromAscii(span[0]) * 10 + NumberHelper.FromAscii(span[1]),
-                    4 => NumberHelper.FromAscii(span[0]) * 100 + NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
+                    2 => NumberHelper.FromAscii(span[1]),
+                    3 => NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
+                    4 => NumberHelper.FromAscii(span[1]) * 100 + NumberHelper.FromAscii(span[2]) * 10 + NumberHelper.FromAscii(span[3]),
                     _ => throw SerdeException.ThrowInvalidParsing()
                 });
             }
             return (sbyte) (span.Length switch
             {
-                1 => span[0],
+                1 => NumberHelper.FromAscii(span[0]),
                 2 => NumberHelper.FromAscii(span[0]) * 10 + NumberHelper.FromAscii(span[1]),
                 3 => NumberHelper.FromAscii(span[0]) * 100 + NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
                 _ => throw SerdeException.ThrowInvalidParsing()
             });
         }
 
-        internal static byte ToByte(in ReadOnlySpan<byte> span) => (byte) (span.Length switch
+        public static byte ToByte(in ReadOnlySpan<byte> span) => (byte) (span.Length switch
         {
-            1 => span[0],
+            1 => NumberHelper.FromAscii(span[0]),
             2 => NumberHelper.FromAscii(span[0]) * 10 + NumberHelper.FromAscii(span[1]),
             3 => NumberHelper.FromAscii(span[0]) * 100 + NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
             _ => throw SerdeException.ThrowInvalidParsing()
         });
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static DateTime ToDateTime(in ReadOnlySpan<byte> span)
+        public static DateTime ToDateTime(in ReadOnlySpan<byte> span)
         {
             if (!DateTimeHelper.TryParseDateTime(span, out var value))
                 throw SerdeException.ThrowInvalidParsing();
@@ -145,10 +145,10 @@ namespace PeroTools2.Serde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static string ToString(in ReadOnlySpan<byte> span) => Encoding.UTF8.GetString(span);
+        public static string ToString(in ReadOnlySpan<byte> span) => Encoding.UTF8.GetString(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static decimal ToDecimal(in ReadOnlySpan<byte> span)
+        public static decimal ToDecimal(in ReadOnlySpan<byte> span)
         {
             if (!Utf8Parser.TryParse(span, out decimal value, out var consumed) || span.Length != consumed)
             {
@@ -158,7 +158,7 @@ namespace PeroTools2.Serde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static double ToDouble(in ReadOnlySpan<byte> span)
+        public static double ToDouble(in ReadOnlySpan<byte> span)
         {
             if (!Utf8Parser.TryParse(span, out double value, out var consumed) || span.Length != consumed)
             {
@@ -168,7 +168,7 @@ namespace PeroTools2.Serde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static float ToFloat(in ReadOnlySpan<byte> span)
+        public static float ToFloat(in ReadOnlySpan<byte> span)
         {
             if (!Utf8Parser.TryParse(span, out float value, out var consumed) || span.Length != consumed)
             {
@@ -178,7 +178,7 @@ namespace PeroTools2.Serde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe bool ToBool(in ReadOnlySpan<byte> span)
+        public static unsafe bool ToBool(in ReadOnlySpan<byte> span)
         {
             // UTF8 不存在字节序问题，因此直接反过来读就行
             const uint eurt = 0x65757274U;
@@ -196,7 +196,7 @@ namespace PeroTools2.Serde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static char ToChar(in ReadOnlySpan<byte> span)
+        public static char ToChar(in ReadOnlySpan<byte> span)
         {
             if (span.Length == 1)
             {
@@ -238,145 +238,112 @@ namespace PeroTools2.Serde
             return charSpan[0];
         }
 
-        internal static short ToShort(in ReadOnlySpan<byte> span)
+        public static short ToShort(in ReadOnlySpan<byte> span)
         {
-#if NET8_0_OR_GREATER
-            return short.Parse(span);
-#else
-            if (span.IsEmpty)
-                throw SerdeException.ThrowInvalidParsing();
-
-            var isNegative = span[0] == (byte) '-';
-            var startIndex = isNegative ? 1 : 0;
-            short result = 0;
-
-            for (var i = startIndex; i < span.Length; i++)
+            var isNegative = (char) span[0] == '-';
+            short result;
+            if (isNegative)
             {
-                var digit = (byte) (span[i] - '0');
-                if (digit > 9)
-                    throw SerdeException.ThrowInvalidParsing();
+                result = (short) (span[1] - 48);
+                for (var i = 2; i < span.Length; i++)
+                {
+                    result *= 10;
+                    result += (short) (span[i] - 48);
+                }
 
-                result = (short) (result * 10 + digit);
+                return (short) -result;
             }
 
-            return isNegative ? (short) -result : result;
-#endif
-        }
-
-        internal static ushort ToUshort(in ReadOnlySpan<byte> span)
-        {
-#if NET8_0_OR_GREATER
-            return ushort.Parse(span);
-#else
-            if (span.IsEmpty)
-                throw SerdeException.ThrowInvalidParsing();
-
-            ushort result = 0;
-
-            for (var i = 0; i < span.Length; i++)
+            result = (short) (span[0] - 48);
+            for (var i = 1; i < span.Length; i++)
             {
-                var digit = (byte) (span[i] - '0');
-                if (digit > 9)
-                    throw SerdeException.ThrowInvalidParsing();
-
-                if (result > ushort.MaxValue / 10 || (result == ushort.MaxValue / 10 && digit > ushort.MaxValue % 10))
-                    throw SerdeException.ThrowInvalidParsing();
-
-                result = (ushort) (result * 10 + digit);
+                result *= 10;
+                result += (short) (span[i] - 48);
             }
-
             return result;
-#endif
         }
 
-        internal static int ToInt(in ReadOnlySpan<byte> span)
+        public static ushort ToUshort(in ReadOnlySpan<byte> span)
         {
-#if NET8_0_OR_GREATER
-            return int.Parse(span);
-#else
+            var result = (ushort) (span[0] - 48);
+            for (var i = 1; i < span.Length; i++)
+            {
+                result *= 10;
+                result += (ushort) (span[i] - 48);
+            }
+            return result;
+        }
+
+        public static int ToInt(in ReadOnlySpan<byte> span)
+        {
             var isNegative = (char) span[0] == '-';
-            var result = 0;
+            int result;
             if (isNegative)
             {
-                for (var i = 1; i < span.Length; i++)
+                result = span[1] - 48;
+                for (var i = 2; i < span.Length; i++)
                 {
+                    result *= 10;
                     result += span[i] - 48;
-                    result *= 10;
                 }
 
-                // 除掉多乘的一位数
-                return -(result / 10);
+                return -result;
             }
 
-            for (var i = 0; i < span.Length; i++)
+            result = span[0] - 48;
+            for (var i = 1; i < span.Length; i++)
             {
+                result *= 10;
                 result += span[i] - 48;
-                result *= 10;
             }
-            // 除掉多乘的一位数
-            return result / 10;
-#endif
+            return result;
         }
 
-        internal static uint ToUint(in ReadOnlySpan<byte> span)
+        public static uint ToUint(in ReadOnlySpan<byte> span)
         {
-#if NET8_0_OR_GREATER
-            return uint.Parse(span);
-#else
-            var result = 0U;
-            for (var i = 0; i < span.Length; i++)
+            var result = span[0] - 48U;
+            for (var i = 1; i < span.Length; i++)
             {
-                result += span[i] - 48U;
                 result *= 10;
+                result += span[i] - 48U;
             }
-            // 除掉多乘的一位数
-            return result / 10;
-#endif
+            return result;
         }
 
-        internal static long ToLong(in ReadOnlySpan<byte> span)
+        public static long ToLong(in ReadOnlySpan<byte> span)
         {
-#if NET8_0_OR_GREATER
-            return long.Parse(span);
-#else
             var isNegative = (char) span[0] == '-';
-            var result = 0L;
+            long result;
             if (isNegative)
             {
-                for (var i = 1; i < span.Length; i++)
+                result = span[1] - 48L;
+                for (var i = 2; i < span.Length; i++)
                 {
-                    result += span[i] - 48L;
                     result *= 10;
+                    result += span[i] - 48L;
                 }
 
-                // 除掉多乘的一位数
-                return -(result / 10);
+                return -result;
             }
 
-            for (var i = 0; i < span.Length; i++)
+            result = span[0] - 48L;
+            for (var i = 1; i < span.Length; i++)
             {
-                result += span[i] - 48L;
                 result *= 10;
+                result += span[i] - 48L;
             }
-            // 除掉多乘的一位数
-            return result / 10;
-#endif
+            return result;
         }
 
-        internal static ulong ToUlong(in ReadOnlySpan<byte> span)
+        public static ulong ToUlong(in ReadOnlySpan<byte> span)
         {
-#if NET8_0_OR_GREATER
-            return uint.Parse(span);
-#else
-            var result = 0U;
-            for (var i = 0; i < span.Length; i++)
+            var result = span[0] - 48UL;
+            for (var i = 1; i < span.Length; i++)
             {
-                result += span[i] - 48U;
                 result *= 10;
+                result += span[i] - 48U;
             }
-            // 除掉多乘的一位数
-            return result / 10;
-#endif
+            return result;
         }
 
         #endregion

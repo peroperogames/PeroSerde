@@ -10,31 +10,37 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace PeroTools2.Serde
 {
+    /// <summary>
+    /// Serde 通用异常
+    /// </summary>
     public class SerdeException : Exception
     {
         public SerdeException(string message) : base(message) { }
 
         public SerdeException(string message, Exception innerException) : base(message, innerException) { }
 
-        public static SerdeException ThrowInvalidSurrogateChar(char c) => new SerdeException($"Surrogate char is not supported. Char: {c}");
-
-        public static SerdeException ThrowInvalidParsing() => new SerdeException("Invalid parsing.");
+        [DoesNotReturn]
+        public static SerdeException ThrowInvalidSurrogateChar(char c) => new($"Surrogate char is not supported. Char: {c}");
 
         [DoesNotReturn]
-        public static SerdeException ThrowInvalidAdvance() => new SerdeException("Cannot advance past the end of the buffer.");
+        public static SerdeException ThrowInvalidParsing() => new("Invalid parsing.");
 
         [DoesNotReturn]
-        public static void ThrowInvalidFloatPoint() =>
-            throw new SerdeException("Nan or infinity float point value is invalid in json.");
+        public static SerdeException ThrowInvalidAdvance() => new("Cannot advance past the end of the buffer.");
 
         [DoesNotReturn]
-        public static SerdeException ThrowInvalidEscapedChar(char ch) =>
-            new($"Invalid Escaped Char: {ch}");
+        public static SerdeException ThrowInvalidFloatPoint() => new("Nan or infinity float point value is invalid in json.");
 
         [DoesNotReturn]
-        public static SerdeException ThrowInvalidJson(string json) => new($"Invalid json: {json.ToString()}");
+        public static SerdeException ThrowInvalidEscapedChar(char ch) => new($"Invalid Escaped Char: {ch}");
 
         [DoesNotReturn]
-        public static SerdeException ThrowFormatterNotFound(Type type) => new SerdeException($"Cannot found formatter for type \"{type.Name}\".");
+        public static SerdeException ThrowInvalidJson(string json) => new($"Invalid json: {json}");
+
+        [DoesNotReturn]
+        public static SerdeException ThrowFormatterNotFound(Type type) => new($"Cannot found formatter for type \"{type.Name}\".");
+
+        [DoesNotReturn]
+        public static SerdeException ThrowNotSupportedType(Type type) => new($"Type of {type} cannot be serialized or deserialized.");
     }
 }

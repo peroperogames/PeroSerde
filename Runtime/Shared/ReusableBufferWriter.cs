@@ -12,12 +12,19 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
+    /// <summary>
+    /// 变长缓存写入器
+    /// </summary>
+    /// <typeparam name="T">缓存类型</typeparam>
     public sealed class ReusableBufferWriter<T> : IBufferWriter<T> where T : unmanaged
     {
         public static class Pool
         {
             private static readonly ConcurrentQueue<ReusableBufferWriter<T>> s_Queue = new();
 
+            /// <summary>
+            /// 借用一个缓存中的空闲的 Buffer 写入器
+            /// </summary>
             public static ReusableBufferWriter<T> Rent()
             {
                 if (s_Queue.TryDequeue(out var writer))
@@ -27,6 +34,9 @@ namespace PeroTools2.Serde
                 return new ReusableBufferWriter<T>();
             }
 
+            /// <summary>
+            /// 归还并重置 Buffer 写入器
+            /// </summary>
             public static void Return(ReusableBufferWriter<T> writer)
             {
                 writer.Reset();
@@ -43,8 +53,21 @@ namespace PeroTools2.Serde
         /// <summary>下次CurrentBuffer增长的默认大小</summary>
         private int? m_NextBufferSize;
 
-        public int totalWritten { get; private set; }
+        /// <summary>
+        /// 总共写入的长度
+        /// </summary>
+        public int totalWritten
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private set;
+        }
 
+        /// <summary>
+        /// 获取一个可用的空闲内存
+        /// </summary>
+        /// <param name="sizeHint">内存长度</param>
         public Span<T> GetSpan(int sizeHint = 0)
         {
             // 如果CurrentBuffer够用, 返回CurrentBuffer
@@ -80,9 +103,11 @@ namespace PeroTools2.Serde
             return next.freeBuffer;
         }
 
-        Memory<T> IBufferWriter<T>.GetMemory(int sizeHint)
-            => throw new NotSupportedException(); // 不使用GetMemory
+        Memory<T> IBufferWriter<T>.GetMemory(int sizeHint) => throw new NotSupportedException(); // 不使用GetMemory
 
+        /// <summary>
+        /// 写入器步进
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Advance(int count)
         {
@@ -90,9 +115,15 @@ namespace PeroTools2.Serde
             totalWritten += count;
         }
 
+        /// <summary>
+        /// 获取已经写入的 Buffer
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<T> GetWrittenBuffer() => m_CurrentBuffer.isNull ? ReadOnlySpan<T>.Empty : m_CurrentBuffer.writtenBuffer;
 
+        /// <summary>
+        /// 将已写入部分的 Buffer 转换成数组
+        /// </summary>
         public T[] CopyToArray()
         {
             if (totalWritten == 0) return Array.Empty<T>();
@@ -105,6 +136,9 @@ namespace PeroTools2.Serde
             return result;
         }
 
+        /// <summary>
+        /// 清空缓存，并将 Buffer 释放
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {

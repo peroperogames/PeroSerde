@@ -5,13 +5,26 @@
  * Description: DiagnosticDescriptors
  */
 
+using System;
 using Microsoft.CodeAnalysis;
 
 namespace PeroTools2.Serde.Generator;
 
 internal static class DiagnosticDescriptors
 {
-    private const string category = "GenerateSerdeSerializer";
+    internal const string category = "GenerateSerdeSerializer";
+
+    /// <summary>
+    /// 生成器异常.
+    /// </summary>
+    public static DiagnosticDescriptor CreateErrorDescriptor(Exception exception) => new DiagnosticDescriptor(
+        id: "SERDE000",
+        title: "Generate error.",
+        messageFormat: exception.ToString(),
+        category: DiagnosticDescriptors.category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 
     #region 类型约束
 
@@ -60,50 +73,6 @@ internal static class DiagnosticDescriptors
         id: "SERDE005",
         title: "Type is abstract class or interface",
         messageFormat: "The SerdeSerializable object '{0}' must not be abstract/interface",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    #endregion
-
-    #region 构造函数问题
-
-    /// <summary>有多个构造函数, 并且都没带[SerdeJsonConstructor]标签</summary>
-    public static readonly DiagnosticDescriptor multipleCtorWithoutAttribute = new(
-        id: "SERDE006",
-        title: "Require [SerdeJsonConstructor] when exists multiple constructors",
-        messageFormat: "The SerdeSerializable object '{0}' must annotate with [SerdeJsonConstructor] when exists multiple constructors",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    /// <summary>有多个构造函数带有[SerdeJsonConstructor]标签</summary>
-    public static readonly DiagnosticDescriptor multipleCtorWithAttribute = new(
-        id: "SERDE007",
-        title: "[SerdeJsonConstructor] exists in multiple constructors",
-        messageFormat: "Multiple [SerdeJsonConstructor] exists in '{0}' but allows only single ctor",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    /// <summary>构造函数参数中含有未知参数(没在members里)</summary>
-    public static readonly DiagnosticDescriptor ctorHasNoMatchedParameter = new(
-        id: "SERDE008",
-        title: "Constructor has no matched parameter",
-        messageFormat: "The serde serializable object '{0}' constructor's parameter '{1}' must match a serialized member name(case-insensitive)",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
-    );
-
-    /// <summary>只读Field必须是构造函数参数.</summary>
-    public static readonly DiagnosticDescriptor readonlyFieldMustBeCtorMember = new(
-        id: "SERDE009",
-        title: "Readonly field must be constructor member",
-        messageFormat: "Type '{0}''s readonly field '{1}' must be constructor member",
         category: category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true

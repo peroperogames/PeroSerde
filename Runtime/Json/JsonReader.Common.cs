@@ -12,13 +12,11 @@ namespace PeroTools2.Serde.Json
 {
     public ref struct JsonReaderUtf8
     {
-        private bool m_IsIn;
         private int m_Advanced;
-        private int m_LastIndex;
         private readonly ReadOnlySpan<byte> m_Json;
         public readonly ReadOnlySpan<byte> json => m_Json;
 
-        public ReadOnlySpan<byte> remains
+        public readonly ReadOnlySpan<byte> remains
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => m_Json.Slice(m_Advanced, m_Json.Length - m_Advanced);
@@ -27,66 +25,80 @@ namespace PeroTools2.Serde.Json
         public JsonReaderUtf8(ReadOnlySpan<byte> json)
         {
             m_Advanced = 0;
-            m_LastIndex = 0;
-            m_IsIn = false;
             m_Json = json;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Advance(int count) => m_Advanced += count;
 
+        #region Read Value
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe T ReadValue<T>(bool readComma, ISerdeJsonFormatter<T> formatter)
+        public ReadOnlySpan<byte> ReadValue(bool readComma = false)
         {
-            T result;
-            if (formatter.isFixedFormatter)
-            {
-                var span = remains;
-                fixed (byte* ptr = span)
-                {
-                    result = formatter.DeserializeUtf8Unsafe(ptr, out var advance);
-                    Advance(advance);
-                }
-            }
-            else
-            {
-                var span = remains;
-                result = formatter.DeserializeUtf8(ref span, ref this);
-            }
+            var result = ReadUntilEnd();
             if (readComma) ReadComma();
             return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(bool readComma, ISerdeJsonFormatter<T> formatter)
+        public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
         {
-            var list = ListPool<T>.shared.Rent();
-            ReadCollection(list, readComma, formatter, out var isNull);
-            var results = isNull ? null : list.ToArray();
-            ListPool<T>.shared.Return(list);
-            return results;
+            T result;
+            var span = remains;
+            fixed (byte* ptr = span)
+            {
+                result = formatter.DeserializeUtf8Unsafe(ptr, out var advance);
+                Advance(advance);
+            }
+
+            if (readComma) ReadComma();
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TCollection ReadCollection<TCollection, T>(bool readComma, ISerdeJsonFormatter<T> formatter) where TCollection : ICollection<T>, new()
+        public T ReadValue<T>(ISerdeJsonFormatter<T> formatter, bool readComma = false)
+        {
+            var span = remains;
+            var result = formatter.DeserializeUtf8(ref span, ref this);
+            if (readComma) ReadComma();
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T ReadValue<T>(bool readComma = false)
+        {
+            var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
+            if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+                return ReadValue(fixedFormatter, readComma);
+            if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+                return ReadValue(unfixedFormatter, readComma);
+            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+        }
+
+        #endregion
+
+        #region Read Collection
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal TCollection ReadCollection<TCollection, T>(ISerdeJsonFormatter<T> formatter, bool readComma = false) where TCollection : ICollection<T>, new()
         {
             var col = new TCollection();
-            ReadCollection(col, readComma, formatter, out var isNull);
+            ReadCollection(col, formatter, readComma, out var isNull);
             return isNull ? default : col;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T ReadValue<T>(bool readComma) => ReadValue<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(bool readComma) => ReadArray<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TCollection ReadCollection<TCollection, T>(bool readComma) where TCollection : ICollection<T>, new() => ReadCollection<TCollection, T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        private void ReadCollection<T>(ICollection<T> list, bool readComma, ISerdeJsonFormatter<T> formatter, out bool isNull)
+        internal TCollection ReadCollection<TCollection, T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false) where TCollection : ICollection<T>, new()
         {
-            if (SpanConverter.IsNull(m_Json.Slice(m_Advanced - 1, 4)))
+            var col = new TCollection();
+            ReadCollection(col, formatter, readComma, out var isNull);
+            return isNull ? default : col;
+        }
+
+        internal void ReadCollection<T>(ICollection<T> col, IFixedSerdeJsonFormatter<T> formatter, bool readComma, out bool isNull)
+        {
+            if (m_Json.Length >= 4 && SpanConverter.IsNull(m_Json.Slice(4)))
             {
                 isNull = true;
                 Advance(4);
@@ -96,13 +108,14 @@ namespace PeroTools2.Serde.Json
                 ReadBeginArray();
                 while (true)
                 {
-                    list.Add(ReadValue<T>(false, formatter));
                     ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == (byte) ',')
+                    col.Add(ReadValue(formatter));
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced] == (byte) ',')
                     {
                         Advance(1);
                     }
-                    else if (m_Json[m_Advanced - 1] == (byte) ']')
+                    else if (m_Json[m_Advanced] == (byte) ']')
                     {
                         Advance(1);
                         break;
@@ -113,124 +126,45 @@ namespace PeroTools2.Serde.Json
             isNull = false;
         }
 
-        public unsafe TDictionary ReadDictionary<TDictionary, TKey, TValue>(bool readComma) where TDictionary : IDictionary<TKey, TValue>, new()
+        internal void ReadCollection<T>(ICollection<T> col, ISerdeJsonFormatter<T> formatter, bool readComma, out bool isNull)
         {
-            var dic = new TDictionary();
-            var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
-            var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            ReadBeginObject();
-            if (keyFormatter.isFixedFormatter && valueFormatter.isFixedFormatter)
+            if (m_Json.Length >= 4 && SpanConverter.IsNull(m_Json.Slice(4)))
             {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    fixed (byte* k = strKey)
-                    {
-                        key = keyFormatter.DeserializeUtf8Unsafe(k, out _);
-                    }
-                    fixed (byte* v = remains)
-                    {
-                        value = valueFormatter.DeserializeUtf8Unsafe(v, out var advance);
-                        Advance(advance);
-                    }
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == (byte) ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == (byte) '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
-            }
-            else if (keyFormatter.isFixedFormatter && !valueFormatter.isFixedFormatter)
-            {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    fixed (byte* k = strKey)
-                    {
-                        key = keyFormatter.DeserializeUtf8Unsafe(k, out _);
-                    }
-                    var span = remains;
-                    value = valueFormatter.DeserializeUtf8(ref span, ref this);
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == (byte) ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == (byte) '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
-            }
-            else if (!keyFormatter.isFixedFormatter && valueFormatter.isFixedFormatter)
-            {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    key = keyFormatter.DeserializeUtf8(ref strKey, ref this);
-                    fixed (byte* v = remains)
-                    {
-                        value = valueFormatter.DeserializeUtf8Unsafe(v, out var advance);
-                        Advance(advance);
-                    }
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == (byte) ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == (byte) '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
+                isNull = true;
+                Advance(4);
             }
             else
             {
+                ReadBeginArray();
                 while (true)
                 {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    key = keyFormatter.DeserializeUtf8(ref strKey, ref this);
-                    var span = remains;
-                    value = valueFormatter.DeserializeUtf8(ref span, ref this);
-                    dic.Add(key, value);
                     ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == (byte) ',')
+                    col.Add(ReadValue(formatter));
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced] == (byte) ',')
                     {
                         Advance(1);
                     }
-                    else if (m_Json[m_Advanced - 1] == (byte) '}')
+                    else if (m_Json[m_Advanced] == (byte) ']')
                     {
                         Advance(1);
                         break;
                     }
                 }
             }
-            return dic;
+            if (readComma) ReadComma();
+            isNull = false;
         }
+
+        #endregion
+
+        #region Read Literal
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe ReadOnlySpan<byte> ReadUntilEnd()
         {
             var span = remains;
-            fixed(byte* src = remains)
+            fixed (byte* src = remains)
             {
                 var result = JsonReader.ReadValueUntilEndUtf8(src, span.Length - 1, out var advance);
                 Advance(advance);
@@ -289,7 +223,7 @@ namespace PeroTools2.Serde.Json
             {
                 if (m_Json[i].Equals((byte) '"') && m_Json[i - 1] != (byte) '\\')
                 {
-                    var result = m_Json.Slice(m_Advanced + 1, i - 2);
+                    var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
                     Advance(i + 1 - m_Advanced);
                     return result;
                 }
@@ -321,16 +255,17 @@ namespace PeroTools2.Serde.Json
             }
             return index != -1;
         }
+
+        #endregion
     }
+
     public ref struct JsonReaderUtf16
     {
-        private bool m_IsIn;
         private int m_Advanced;
-        private int m_LastIndex;
         private readonly ReadOnlySpan<char> m_Json;
         public readonly ReadOnlySpan<char> json => m_Json;
 
-        public ReadOnlySpan<char> remains
+        public readonly ReadOnlySpan<char> remains
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => m_Json.Slice(m_Advanced, m_Json.Length - m_Advanced);
@@ -339,66 +274,80 @@ namespace PeroTools2.Serde.Json
         public JsonReaderUtf16(ReadOnlySpan<char> json)
         {
             m_Advanced = 0;
-            m_LastIndex = 0;
-            m_IsIn = false;
             m_Json = json;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Advance(int count) => m_Advanced += count;
 
+        #region Read Value
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe T ReadValue<T>(bool readComma, ISerdeJsonFormatter<T> formatter)
+        public ReadOnlySpan<char> ReadValue(bool readComma = false)
         {
-            T result;
-            if (formatter.isFixedFormatter)
-            {
-                var span = remains;
-                fixed (char* ptr = span)
-                {
-                    result = formatter.DeserializeUtf16Unsafe(ptr, out var advance);
-                    Advance(advance);
-                }
-            }
-            else
-            {
-                var span = remains;
-                result = formatter.DeserializeUtf16(ref span, ref this);
-            }
+            var result = ReadUntilEnd();
             if (readComma) ReadComma();
             return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(bool readComma, ISerdeJsonFormatter<T> formatter)
+        public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
         {
-            var list = ListPool<T>.shared.Rent();
-            ReadCollection(list, readComma, formatter, out var isNull);
-            var results = isNull ? null : list.ToArray();
-            ListPool<T>.shared.Return(list);
-            return results;
+            T result;
+            var span = remains;
+            fixed (char* ptr = span)
+            {
+                result = formatter.DeserializeUtf16Unsafe(ptr, out var advance);
+                Advance(advance);
+            }
+
+            if (readComma) ReadComma();
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TCollection ReadCollection<TCollection, T>(bool readComma, ISerdeJsonFormatter<T> formatter) where TCollection : ICollection<T>, new()
+        public T ReadValue<T>(ISerdeJsonFormatter<T> formatter, bool readComma = false)
+        {
+            var span = remains;
+            var result = formatter.DeserializeUtf16(ref span, ref this);
+            if (readComma) ReadComma();
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T ReadValue<T>(bool readComma = false)
+        {
+            var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
+            if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+                return ReadValue(fixedFormatter, readComma);
+            if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+                return ReadValue(unfixedFormatter, readComma);
+            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+        }
+
+        #endregion
+
+        #region Read Collection
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal TCollection ReadCollection<TCollection, T>(ISerdeJsonFormatter<T> formatter, bool readComma = false) where TCollection : ICollection<T>, new()
         {
             var col = new TCollection();
-            ReadCollection(col, readComma, formatter, out var isNull);
+            ReadCollection(col, formatter, readComma, out var isNull);
             return isNull ? default : col;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T ReadValue<T>(bool readComma) => ReadValue<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(bool readComma) => ReadArray<T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TCollection ReadCollection<TCollection, T>(bool readComma) where TCollection : ICollection<T>, new() => ReadCollection<TCollection, T>(readComma, SerdeJsonFormatterProvider.GetFormatter<T>());
-
-        private void ReadCollection<T>(ICollection<T> list, bool readComma, ISerdeJsonFormatter<T> formatter, out bool isNull)
+        internal TCollection ReadCollection<TCollection, T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false) where TCollection : ICollection<T>, new()
         {
-            if (SpanConverter.IsNull(m_Json.Slice(m_Advanced - 1, 4)))
+            var col = new TCollection();
+            ReadCollection(col, formatter, readComma, out var isNull);
+            return isNull ? default : col;
+        }
+
+        internal void ReadCollection<T>(ICollection<T> col, IFixedSerdeJsonFormatter<T> formatter, bool readComma, out bool isNull)
+        {
+            if (m_Json.Length >= 4 && SpanConverter.IsNull(m_Json.Slice(4)))
             {
                 isNull = true;
                 Advance(4);
@@ -408,13 +357,14 @@ namespace PeroTools2.Serde.Json
                 ReadBeginArray();
                 while (true)
                 {
-                    list.Add(ReadValue<T>(false, formatter));
                     ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == ',')
+                    col.Add(ReadValue(formatter));
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced] == ',')
                     {
                         Advance(1);
                     }
-                    else if (m_Json[m_Advanced - 1] == ']')
+                    else if (m_Json[m_Advanced] == ']')
                     {
                         Advance(1);
                         break;
@@ -425,124 +375,45 @@ namespace PeroTools2.Serde.Json
             isNull = false;
         }
 
-        public unsafe TDictionary ReadDictionary<TDictionary, TKey, TValue>(bool readComma) where TDictionary : IDictionary<TKey, TValue>, new()
+        internal void ReadCollection<T>(ICollection<T> col, ISerdeJsonFormatter<T> formatter, bool readComma, out bool isNull)
         {
-            var dic = new TDictionary();
-            var keyFormatter = SerdeJsonFormatterProvider.GetFormatter<TKey>();
-            var valueFormatter = SerdeJsonFormatterProvider.GetFormatter<TValue>();
-            ReadBeginObject();
-            if (keyFormatter.isFixedFormatter && valueFormatter.isFixedFormatter)
+            if (m_Json.Length >= 4 && SpanConverter.IsNull(m_Json.Slice(4)))
             {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    fixed (char* k = strKey)
-                    {
-                        key = keyFormatter.DeserializeUtf16Unsafe(k, out _);
-                    }
-                    fixed (char* v = remains)
-                    {
-                        value = valueFormatter.DeserializeUtf16Unsafe(v, out var advance);
-                        Advance(advance);
-                    }
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
-            }
-            else if (keyFormatter.isFixedFormatter && !valueFormatter.isFixedFormatter)
-            {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    fixed (char* k = strKey)
-                    {
-                        key = keyFormatter.DeserializeUtf16Unsafe(k, out _);
-                    }
-                    var span = remains;
-                    value = valueFormatter.DeserializeUtf16(ref span, ref this);
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
-            }
-            else if (!keyFormatter.isFixedFormatter && valueFormatter.isFixedFormatter)
-            {
-                while (true)
-                {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    key = keyFormatter.DeserializeUtf16(ref strKey, ref this);
-                    fixed (char* v = remains)
-                    {
-                        value = valueFormatter.DeserializeUtf16Unsafe(v, out var advance);
-                        Advance(advance);
-                    }
-                    dic.Add(key, value);
-                    ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == ',')
-                    {
-                        Advance(1);
-                    }
-                    else if (m_Json[m_Advanced - 1] == '}')
-                    {
-                        Advance(1);
-                        break;
-                    }
-                }
+                isNull = true;
+                Advance(4);
             }
             else
             {
+                ReadBeginArray();
                 while (true)
                 {
-                    TKey key;
-                    TValue value;
-                    var strKey = ReadKey();
-                    key = keyFormatter.DeserializeUtf16(ref strKey, ref this);
-                    var span = remains;
-                    value = valueFormatter.DeserializeUtf16(ref span, ref this);
-                    dic.Add(key, value);
                     ReadWhiteSpace();
-                    if (m_Json[m_Advanced - 1] == ',')
+                    col.Add(ReadValue(formatter));
+                    ReadWhiteSpace();
+                    if (m_Json[m_Advanced] == ',')
                     {
                         Advance(1);
                     }
-                    else if (m_Json[m_Advanced - 1] == '}')
+                    else if (m_Json[m_Advanced] == ']')
                     {
                         Advance(1);
                         break;
                     }
                 }
             }
-            return dic;
+            if (readComma) ReadComma();
+            isNull = false;
         }
+
+        #endregion
+
+        #region Read Literal
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe ReadOnlySpan<char> ReadUntilEnd()
         {
             var span = remains;
-            fixed(char* src = remains)
+            fixed (char* src = remains)
             {
                 var result = JsonReader.ReadValueUntilEndUtf16(src, span.Length - 1, out var advance);
                 Advance(advance);
@@ -601,7 +472,7 @@ namespace PeroTools2.Serde.Json
             {
                 if (m_Json[i].Equals('"') && m_Json[i - 1] != '\\')
                 {
-                    var result = m_Json.Slice(m_Advanced + 1, i - 2);
+                    var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
                     Advance(i + 1 - m_Advanced);
                     return result;
                 }
@@ -633,5 +504,7 @@ namespace PeroTools2.Serde.Json
             }
             return index != -1;
         }
+
+        #endregion
     }
 }

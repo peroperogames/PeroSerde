@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
 namespace PeroTools2.Serde.Generator;
@@ -18,14 +19,14 @@ public struct TypeMeta
     /// <summary>
     /// 当前类型符号信息
     /// </summary>
-    public readonly INamedTypeSymbol symbol;
+    public readonly ITypeSymbol symbol;
 
     /// <summary>
     /// 可序列化/反序列化的成员
     /// </summary>
     public readonly MemberMeta[] members;
 
-    public TypeMeta(INamedTypeSymbol type, ReferenceSymbols referenceSymbols)
+    public TypeMeta(ITypeSymbol type, ReferenceSymbols referenceSymbols)
     {
         symbol = type;
         members = GetMemberMetas(type, referenceSymbols);
@@ -34,24 +35,27 @@ public struct TypeMeta
     /// <summary>
     /// 获取所有可序列化/反序列化成员的信息
     /// </summary>
-    private MemberMeta[] GetMemberMetas(INamedTypeSymbol type, ReferenceSymbols referenceSymbols)
+    private MemberMeta[] GetMemberMetas(ITypeSymbol type, ReferenceSymbols referenceSymbols)
     {
         var result = new List<MemberMeta>();
-        foreach (var member in type.GetAllMembers())
+        var members = type.GetAllMembers();
+        foreach (var member in members)
         {
-            // 不考虑 Ignore 和静态成员
-            if (member.ContainsAttribute(referenceSymbols.serdeJsonIgnoreMemberAttribute) || member.IsStatic) continue;
-            var memberType = member switch
-            {
-                IPropertySymbol { SetMethod: not null } property => property.Type,
-                IFieldSymbol { IsReadOnly: false } field => field.Type,
-                _ => null
-            };
-            // 只考虑非只读字段和包含 Set 方法的属性
-            if (memberType == null) continue;
+            // 除了 Enum 不考虑 Ignore 和静态成员
+            if (type.TypeKind != TypeKind.Enum && (member.ContainsAttribute(referenceSymbols.serdeJsonIgnoreMemberAttribute) || member.IsStatic)) continue;
 
-            var formatName = member.Name;
-            var formatter = ((ITypeSymbol, ITypeSymbol)?) null;
+            // 只考虑非只读字段和包含 Set 方法的属性
+            var (memberType, formatName) = member switch
+            {
+                IPropertySymbol { SetMethod: not null } property => (property.Type, property.Name),
+                IFieldSymbol { IsReadOnly: false } field => (field.Type, field.Name),
+                _ => (null, null)
+            };
+
+            // 跳过私有属性的字段
+            if (memberType == null || Regex.IsMatch(formatName, "<.+>k__BackingField")) continue;
+
+            var formatter = (ITypeSymbol) null;
             var memberKind = GetMemberKind(memberType, referenceSymbols);
             if (member.TryGetAttribute(referenceSymbols.serdeJsonMemberAttribute, out var memberAttr))
             {
@@ -59,9 +63,7 @@ public struct TypeMeta
             }
             if (member.TryGetAttribute(referenceSymbols.serdeJsonFormatterAttribute, out var formatterAttr))
             {
-                formatter = memberKind is MemberKind.Dictionary or MemberKind.ReadonlyDictionary
-                    ? (formatterAttr!.ConstructorArguments[0].Value as ITypeSymbol, formatterAttr.ConstructorArguments[1].Value as ITypeSymbol)
-                    : (formatterAttr!.ConstructorArguments.First().Value as ITypeSymbol, null);
+                formatter = formatterAttr!.ConstructorArguments.First().Value as ITypeSymbol;
             }
             result.Add(new MemberMeta
             {
@@ -69,7 +71,7 @@ public struct TypeMeta
                 name = member.Name,
                 kind = memberKind,
                 formatName = formatName,
-                formatter = formatter,
+                formatter = formatter
             });
         }
         return result.ToArray();
@@ -78,25 +80,37 @@ public struct TypeMeta
     /// <summary>
     /// 根据类型返回实际类型
     /// </summary>
-    private MemberKind GetMemberKind(ITypeSymbol type, ReferenceSymbols referenceSymbols)
+    public static BuiltinKind GetMemberKind(ITypeSymbol type, ReferenceSymbols referenceSymbols)
     {
-        if (type.ContainsInterface(referenceSymbols.iReadonlyDictionaryInterface))
+        if (type is IArrayTypeSymbol)
         {
-            return MemberKind.ReadonlyDictionary;
+            return BuiltinKind.Array;
         }
-        if (type.ContainsInterface(referenceSymbols.iDictionaryInterface))
+        if (type.IsGenericTypeOf(referenceSymbols.lazyType))
         {
-            return MemberKind.Dictionary;
+            return BuiltinKind.Lazy;
         }
-        if (type.ContainsInterface(referenceSymbols.iReadonlyListInterface) || type.TypeKind == TypeKind.Array)
+        if (type.IsGenericTypeOf(referenceSymbols.keyValuePairType))
         {
-            return MemberKind.ReadonlyList;
+            return BuiltinKind.KeyValuePair;
         }
-        if (type.ContainsInterface(referenceSymbols.iListInterface))
+        if (type.IsGenericTypeOf(referenceSymbols.nullableType) || type.ToDisplayString().Last() == '?')
         {
-            return MemberKind.List;
+            return BuiltinKind.Nullable;
         }
-        return MemberKind.Value;
+        if (type.ContainsInterface(referenceSymbols.iCollectionInterface))
+        {
+            return BuiltinKind.Collection;
+        }
+        if (type.ContainsInterface(referenceSymbols.iReadonlyCollectionInterface))
+        {
+            return BuiltinKind.ReadonlyCollection;
+        }
+        if (type.TypeKind == TypeKind.Enum)
+        {
+            return BuiltinKind.Enum;
+        }
+        return BuiltinKind.Value;
     }
 }
 
@@ -104,7 +118,8 @@ public struct MemberMeta
 {
     public ITypeSymbol type;
     public string name;
-    public MemberKind kind;
+    public BuiltinKind kind;
     public string formatName;
-    public (ITypeSymbol, ITypeSymbol)? formatter;
+    public ITypeSymbol formatter;
+    public bool useFormatter => formatter != null || kind != BuiltinKind.Value;
 }

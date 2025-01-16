@@ -20,14 +20,6 @@ namespace PeroTools2.Serde.Json
     /// </example>
     public sealed class Vector2Formatter : ISerdeJsonFormatter<Vector2>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => false;
-        }
-
         public void SerializeUtf8(Vector2 value, ref JsonWriterUtf8 writer)
         {
             writer.WriteDoubleQuote();
@@ -156,14 +148,6 @@ namespace PeroTools2.Serde.Json
     /// </example>
     public sealed class Vector3Formatter : ISerdeJsonFormatter<Vector3>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => false;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SerializeUtf8(Vector3 value, ref JsonWriterUtf8 writer)
         {
@@ -315,14 +299,6 @@ namespace PeroTools2.Serde.Json
     /// </example>
     public sealed class Vector4Formatter : ISerdeJsonFormatter<Vector4>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => false;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SerializeUtf8(Vector4 value, ref JsonWriterUtf8 writer)
         {

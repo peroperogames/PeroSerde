@@ -44,14 +44,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class BoolFormatter : IFixedSerdeJsonFormatter<bool>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 5;
 
@@ -73,8 +65,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableBoolFormatter : IFixedSerdeJsonFormatter<bool?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,14 +98,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class ByteFormatter : IFixedSerdeJsonFormatter<byte>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 3;
 
@@ -137,8 +119,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableByteFormatter : IFixedSerdeJsonFormatter<byte?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -172,14 +152,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class SbyteFormatter : IFixedSerdeJsonFormatter<sbyte>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 4;
 
@@ -201,8 +173,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableSbyteFormatter : IFixedSerdeJsonFormatter<sbyte?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -236,14 +206,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class UshortFormatter : IFixedSerdeJsonFormatter<ushort>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 5;
 
@@ -265,8 +227,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableUshortFormatter : IFixedSerdeJsonFormatter<ushort?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -300,14 +260,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class ShortFormatter : IFixedSerdeJsonFormatter<short>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 6;
 
@@ -329,8 +281,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableShortFormatter : IFixedSerdeJsonFormatter<short?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -364,14 +314,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class UintFormatter : IFixedSerdeJsonFormatter<uint>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 10;
 
@@ -393,8 +335,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableUintFormatter : IFixedSerdeJsonFormatter<uint?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -428,14 +368,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class IntFormatter : IFixedSerdeJsonFormatter<int>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 11;
 
@@ -457,8 +389,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableIntFormatter : IFixedSerdeJsonFormatter<int?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -492,14 +422,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class UlongFormatter : IFixedSerdeJsonFormatter<ulong>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => NumberHelper.max_uint64_numbers_length;
 
@@ -521,8 +443,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableUlongFormatter : IFixedSerdeJsonFormatter<ulong?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -556,14 +476,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class LongFormatter : IFixedSerdeJsonFormatter<long>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => NumberHelper.max_int64_numbers_length;
 
@@ -585,8 +497,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableLongFormatter : IFixedSerdeJsonFormatter<long?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -620,14 +530,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class FloatFormatter : IFixedSerdeJsonFormatter<float>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => NumberHelper.max_float_string_length;
 
@@ -649,8 +551,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableFloatFormatter : IFixedSerdeJsonFormatter<float?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -684,14 +584,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class DoubleFormatter : IFixedSerdeJsonFormatter<double>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => NumberHelper.max_double_string_length;
 
@@ -713,8 +605,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableDoubleFormatter : IFixedSerdeJsonFormatter<double?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -748,14 +638,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class DecimalFormatter : IFixedSerdeJsonFormatter<decimal>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => NumberHelper.max_decimal_string_length;
 
@@ -777,8 +659,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableDecimalFormatter : IFixedSerdeJsonFormatter<decimal?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -812,14 +692,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class CharFormatter : IFixedSerdeJsonFormatter<char>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 8;
 
@@ -841,8 +713,6 @@ namespace PeroTools2.Serde.Json
 
     public sealed class NullableCharFormatter : IFixedSerdeJsonFormatter<char?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -873,4 +743,5 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe char? DeserializeUtf16Unsafe(char* src, out int advance) => JsonReader.ReadNullableCharUtf16(src, out advance);
     }
+
 }

@@ -41,6 +41,10 @@ namespace PeroTools2.Serde
         /// </summary>
         public static bool TryParseDateTime(in ReadOnlySpan<byte> span, out DateTime dateTime)
         {
+            if (TryParseDefaultDateTime(span, out dateTime) || TryParseChineseDateTime(span, out dateTime))
+            {
+                return true;
+            }
             if (Utf8Parser.TryParse(span, out DateTime value, out var bytesConsumed, 'G') && bytesConsumed == span.Length)
             {
                 dateTime = value;
@@ -64,9 +68,7 @@ namespace PeroTools2.Serde
                 dateTime = value;
                 return true;
             }
-
-            // If none of the above formats work, try a custom parsing approach
-            return TryParseDefaultDateTime(span, out dateTime) || TryParseChineseDateTime(span, out dateTime);
+            return false;
         }
 
         /// <summary>
@@ -84,12 +86,11 @@ namespace PeroTools2.Serde
             var day = ParseInt(span.Slice(8, 2));
 
             int hour = 0, minute = 0, second = 0, millisecond = 0;
-            var offset = TimeSpan.Zero;
 
             // Parse time if present
             if (span.Length <= 10 || span[10] != (byte) 'T')
             {
-                dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc).Add(offset);
+                dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
                 return true;
             }
             if (span.Length < 19)
@@ -113,32 +114,8 @@ namespace PeroTools2.Serde
 
                 if (msEnd > index)
                     millisecond = ParseInt(span.Slice(index, Math.Min(3, msEnd - index)));
-
-                index = msEnd;
             }
-
-            // Parse offset if present
-            if (index < span.Length)
-            {
-                if (span[index] == (byte) '+' || span[index] == (byte) '-')
-                {
-                    var negative = span[index] == (byte) '-';
-                    if (span.Length < index + 6)
-                        throw SerdeException.ThrowInvalidParsing();
-
-                    var offsetHours = ParseInt(span.Slice(index + 1, 2));
-                    var offsetMinutes = ParseInt(span.Slice(index + 4, 2));
-                    offset = new TimeSpan(offsetHours, offsetMinutes, 0);
-                    if (negative)
-                        offset = offset.Negate();
-                }
-                else if (span[index] != (byte) 'Z')
-                {
-                    return false;
-                }
-            }
-
-            dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc).Add(offset);
+            dateTime = new DateTime(year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
             return true;
 
             static int ParseInt(ReadOnlySpan<byte> span)

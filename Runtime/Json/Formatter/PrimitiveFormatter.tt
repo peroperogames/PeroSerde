@@ -76,7 +76,7 @@ namespace PeroTools2.Serde.Json
 #>
     static partial class SerdeJsonFormatterProvider
     {
-        static partial void RegisterPrimitiveFormatters()
+        private static void RegisterPrimitiveFormatters()
         {
 <#
     foreach
@@ -105,14 +105,6 @@ namespace PeroTools2.Serde.Json
 #>
     public sealed class <#= typeName #>Formatter : IFixedSerdeJsonFormatter<<#= typeNameLower #>>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => <#= GetRequiredSize(typeName, true) #>;
 
@@ -138,8 +130,6 @@ namespace PeroTools2.Serde.Json
 #>
     public sealed class Nullable<#= typeName #>Formatter : IFixedSerdeJsonFormatter<<#= typeNameLower #>?>
     {
-        public JsonType jsonType => JsonType.Value;
-
         public bool isFixedFormatter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

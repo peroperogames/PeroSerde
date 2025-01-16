@@ -12,67 +12,73 @@ namespace PeroTools2.Serde.Generator;
 
 public sealed class ReferenceSymbols
 {
-    internal const string serde_json_namespace = "PeroTools2.Serde.Json";
-    internal const string system_collection_generic_namespace = "System.Collections.Generic";
+    private const string serde_namespace = "PeroTools2.Serde";
+    private const string serde_json_namespace = $"{serde_namespace}.Json";
+    private const string system_collection_generic_namespace = "System.Collections.Generic";
+    private const string system_namespace = "System";
+    private const string unity_engine_namespace = "UnityEngine";
 
-    internal const string i_dictionary_type_name = "IDictionary`2";
-    internal const string i_readonly_dictionary_type_name = "IReadOnlyDictionary`2";
-    internal const string i_list_type_name = "IList`1";
-    internal const string i_readonly_list_type_name = "IReadOnlyList`1";
+    private const string i_collection_type_name = "ICollection`1";
+    private const string i_readonly_collection_type_name = "IReadOnlyCollection`1";
 
-    internal const string i_dictionary_type_fullname = $"{system_collection_generic_namespace}.{i_dictionary_type_name}";
-    internal const string i_readonly_dictionary_type_fullname = $"{system_collection_generic_namespace}.{i_readonly_dictionary_type_name}";
-    internal const string i_list_type_fullname = $"{system_collection_generic_namespace}.{i_list_type_name}";
-    internal const string i_readonly_list_type_fullname = $"{system_collection_generic_namespace}.{i_readonly_list_type_name}";
+    private const string lazy_type_name = "Lazy`1";
+    private const string nuallable_type_name = "Nullable`1";
+    private const string key_value_pair_type_name = "KeyValuePair`2";
 
-    internal const string serde_json_serializable_attr_name = "SerdeJsonSerializableAttribute";
-    internal const string serde_json_member_attr_name = "SerdeJsonMemberAttribute";
-    internal const string serde_json_ignore_member_attr_name = "SerdeJsonIgnoreMemberAttribute";
-    internal const string serde_json_formatter_attr_name = "SerdeJsonFormatterAttribute";
+    private const string flags_attr_name = "FlagsAttribute";
+    private const string serde_enum_formatter_attr_name = "SerdeJsonEnumFormatterAttribute";
+    private const string serde_json_serializable_attr_name = "SerdeJsonSerializableAttribute";
+    private const string serde_json_member_attr_name = "SerdeJsonMemberAttribute";
+    private const string serde_json_ignore_member_attr_name = "SerdeJsonIgnoreMemberAttribute";
+    private const string serde_json_formatter_attr_name = "SerdeJsonFormatterAttribute";
 
-    internal const string serde_json_serializable_attr_fullname = $"{serde_json_namespace}.{serde_json_serializable_attr_name}";
-    internal const string serde_json_member_attr_fullname = $"{serde_json_namespace}.{serde_json_member_attr_name}";
-    internal const string serde_json_ignore_member_attr_fullname = $"{serde_json_namespace}.{serde_json_ignore_member_attr_name}";
-    internal const string serde_json_formatter_attr_fullname = $"{serde_json_namespace}.{serde_json_formatter_attr_name}";
+    private const string flags_attr_fullname = $"{system_namespace}.{flags_attr_name}";
+    private const string serde_enum_formatter_attr_fullname = $"{serde_json_namespace}.{serde_enum_formatter_attr_name}";
+    private const string serde_json_serializable_attr_fullname = $"{serde_json_namespace}.{serde_json_serializable_attr_name}";
+    private const string serde_json_member_attr_fullname = $"{serde_json_namespace}.{serde_json_member_attr_name}";
+    private const string serde_json_ignore_member_attr_fullname = $"{serde_json_namespace}.{serde_json_ignore_member_attr_name}";
+    private const string serde_json_formatter_attr_fullname = $"{serde_json_namespace}.{serde_json_formatter_attr_name}";
+
+    internal const string nullable_type_fullname = $"{system_namespace}.{nuallable_type_name}";
+    internal const string lazy_type_fullname = $"{system_namespace}.{lazy_type_name}";
+    internal const string key_value_pair_type_fullname = $"{system_collection_generic_namespace}.{key_value_pair_type_name}";
+    internal const string i_collection_type_fullname = $"{system_collection_generic_namespace}.{i_collection_type_name}";
+    internal const string i_readonly_collection_type_fullname = $"{system_collection_generic_namespace}.{i_readonly_collection_type_name}";
 
     private readonly Compilation m_Compilation;
-    public WellKnownTypes wellKnownTypes { get; }
 
-    // Serde Json Attributes
+    // Attributes
+    public INamedTypeSymbol flagsAttribute { get; }
+    public INamedTypeSymbol serdeEnumFormatterAttribute { get; }
     public INamedTypeSymbol serdeJsonSerializableAttribute { get; }
     public INamedTypeSymbol serdeJsonMemberAttribute { get; }
     public INamedTypeSymbol serdeJsonIgnoreMemberAttribute { get; }
     public INamedTypeSymbol serdeJsonFormatterAttribute { get; }
-    public INamedTypeSymbol iDictionaryInterface { get; }
-    public INamedTypeSymbol iReadonlyDictionaryInterface { get; }
-    public INamedTypeSymbol iListInterface { get; }
-    public INamedTypeSymbol iReadonlyListInterface { get; }
+
+    // Interfaces
+    public INamedTypeSymbol iCollectionInterface { get; }
+    public INamedTypeSymbol iReadonlyCollectionInterface { get; }
+    public INamedTypeSymbol keyValuePairType { get; }
+    public INamedTypeSymbol lazyType { get; }
+    public INamedTypeSymbol nullableType { get; }
 
     public ReferenceSymbols(Compilation compilation)
     {
         m_Compilation = compilation;
-        wellKnownTypes = new WellKnownTypes(this);
 
+        flagsAttribute = GetTypeByMetaDataName(flags_attr_fullname);
+        serdeEnumFormatterAttribute = GetTypeByMetaDataName(serde_enum_formatter_attr_fullname);
         serdeJsonSerializableAttribute = GetTypeByMetaDataName(serde_json_serializable_attr_fullname);
         serdeJsonMemberAttribute = GetTypeByMetaDataName(serde_json_member_attr_fullname);
         serdeJsonIgnoreMemberAttribute = GetTypeByMetaDataName(serde_json_ignore_member_attr_fullname);
         serdeJsonFormatterAttribute = GetTypeByMetaDataName(serde_json_formatter_attr_fullname);
-        iDictionaryInterface = GetTypeByMetaDataName(i_dictionary_type_fullname);
-        iReadonlyDictionaryInterface = GetTypeByMetaDataName(i_readonly_dictionary_type_fullname);
-        iListInterface = GetTypeByMetaDataName(i_list_type_fullname);
-        iReadonlyListInterface = GetTypeByMetaDataName(i_readonly_list_type_fullname);
+        iCollectionInterface = GetTypeByMetaDataName(i_collection_type_fullname);
+        iReadonlyCollectionInterface = GetTypeByMetaDataName(i_readonly_collection_type_fullname);
+        lazyType = GetTypeByMetaDataName(lazy_type_fullname);
+        nullableType = GetTypeByMetaDataName(nullable_type_fullname);
+        keyValuePairType = GetTypeByMetaDataName(key_value_pair_type_fullname);
     }
 
     public INamedTypeSymbol GetTypeByMetaDataName(string metaDataName)
         => m_Compilation.GetTypeByMetadataName(metaDataName) ?? throw new InvalidOperationException($"Type {metaDataName} is not found in compilation.");
-}
-
-public sealed class WellKnownTypes
-{
-    private readonly ReferenceSymbols m_Parent;
-
-    public WellKnownTypes(ReferenceSymbols parent)
-    {
-        m_Parent = parent;
-    }
 }

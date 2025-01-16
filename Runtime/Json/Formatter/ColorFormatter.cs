@@ -21,14 +21,6 @@ namespace PeroTools2.Serde.Json
     /// </example>
     public sealed class ColorFormatter : ISerdeJsonFormatter<Color>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => false;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SerializeUtf8(Color value, ref JsonWriterUtf8 writer)
         {
@@ -202,17 +194,12 @@ namespace PeroTools2.Serde.Json
     /// "#7F7F7F7F"
     /// </code>
     /// </example>
-    public sealed unsafe class HexColorFormatter : ISerdeJsonFormatter<Color>
+    public sealed unsafe class HexColorFormatter : IFixedSerdeJsonFormatter<Color>
     {
-        public JsonType jsonType => JsonType.Value;
-
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() => 11; // 9 + 2
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf16() => 11; // 9 + 2
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,0 +1,107 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+(string type, string ctor)[] builtinTypes =
+[
+    ("BoolType", "true"),
+    ("CharType", "'\\ufff0'"),
+    ("ByteType", "10"),
+    ("SbyteType", "10"),
+    ("ShortType", "10"),
+    ("UshortType", "10"),
+    ("IntType", "10"),
+    ("UintType", "10"),
+    ("LongType", "10"),
+    ("UlongType", "10"),
+    ("FloatType", "10.4f"),
+    ("DoubleType", "10.4d"),
+    ("DecimalType", "13/2"),
+    ("NullableBoolType", "null"),
+    ("NuallableCharType", "null"),
+    ("NuallableByteType", "null"),
+    ("NuallableSbyteType", "null"),
+    ("NuallableShortType", "null"),
+    ("NuallableUshortType", "null"),
+    ("NuallableIntType", "null"),
+    ("NuallableUintType", "null"),
+    ("NuallableLongType", "null"),
+    ("NuallableUlongType", "null"),
+    ("NuallableFloatType", "null"),
+    ("NuallableDoubleType", "null"),
+    ("NuallableDecimalType", "null"),
+    ("StringType", "\"String\""),
+    ("DateTimeType", "DateTime.Now"),
+    ("UnixMillisecondDateTimeType", "DateTime.Now"),
+    ("UnixSecondDateTimeType", "DateTime.Now"),
+    ("Vector2Type", "new Vector2(0.5f, 0.5f)"),
+    ("Vector3Type", "new Vector3(0.5f, 0.5f, 0.5f)"),
+    ("Vector4Type", "new Vector4(0.5f, 0.5f, 0.5f, 0.5f)"),
+    ("ColorType", "new Color(0.5f, 0.5f, 0.5f, 0.5f)"),
+    ("HexColorType", "new Color(0.5f, 0.5f, 0.5f, 0.5f)"),
+    ("GuidType", "Guid.NewGuid()"),
+    ("ListNumberType", "new List<int> { 1, 2, 3, 4, 5 }"),
+    ("ListObjectType", "new List<BoolType> { new BoolType(true), new BoolType(false) }"),
+    ("DictionaryNumberType", "new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} }"),
+    ("DictionaryStringType", "new Dictionary<string, BoolType> { {\"True\", new BoolType(true)}, {\"False\", new BoolType(false)} }"),
+    ("NumberEnumType", "NumberEnum.BEnum"),
+    ("StringEnumType", "StringEnum.BEnum"),
+    ("StringNumberEnumType", "StringNumberEnum.BEnum"),
+    ("NumberStringEnumType", "NumberStringEnum.BEnum"),
+    ("NumberFlagsType", "NumberFlags.BFlag | NumberFlags.CFlag"),
+    ("StringFlagsType", "StringFlags.BFlag | StringFlags.CFlag"),
+    ("LazyType", "new Lazy<string>(\"LazyString\")"),
+    ("NullableType", "new BoolType(true)")
+];
+#>
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2024/12/25
+ */
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using NUnit.Framework;
+using PeroTools2.Serde.Editor.Tests;
+
+namespace PeroTools2.Serde.Json.Editor.Tests
+{
+    public sealed class BuiltinFormattersTests
+    {
+<#
+    for (var i = 0; i < builtinTypes.Length; i++)
+    {
+        var type = builtinTypes[i].type;
+        var ctor = builtinTypes[i].ctor;
+#>
+
+         [TestCase(Encoding.UTF8)]
+         [TestCase(Encoding.UTF16)]
+         public void <#= type.Replace("Type","") #>SerializeTest(Encoding encoding)
+         {
+             var obj = new <#= type #>(<#= ctor #>);
+             var json = encoding == Encoding.UTF8
+                 ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                 : JsonConverter.UTF16.Serialize(obj);
+             Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<<#= type #>>(json));
+         }
+
+         [TestCase(Encoding.UTF8)]
+         [TestCase(Encoding.UTF16)]
+         public void <#= type.Replace("Type", "") #>DeserializeTest(Encoding encoding)
+         {
+             var obj = new <#= type #>(<#= ctor #>);
+             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+
+             var newObj = encoding == Encoding.UTF8
+                 ? JsonConverter.UTF8.Deserialize<<#= type #>>(System.Text.Encoding.UTF8.GetBytes(json))
+                 : JsonConverter.UTF16.Deserialize<<#= type #>>(json);
+             Assert.AreEqual(obj, newObj);
+         }
+<#
+    }
+#>
+    }
+}

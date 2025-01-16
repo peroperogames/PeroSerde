@@ -14,9 +14,7 @@ namespace PeroTools2.Serde
     {
         public static readonly ReferenceEqualityComparer shared = new();
 
-        private ReferenceEqualityComparer()
-        {
-        }
+        private ReferenceEqualityComparer() { }
 
         public new bool Equals(object x, object y)
             => ReferenceEquals(x, y);

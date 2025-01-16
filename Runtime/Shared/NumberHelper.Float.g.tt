@@ -25,8 +25,7 @@ namespace PeroTools2.Serde
             // TODO 特殊值的处理？需要提供几种方式
             if (IsSpecialValue(value))
             {
-                SerdeException.ThrowInvalidFloatPoint();
-                return default;
+                throw SerdeException.ThrowInvalidFloatPoint();
             }
             var start = dest;
             // 按需写入负号
@@ -77,7 +76,7 @@ namespace PeroTools2.Serde
             // 写入数字
             if (lengthOfFractional == 0) // 没有小数位的情况, 直接按照整数写入.
             {
-                var <#= charType #>sWritten = To<#= utf #>String(mantissa, dest);
+                var <#= charType #>sWritten = To<#= utf #>StringUnsafe(mantissa, dest);
                 if (<#= charType #>sWritten > lengthOfInteger && exponent != 0)
                 {
                     exponent += 1;

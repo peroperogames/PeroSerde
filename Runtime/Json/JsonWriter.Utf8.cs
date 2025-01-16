@@ -15,24 +15,34 @@ namespace PeroTools2.Serde.Json
     {
         #region Write String
 
-        public static int WriteStringUtf8(byte* dest, string value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int WriteRawUtf8(byte* dest, ReadOnlySpan<byte> src)
+        {
+            fixed (byte* srcPtr = src)
+            {
+                Unsafe.CopyBlockUnaligned(dest, srcPtr, (uint) src.Length);
+            }
+            return src.Length;
+        }
+
+        public static int WriteStringUtf8(byte* dest, ReadOnlySpan<char> value)
         {
             if (value == null)
                 return WriteNullUtf8(dest);
             var start = dest;
             dest += WriteDoubleQuoteUtf8(dest);
-            dest += WriteStringValueUtf8(value.AsSpan(), dest);
+            dest += WriteStringValueUtf8(value, dest);
             dest += WriteDoubleQuoteUtf8(dest);
             return (int) (dest - start);
         }
 
-        public static int WriteStringNoEscapeUtf8(byte* dest, string value)
+        public static int WriteStringNoEscapeUtf8(byte* dest, ReadOnlySpan<char> value)
         {
             if (value == null)
                 return WriteNullUtf8(dest);
             var start = dest;
             dest += WriteDoubleQuoteUtf8(dest);
-            dest += WriteStringValueNoEscapeUtf8(value.AsSpan(), dest);
+            dest += WriteStringValueNoEscapeUtf8(value, dest);
             dest += WriteDoubleQuoteUtf8(dest);
             return (int) (dest - start);
         }

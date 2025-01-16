@@ -10,13 +10,15 @@ using System.Runtime.InteropServices;
 
 namespace PeroTools2.Serde
 {
+    /// <summary>
+    /// Guid 位信息
+    /// </summary>
     [StructLayout(LayoutKind.Explicit)]
     public readonly struct GuidBits
     {
         [FieldOffset(0)]
         public readonly Guid value;
 
-        // int _a
         [FieldOffset(0)]
         public readonly byte a4;
 

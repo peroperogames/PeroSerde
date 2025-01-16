@@ -10,8 +10,11 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
-    public static class TypeHelper
+    internal static class TypeHelper
     {
+        /// <summary>
+        /// 判断是否是匿名类型
+        /// </summary>
         public static bool IsAnonymous(Type type) =>
             type.Namespace == null
             && type.IsSealed

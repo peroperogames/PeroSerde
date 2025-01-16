@@ -49,7 +49,7 @@ namespace PeroTools2.Serde.Json
             throw SerdeException.ThrowInvalidAdvance();
         }
 
-        internal static ReadOnlySpan<char> ReadValueUntilEndUtf16(char* src, int maxLength, out int advance)
+        public static ReadOnlySpan<char> ReadValueUntilEndUtf16(char* src, int maxLength, out int advance)
         {
             var span = new ReadOnlySpan<char>(src, maxLength);
             if (span[0] != '"')
@@ -73,91 +73,91 @@ namespace PeroTools2.Serde.Json
         #region ReadNullable
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static sbyte? ReadNullableSbyteUtf16(char* src, out int advance)
+        public static sbyte? ReadNullableSbyteUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 5, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToSbyte(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static byte? ReadNullableByteUtf16(char* src, out int advance)
+        public static byte? ReadNullableByteUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 4, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToByte(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static decimal? ReadNullableDecimalUtf16(char* src, out int advance)
+        public static decimal? ReadNullableDecimalUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_decimal_string_length, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToDecimal(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static double? ReadNullableDoubleUtf16(char* src, out int advance)
+        public static double? ReadNullableDoubleUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_double_string_length, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToDouble(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static float? ReadNullableFloatUtf16(char* src, out int advance)
+        public static float? ReadNullableFloatUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_float_string_length, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToFloat(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static short? ReadNullableShortUtf16(char* src, out int advance)
+        public static short? ReadNullableShortUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 6, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToShort(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int? ReadNullableIntUtf16(char* src, out int advance)
+        public static int? ReadNullableIntUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 11, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToInt(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long? ReadNullableLongUtf16(char* src, out int advance)
+        public static long? ReadNullableLongUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_int64_numbers_length, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToLong(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ushort? ReadNullableUshortUtf16(char* src, out int advance)
+        public static ushort? ReadNullableUshortUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 6, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToUshort(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint? ReadNullableUintUtf16(char* src, out int advance)
+        public static uint? ReadNullableUintUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 10, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToUint(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ulong? ReadNullableUlongUtf16(char* src, out int advance)
+        public static ulong? ReadNullableUlongUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_uint64_numbers_length, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToUlong(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static char? ReadNullableCharUtf16(char* src, out int advance)
+        public static char? ReadNullableCharUtf16(char* src, out int advance)
         {
             var span = ReadValueUntilEndUtf16(src, 8, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToChar(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool? ReadNullableBoolUtf16(char* src, out int advance)
+        public static bool? ReadNullableBoolUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 5, out advance);
             return SpanConverter.IsNull(span) ? null : SpanConverter.ToBool(in span);
@@ -168,91 +168,91 @@ namespace PeroTools2.Serde.Json
         #region Read Primitive
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static byte ReadByteUtf16(char* src, out int advance)
+        public static byte ReadByteUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 3, out advance);
             return SpanConverter.ToByte(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static sbyte ReadSbyteUtf16(char* src, out int advance)
+        public static sbyte ReadSbyteUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 4, out advance);
             return SpanConverter.ToSbyte(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static decimal ReadDecimalUtf16(char* src, out int advance)
+        public static decimal ReadDecimalUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_decimal_string_length, out advance);
             return SpanConverter.ToDecimal(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static double ReadDoubleUtf16(char* src, out int advance)
+        public static double ReadDoubleUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_double_string_length, out advance);
             return SpanConverter.ToDouble(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static float ReadFloatUtf16(char* src, out int advance)
+        public static float ReadFloatUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_float_string_length, out advance);
             return SpanConverter.ToFloat(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool ReadBoolUtf16(char* src, out int advance)
+        public static bool ReadBoolUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 5, out advance);
             return SpanConverter.ToBool(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static char ReadCharUtf16(char* src, out int advance)
+        public static char ReadCharUtf16(char* src, out int advance)
         {
             var span = ReadValueUntilEndUtf16(src, 8, out advance);
             return SpanConverter.ToChar(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static short ReadShortUtf16(char* src, out int advance)
+        public static short ReadShortUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 6, out advance);
             return SpanConverter.ToShort(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int ReadIntUtf16(char* src, out int advance)
+        public static int ReadIntUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 11, out advance);
             return SpanConverter.ToInt(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long ReadLongUtf16(char* src, out int advance)
+        public static long ReadLongUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_int64_numbers_length, out advance);
             return SpanConverter.ToLong(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ushort ReadUshortUtf16(char* src, out int advance)
+        public static ushort ReadUshortUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 5, out advance);
             return SpanConverter.ToUshort(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint ReadUintUtf16(char* src, out int advance)
+        public static uint ReadUintUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, 10, out advance);
             return SpanConverter.ToUint(in span);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ulong ReadUlongUtf16(char* src, out int advance)
+        public static ulong ReadUlongUtf16(char* src, out int advance)
         {
             var span = ReadNotStringUntilEndUtf16(src, NumberHelper.max_uint64_numbers_length, out advance);
             return SpanConverter.ToUlong(in span);

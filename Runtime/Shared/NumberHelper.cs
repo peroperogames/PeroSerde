@@ -9,6 +9,9 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
+    /// <summary>
+    /// 数字帮助类
+    /// </summary>
     internal static partial class NumberHelper
     {
         /// <summary>float值格式化为字符串后的最大长度</summary>
@@ -26,10 +29,10 @@ namespace PeroTools2.Serde
         /// <summary>ulong值格式化为字符串后的最大长度</summary>
         internal const int max_uint64_numbers_length = 20; // -9223372036854775808 到 9223372036854775807
 
-        internal const char positive_sign = '+';
-        internal const char negative_sign = '-';
-        internal const char dot_sign = '.';
-        internal const char exponent_sign = 'E';
+        private const char positive_sign = '+';
+        private const char negative_sign = '-';
+        private const char dot_sign = '.';
+        private const char exponent_sign = 'E';
 
         static NumberHelper()
         {

@@ -10,6 +10,10 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
+    /// <summary>
+    /// List 对象池
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal sealed class ListPool<T>
     {
         public static readonly ListPool<T> shared = new();
@@ -20,22 +24,6 @@ namespace PeroTools2.Serde
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(List<T> collection)
-        {
-            collection.Clear();
-            s_Queue.Enqueue(collection);
-        }
-    }
-
-    internal sealed class StackPool<T>
-    {
-        public static readonly StackPool<T> shared = new();
-        private static readonly ConcurrentQueue<Stack<T>> s_Queue = new();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Stack<T> Rent() => s_Queue.TryDequeue(out var collection) ? collection : new Stack<T>();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return(Stack<T> collection)
         {
             collection.Clear();
             s_Queue.Enqueue(collection);
