@@ -13,6 +13,17 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     {
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
+        public void MissingMemberDeserializeTest(Encoding encoding)
+        {
+            const string json = "{ \"a\":\"A1\"} ";
+            var obj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<JsonObject>(json);
+            Assert.IsNull(obj.b);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
         public void WriteSpaceStyleDeserializeArrayTest(Encoding encoding)
         {
             const string json = " [ { \"a\" : \"A1 \" , \"b\" : \" B1\" } , { \"a\" : \"A2 \" , \"b\" : \" B2\" } ] ";
@@ -44,7 +55,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     [SerdeJsonSerializable]
     public partial class JsonObject
     {
-        public string a { get; set; }
-        public string b { get; set; }
+        public string a { get; private set; }
+        public string b { get; private set; }
     }
 }

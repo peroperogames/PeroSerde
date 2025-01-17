@@ -120,6 +120,6 @@ public struct MemberMeta
     public string name;
     public BuiltinKind kind;
     public string formatName;
-    public ITypeSymbol formatter;
+    public ITypeSymbol? formatter;
     public bool useFormatter => formatter != null || kind != BuiltinKind.Value;
 }

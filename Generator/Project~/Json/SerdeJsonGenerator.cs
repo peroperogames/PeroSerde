@@ -38,10 +38,17 @@ public partial class SerdeJsonGenerator : ISourceGenerator
 
         foreach (var typeSyntax in receiver.typeDeclarations)
         {
-            var semanticModel = context.Compilation.GetSemanticModel(typeSyntax.SyntaxTree);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeSyntax, context.CancellationToken) as ITypeSymbol;
-            if (typeSymbol == null) continue;
-            m_TypeSymbols.Add(typeSymbol, typeSymbol.Locations[0]);
+            try
+            {
+                var semanticModel = context.Compilation.GetSemanticModel(typeSyntax.SyntaxTree);
+                var typeSymbol = semanticModel.GetDeclaredSymbol(typeSyntax, context.CancellationToken) as ITypeSymbol;
+                if (typeSymbol == null) continue;
+                m_TypeSymbols.Add(typeSymbol, typeSymbol.Locations[0]);
+            }
+            catch (Exception e)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.CreateErrorDescriptor(e), typeSyntax.GetLocation()));
+            }
         }
 
         foreach (var typeSymbol in m_TypeSymbols)

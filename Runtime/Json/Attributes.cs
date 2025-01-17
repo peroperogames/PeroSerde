@@ -19,7 +19,10 @@ namespace PeroTools2.Serde.Json
         AttributeTargets.Enum,
         Inherited = false
     )]
-    public sealed class SerdeJsonSerializableAttribute : Attribute { }
+    public sealed class SerdeJsonSerializableAttribute : Attribute
+    {
+        public SerdeJsonSerializableAttribute(bool ignoreMissingMembers = true) { }
+    }
 
     /// <summary>
     /// 为 Serde 指示在 JSON 序列化和反序列化时使用哪个名称

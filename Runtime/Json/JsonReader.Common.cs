@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace PeroTools2.Serde.Json
 {
@@ -173,7 +174,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ReadWhiteSpace()
+        public void ReadWhiteSpace()
         {
             for (var i = m_Advanced; i < m_Json.Length; i++)
             {
@@ -202,6 +203,24 @@ namespace PeroTools2.Serde.Json
         public void ReadComma() => ReadChar(',');
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadBeginObject() => TryReadChar('{');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadEndObject() => TryReadChar('}');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadBeginArray() => TryReadChar('[');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadEndArray() => TryReadChar(']');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadKeyBegin() => TryReadChar(':');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadComma() => TryReadChar(',');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> ReadKey()
         {
             ReadWhiteSpace();
@@ -210,6 +229,22 @@ namespace PeroTools2.Serde.Json
             ReadKeyBegin();
             ReadWhiteSpace();
             return key;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadKey(out ReadOnlySpan<byte> key)
+        {
+            ReadWhiteSpace();
+            if (remains[0] != (byte) '"')
+            {
+                key = default;
+                return false;
+            }
+            key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return true;
         }
 
         private ReadOnlySpan<byte> ReadString()
@@ -244,6 +279,27 @@ namespace PeroTools2.Serde.Json
                 throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
             Advance(index + 1);
+        }
+
+        /// <summary>
+        /// 持续读取字符，直到遇到第一个目标字符
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadChar(char c)
+        {
+            var length = m_Json.Length - m_Advanced;
+            var span = m_Json.Slice(m_Advanced, length);
+            for (var i = 0; i < span.Length; i++)
+            {
+                if (StringHelper.IsWhiteSpace(span[i])) continue;
+                if (span[i] == (byte) c)
+                {
+                    Advance(i + 1);
+                    return true;
+                }
+                return false;
+            }
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -422,7 +478,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ReadWhiteSpace()
+        public void ReadWhiteSpace()
         {
             for (var i = m_Advanced; i < m_Json.Length; i++)
             {
@@ -451,6 +507,24 @@ namespace PeroTools2.Serde.Json
         public void ReadComma() => ReadChar(',');
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadBeginObject() => TryReadChar('{');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadEndObject() => TryReadChar('}');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadBeginArray() => TryReadChar('[');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadEndArray() => TryReadChar(']');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadKeyBegin() => TryReadChar(':');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadComma() => TryReadChar(',');
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<char> ReadKey()
         {
             ReadWhiteSpace();
@@ -459,6 +533,24 @@ namespace PeroTools2.Serde.Json
             ReadKeyBegin();
             ReadWhiteSpace();
             return key;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryReadKey(out ReadOnlySpan<char> key)
+        {
+            ReadWhiteSpace();
+            if (remains[0] != '"')
+            {
+                var r = remains;
+                Debug.Log(r[0]);
+                key = default;
+                return false;
+            }
+            key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return true;
         }
 
         private ReadOnlySpan<char> ReadString()
@@ -493,6 +585,27 @@ namespace PeroTools2.Serde.Json
                 throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
             Advance(index + 1);
+        }
+
+        /// <summary>
+        /// 持续读取字符，直到遇到第一个目标字符
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadChar(char c)
+        {
+            var length = m_Json.Length - m_Advanced;
+            var span = m_Json.Slice(m_Advanced, length);
+            for (var i = 0; i < span.Length; i++)
+            {
+                if (StringHelper.IsWhiteSpace(span[i])) continue;
+                if (span[i] == c)
+                {
+                    Advance(i + 1);
+                    return true;
+                }
+                return false;
+            }
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
