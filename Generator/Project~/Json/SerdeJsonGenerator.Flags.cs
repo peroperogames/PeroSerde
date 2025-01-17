@@ -23,7 +23,7 @@ public partial class SerdeJsonGenerator
         if (type.TryGetAttribute(m_ReferenceSymbols.serdeEnumFormatterAttribute, out var attr))
         {
             var serializationFormat = (int) attr!.ConstructorArguments[0].Value!;
-            var deserializationFormat = (int) attr!.ConstructorArguments[1].Value!;
+            var deserializationFormat = (int) attr.ConstructorArguments[1].Value!;
             // 非自定义的 Number 格式化器
             if (serializationFormat == 1 && deserializationFormat == 1)
             {

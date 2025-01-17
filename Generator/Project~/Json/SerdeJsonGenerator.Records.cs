@@ -52,7 +52,6 @@ public partial class SerdeJsonGenerator
                 && member.type is INamedTypeSymbol colType
                 && colType.TryGetCollectionElementType(out var elementType))
             {
-                // if (m_TypeSymbols.ContainsKey(colType))
                 if (m_TypeSymbols.Any(kv => SymbolEqualityComparer.Default.Equals(kv.Key, elementType)))
                 {
                     formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
