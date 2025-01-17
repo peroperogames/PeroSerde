@@ -149,7 +149,16 @@ public partial class SerdeJsonGenerator
                 var readComma = (index == members.Length - 1).ToString().ToLower();
                 var memberTypeName = member.type.ToDisplayString();
                 var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
-                deserializerBuilder.AppendLine("            if (reader.TryReadKey(out key))");
+                deserializerBuilder.AppendLine($$"""
+                                                           if (reader.TryReadKey(out key))
+                                                               OnReadKey(ref key, ref obj, ref reader, {{readComma}});
+                                                           else
+                                                           {
+                                                               reader.ReadEndObject();
+                                                               return obj;
+                                                           }
+                                               
+                                               """);
                 deserializerBuilder.AppendLine($"                OnReadKey(ref key, ref obj, ref reader, {readComma});");
                 utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
                 utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
