@@ -6,18 +6,20 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
-    /// Vector2  Json 格式化器
+    /// Vector2 Json 格式化器
     /// </summary>
     /// <example>
     /// <code>
     /// "(12.1,32.45)"// 不带空格
     /// </code>
     /// </example>
+    [PublicAPI]
     public sealed class Vector2Formatter : ISerdeJsonFormatter<Vector2>
     {
         public void SerializeUtf8(Vector2 value, ref JsonWriterUtf8 writer)
@@ -139,13 +141,14 @@ namespace PeroTools2.Serde.Json
     }
 
     /// <summary>
-    /// Vector3  Json 格式化器
+    /// Vector3 Json 格式化器
     /// </summary>
     /// <example>
     /// <code>
     /// "(12.1,32.45,0.5)"// 不带空格
     /// </code>
     /// </example>
+    [PublicAPI]
     public sealed class Vector3Formatter : ISerdeJsonFormatter<Vector3>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -290,13 +293,14 @@ namespace PeroTools2.Serde.Json
     }
 
     /// <summary>
-    /// Vector4  Json 格式化器
+    /// Vector4 Json 格式化器
     /// </summary>
     /// <example>
     /// <code>
     /// "(12.1,32.45,0.5,1.23)"// 不带空格
     /// </code>
     /// </example>
+    [PublicAPI]
     public sealed class Vector4Formatter : ISerdeJsonFormatter<Vector4>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

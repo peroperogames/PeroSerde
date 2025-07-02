@@ -1,9 +1,25 @@
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2025/07/02-18:14:05
+ */
+
 using System;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PeroTools2.Serde.Json
 {
+    /// <summary>
+    /// Quaternion Json 格式化器
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// "(12.1,32.45)"// 不带空格
+    /// </code>
+    /// </example>
+    [PublicAPI]
     public sealed class QuaternionFormatter : ISerdeJsonFormatter<Quaternion>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

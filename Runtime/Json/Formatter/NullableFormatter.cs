@@ -7,12 +7,14 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// 可空类型格式化器
     /// </summary>
+    [PublicAPI]
     public sealed class NullableFormatter<T> : ISerdeJsonFormatter<T?> where T : struct
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

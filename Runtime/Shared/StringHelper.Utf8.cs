@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde
 {
@@ -13,6 +14,7 @@ namespace PeroTools2.Serde
     /// 4. 直接使用指针操作
     /// 5. 能缓存尽量缓存
     /// </remarks>
+    [PublicAPI]
     public static unsafe partial class StringHelper
     {
         #region Trim

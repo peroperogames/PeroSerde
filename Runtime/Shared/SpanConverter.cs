@@ -8,12 +8,14 @@ using System;
 using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde
 {
     /// <summary>
     /// UTF8/UTF16 基本类型转换器
     /// </summary>
+    [PublicAPI]
     public static class SpanConverter
     {
         #region Null

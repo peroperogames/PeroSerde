@@ -5,9 +5,9 @@
  */
 
 using System;
-using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
@@ -68,6 +68,7 @@ namespace PeroTools2.Serde.Json
     /// Primitive 的编码格式化器
     /// </summary>
     /// <typeparam name="T">格式化对象类型，仅支持 Primitive 类型</typeparam>
+    [PublicAPI]
     public abstract class EncodingJsonFormatter<T> : ISerdeJsonFormatter<T>
     {
         static EncodingJsonFormatter()
@@ -123,6 +124,7 @@ namespace PeroTools2.Serde.Json
     /// Primitive Json 格式化器
     /// </summary>
     /// <typeparam name="T">格式化对象类型，仅支持 Primitive 类型</typeparam>
+    [PublicAPI]
     public abstract class PrimitiveJsonFormatter<T> : ISerdeJsonFormatter<T>
     {
         static PrimitiveJsonFormatter()

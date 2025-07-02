@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
@@ -16,6 +17,7 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     /// <typeparam name="TKey">Key 类型</typeparam>
     /// <typeparam name="TValue">Value 类型</typeparam>
+    [PublicAPI]
     public sealed class KeyValuePairFormatter<TKey, TValue> : ISerdeJsonFormatter<KeyValuePair<TKey, TValue>>
     {
         private static readonly EncodingJsonFormatter<TKey> s_KeyEncodingJsonFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as EncodingJsonFormatter<TKey>;

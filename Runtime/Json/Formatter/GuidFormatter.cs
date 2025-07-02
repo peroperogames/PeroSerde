@@ -8,12 +8,14 @@ using System;
 using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// Guid 的格式化器
     /// </summary>
+    [PublicAPI]
     public sealed class GuidFormatter : IFixedSerdeJsonFormatter<Guid>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

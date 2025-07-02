@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde
 {
@@ -14,7 +15,7 @@ namespace PeroTools2.Serde
     /// Guid 位信息
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    public readonly struct GuidBits
+    internal readonly struct GuidBits
     {
         [FieldOffset(0)]
         public readonly Guid value;

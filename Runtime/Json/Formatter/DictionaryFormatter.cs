@@ -1,5 +1,12 @@
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2024/12/23
+ */
+
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
@@ -8,7 +15,8 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     /// <typeparam name="TKey">键类型</typeparam>
     /// <typeparam name="TValue">值类型</typeparam>
-    public class DictionaryFormatter<TKey, TValue> : DictionaryFormatter<Dictionary<TKey, TValue>, TKey, TValue> { }
+    [PublicAPI]
+    public sealed class DictionaryFormatter<TKey, TValue> : DictionaryFormatter<Dictionary<TKey, TValue>, TKey, TValue> { }
 
     /// <summary>
     /// Newtonsoft.Json 风格的 Dictionary 格式化器

@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using PeroTools2.Serde.Json;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace PeroTools2.Serde
     /// <summary>
     /// Json 序列化器/反序列化器
     /// </summary>
+    [PublicAPI]
     public static class JsonConverter
     {
         /// <summary>

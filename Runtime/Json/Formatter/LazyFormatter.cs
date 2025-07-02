@@ -6,12 +6,14 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// 懒类型格式化器
     /// </summary>
+    [PublicAPI]
     public sealed class LazyFormatter<T> : ISerdeJsonFormatter<Lazy<T>>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

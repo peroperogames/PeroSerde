@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
-    static partial class NumberHelper
+    internal static partial class NumberHelper
     {
         // 1, 10, 100, 1000, 1e4, 1e5, 1e6,... 1e308
         private static double[] s_PositiveExponents;

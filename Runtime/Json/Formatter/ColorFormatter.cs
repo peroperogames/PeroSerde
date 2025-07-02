@@ -7,6 +7,7 @@
 using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PeroTools2.Serde.Json
@@ -19,6 +20,7 @@ namespace PeroTools2.Serde.Json
     /// "(0.5,0.25,0.75,1.0)"// 不带空格
     /// </code>
     /// </example>
+    [PublicAPI]
     public sealed class ColorFormatter : ISerdeJsonFormatter<Color>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

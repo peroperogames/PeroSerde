@@ -7,7 +7,7 @@
 
 namespace PeroTools2.Serde
 {
-    static partial class NumberHelper
+    internal static partial class NumberHelper
     {
         /*
          * 以下这些方法在Mono + .NetStandard2.1下比value.TryFormat快3-5倍,

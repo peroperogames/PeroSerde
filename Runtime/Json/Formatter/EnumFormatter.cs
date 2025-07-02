@@ -136,12 +136,6 @@ namespace PeroTools2.Serde.Json
     /// <typeparam name="T">枚举类型</typeparam>
     public class EnumNumberFormatter<T> : IFixedSerdeJsonFormatter<T> where T : unmanaged, Enum
     {
-        public bool isFixedFormatter
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => true;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetMaxRequiredSizeUtf8() =>
             Unsafe.SizeOf<T>() switch

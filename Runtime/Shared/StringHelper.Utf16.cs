@@ -7,6 +7,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde
 {

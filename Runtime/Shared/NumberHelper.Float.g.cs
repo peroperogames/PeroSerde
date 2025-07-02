@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
-    static partial class NumberHelper {
+    internal static partial class NumberHelper {
         /// <summary>将一个float值格式化为utf16字符串.</summary>
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_float_string_length"/>个字节

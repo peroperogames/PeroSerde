@@ -6,12 +6,14 @@
  */
 
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// Json 格式化器的全局缓存
     /// </summary>
+    [PublicAPI]
     public static partial class SerdeJsonFormatterProvider
     {
         static SerdeJsonFormatterProvider()

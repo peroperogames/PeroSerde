@@ -5,14 +5,15 @@
  */
 
 using System;
-using System.Globalization;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// DateTime 格式化器
     /// </summary>
+    [PublicAPI]
     public sealed class DateTimeFormatter : ISerdeJsonFormatter<DateTime>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
