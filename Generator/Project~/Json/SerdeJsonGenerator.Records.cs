@@ -149,8 +149,16 @@ public partial class SerdeJsonGenerator
                 var readComma = (index == members.Length - 1).ToString().ToLower();
                 var memberTypeName = member.type.ToDisplayString();
                 var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
-                deserializerBuilder.AppendLine("            if (reader.TryReadKey(out key))");
-                deserializerBuilder.AppendLine($"                OnReadKey(ref key, ref obj, ref reader, {readComma});");
+                deserializerBuilder.AppendLine($$"""
+                                                           if (reader.TryReadKey(out key))
+                                                               OnReadKey(ref key, ref obj, ref reader, {{readComma}});
+                                                           else
+                                                           {
+                                                               reader.ReadEndObject();
+                                                               return obj;
+                                                           }
+                                               
+                                               """);
                 utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
                 utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
                 var memberReadStr = $$"""
@@ -183,8 +191,8 @@ public partial class SerdeJsonGenerator
 
         deserializerBuilder.AppendLine("            reader.ReadEndObject();");
         deserializerBuilder.Append("            return obj;");
-        utf8Builder.Remove(utf8Builder.Length - 1, 1);
-        utf16Builder.Remove(utf16Builder.Length - 1, 1);
+        if(utf8Builder.Length > 0) utf8Builder.Remove(utf8Builder.Length - 1, 1);
+        if(utf16Builder.Length > 0) utf16Builder.Remove(utf16Builder.Length - 1, 1);
 
         // 生成分部序列化器
         return $$"""

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -18,6 +19,7 @@ public partial class SerdeJsonGenerator : ISourceGenerator
 {
     private ReferenceSymbols m_ReferenceSymbols;
     private readonly Dictionary<ITypeSymbol, Location> m_TypeSymbols = new(SymbolEqualityComparer.Default);
+    private readonly List<(DiagnosticDescriptor descriptor, Location location)> diagnostics = new();
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -30,10 +32,7 @@ public partial class SerdeJsonGenerator : ISourceGenerator
         {
             return;
         }
-        foreach (var diagnostic in receiver.diagnostics)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(diagnostic.descriptor, diagnostic.location));
-        }
+
         m_ReferenceSymbols = new ReferenceSymbols(context.Compilation);
 
         foreach (var typeSyntax in receiver.typeDeclarations)
@@ -55,7 +54,14 @@ public partial class SerdeJsonGenerator : ISourceGenerator
         {
             try
             {
-                Generate(ref context, typeSymbol.Key);
+                if (!TryGetDiagnostic(typeSymbol.Key, out var descriptor))
+                {
+                    Generate(ref context, typeSymbol.Key);
+                }
+                else
+                {
+                    context.ReportDiagnostic(descriptor!);
+                }
             }
             catch (Exception e)
             {
@@ -64,10 +70,25 @@ public partial class SerdeJsonGenerator : ISourceGenerator
         }
     }
 
+    private static bool TryGetDiagnostic(ITypeSymbol typeSymbol, out Diagnostic? diagnostic)
+    {
+        diagnostic = null;
+        if (!typeSymbol.IsValueType && typeSymbol.GetMembers().FirstOrDefault(static m => m.Name == ".ctor") is not IMethodSymbol { DeclaredAccessibility: Accessibility.Public, Parameters.Length: 0 })
+            diagnostic = Diagnostic.Create(DiagnosticDescriptors.needEmptyCtor, typeSymbol.Locations[0], typeSymbol.ToDisplayString());
+        else if (typeSymbol.IsAbstract || typeSymbol.TypeKind == TypeKind.Interface)
+            diagnostic = Diagnostic.Create(DiagnosticDescriptors.abstractClassOrInterfaceNotAllow, typeSymbol.Locations[0], typeSymbol.ToDisplayString());
+        else if (typeSymbol.IsRefLikeType)
+            diagnostic = Diagnostic.Create(DiagnosticDescriptors.refStructNotAllow, typeSymbol.Locations[0], typeSymbol.ToDisplayString());
+        else if (typeSymbol.IsStatic)
+            diagnostic = Diagnostic.Create(DiagnosticDescriptors.staticClassNotAllow, typeSymbol.Locations[0], typeSymbol.ToDisplayString());
+        else if (typeSymbol.ContainingType != null)
+            diagnostic = Diagnostic.Create(DiagnosticDescriptors.nestedNotAllow, typeSymbol.Locations[0], typeSymbol.ToDisplayString());
+        return diagnostic != null;
+    }
+
     private sealed class SyntaxContentReceiver : ISyntaxContextReceiver
     {
         public HashSet<BaseTypeDeclarationSyntax> typeDeclarations { get; } = [];
-        public List<(DiagnosticDescriptor descriptor, Location location)> diagnostics { get; } = [];
 
         public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
         {

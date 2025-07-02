@@ -17,65 +17,65 @@ internal static class DiagnosticDescriptors
     /// <summary>
     /// 生成器异常.
     /// </summary>
-    public static DiagnosticDescriptor CreateErrorDescriptor(Exception exception) => new DiagnosticDescriptor(
-        id: "SERDE000",
-        title: "Generate error.",
-        messageFormat: exception.ToString(),
-        category: DiagnosticDescriptors.category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+    public static DiagnosticDescriptor CreateErrorDescriptor(Exception exception) => new(
+        "SERDE000",
+        "Generate error.",
+        exception.ToString(),
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     #region 类型约束
 
     /// <summary>需要做代码生成的类必须是partial的</summary>
-    public static readonly DiagnosticDescriptor mustBePartial = new(
-        id: "SERDE001",
-        title: "Serde serializable object must be partial",
-        messageFormat: "The SerdeSerializable object '{0}' must be partial",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+    public static readonly DiagnosticDescriptor needEmptyCtor = new(
+        "SERDE001",
+        "Needed empty constructor",
+        "The SerdeSerializable object '{0}' must have a public empty constructor",
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     /// <summary>不支持嵌套类</summary>
     public static readonly DiagnosticDescriptor nestedNotAllow = new(
-        id: "SERDE002",
-        title: "Type is nested type",
-        messageFormat: "The SerdeSerializable object '{0}' must not be nested type",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        "SERDE002",
+        "Type is nested type",
+        "The SerdeSerializable object '{0}' must not be nested type",
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     /// <summary>不支持static类</summary>
     public static readonly DiagnosticDescriptor staticClassNotAllow = new(
-        id: "SERDE003",
-        title: "Type is static class",
-        messageFormat: "The SerdeSerializable object '{0}' must not be static class",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        "SERDE003",
+        "Type is static class",
+        "The SerdeSerializable object '{0}' must not be static class",
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     /// <summary>不支持ref struct</summary>
     public static readonly DiagnosticDescriptor refStructNotAllow = new(
-        id: "SERDE004",
-        title: "ref struct",
-        messageFormat: "The SerdeSerializable object '{0}' must not be ref struct",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        "SERDE004",
+        "ref struct",
+        "The SerdeSerializable object '{0}' must not be ref struct",
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     /// <summary>不支持序列化抽象类或接口</summary>
     public static readonly DiagnosticDescriptor abstractClassOrInterfaceNotAllow = new(
-        id: "SERDE005",
-        title: "Type is abstract class or interface",
-        messageFormat: "The SerdeSerializable object '{0}' must not be abstract/interface",
-        category: category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true
+        "SERDE005",
+        "Type is abstract class or interface",
+        "The SerdeSerializable object '{0}' must not be abstract/interface",
+        category,
+        DiagnosticSeverity.Error,
+        true
     );
 
     #endregion
