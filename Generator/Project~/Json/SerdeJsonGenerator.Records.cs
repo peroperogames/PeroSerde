@@ -93,7 +93,7 @@ public partial class SerdeJsonGenerator
                  }
                  """;
 
-        bool TryGetFormatterType(MemberMeta member, out string formatter)
+        static bool TryGetFormatterType(MemberMeta member, out string formatter)
         {
             formatter = member switch
             {
@@ -130,7 +130,7 @@ public partial class SerdeJsonGenerator
         }
     }
 
-    private string GenerateRecordsDeserialization(ITypeSymbol type, TypeMeta typeMeta, bool ignoreMissingMember)
+    private static string GenerateRecordsDeserialization(ITypeSymbol type, TypeMeta typeMeta, bool ignoreMissingMember)
     {
         var typeName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         var members = typeMeta.members;
@@ -223,7 +223,7 @@ public partial class SerdeJsonGenerator
                  """;
     }
 
-    private string GenerateRecordsSerialization(ITypeSymbol type, TypeMeta typeMeta)
+    private static string GenerateRecordsSerialization(ITypeSymbol type, TypeMeta typeMeta)
     {
         var typeName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         var members = typeMeta.members;

@@ -49,7 +49,7 @@ public partial class SerdeJsonGenerator
         return sb.ToString();
     }
 
-    private string GenerateFlagsSerialization(ITypeSymbol type, TypeMeta meta, bool isNumberSerialize)
+    private static string GenerateFlagsSerialization(ITypeSymbol type, TypeMeta meta, bool isNumberSerialize)
     {
         var typeName = type.Name;
         var sb = new StringBuilder();
@@ -85,24 +85,24 @@ public partial class SerdeJsonGenerator
         }
 
         return $$"""
-                  {{type.GetAccessibilityString()}} sealed partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
-                  {
-                      [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                      public void SerializeUtf8({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf8 writer)
-                      {
-                          {{sb}}
-                      }
+                 {{type.GetAccessibilityString()}} sealed partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
+                 {
+                     [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+                     public void SerializeUtf8({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf8 writer)
+                     {
+                         {{sb}}
+                     }
 
                      [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                      public void SerializeUtf16({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf16 writer)
-                      {
-                          {{sb}}
-                      }
-                  }
-                  """;
+                     public void SerializeUtf16({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf16 writer)
+                     {
+                         {{sb}}
+                     }
+                 }
+                 """;
     }
 
-    private string GenerateFlagsDeserialization(ITypeSymbol type, TypeMeta meta, bool isNumberDeserialize)
+    private static string GenerateFlagsDeserialization(ITypeSymbol type, TypeMeta meta, bool isNumberDeserialize)
     {
         var typeName = type.Name;
         var sbUtf8 = new StringBuilder();
@@ -158,20 +158,20 @@ public partial class SerdeJsonGenerator
         }
 
         return $$"""
-                  {{type.GetAccessibilityString()}} sealed partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
-                  {
-                      [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                      public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> remains, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
-                      {
-                          {{sbUtf8}}
-                      }
+                 {{type.GetAccessibilityString()}} sealed partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
+                 {
+                     [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+                     public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> remains, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
+                     {
+                         {{sbUtf8}}
+                     }
 
-                      [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                      public {{type.ToDisplayString()}} DeserializeUtf16(ref System.ReadOnlySpan<char> remains, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
-                      {
-                          {{sbUtf16}}
-                      }
-                  }
-                  """;
+                     [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+                     public {{type.ToDisplayString()}} DeserializeUtf16(ref System.ReadOnlySpan<char> remains, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
+                     {
+                         {{sbUtf16}}
+                     }
+                 }
+                 """;
     }
 }
