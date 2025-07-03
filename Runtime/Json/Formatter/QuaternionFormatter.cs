@@ -16,7 +16,7 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     /// <example>
     /// <code>
-    /// "(12.1,32.45)"// 不带空格
+    /// "(12.1,32.45,0.5,1.23)"// 不带空格
     /// </code>
     /// </example>
     [PublicAPI]
