@@ -22,7 +22,7 @@ namespace PeroTools2.Serde.Json
             RegisterBuiltinFormatters();
         }
 
-        private static void RegisterBuiltinFormatters()
+        internal static void RegisterBuiltinFormatters()
         {
             Register(new StringFormatter());
             Register(new GuidFormatter());

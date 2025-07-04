@@ -46,7 +46,6 @@ namespace PeroTools2.Serde.Json
                 var length = s_KeyFixedFormatter.SerializeUtf8Unsafe(kv.Key, result);
                 writer.WriteNamedValue(MemoryMarshal.Cast<byte, char>(new ReadOnlySpan<byte>(result, length)), kv.Value);
             }
-            writer.WriteNamedValue(kv.Key.ToString(), kv.Value);
             writer.WriteEndObject();
         }
 

@@ -11,7 +11,7 @@ namespace PeroTools2.Serde.Json
 {
     static partial class SerdeJsonFormatterProvider
     {
-        private static void RegisterPrimitiveFormatters()
+        internal static void RegisterPrimitiveFormatters()
         {
             Register(new BoolFormatter());
             Register(new NullableBoolFormatter());

@@ -13,25 +13,33 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 {
     public sealed class CustomFormatterTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            // 在测试前先进行一次注册
+            SerdeJsonFormatterProvider.Register(new TestPrimitiveFormatter());
+            SerdeJsonFormatterProvider.Register(new TestEncodingFormatter());
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EncodingFormatterTests(Encoding encoding)
         {
             const string testValue = "Hello, World!";
             var json = $"{{\"value\":\"{testValue}\"}}";
-            var obj = new EncodinFormatterTestClass { value = testValue };
+            var obj = new EncodingFormatterTestClass { value = testValue };
             if (encoding == Encoding.UTF8)
             {
                 var utf8 = JsonConverter.UTF8.Serialize(obj);
                 Assert.IsTrue(utf8.SequenceEqual(System.Text.Encoding.UTF8.GetBytes(json)));
-                var utf8Value = JsonConverter.UTF8.Deserialize<EncodinFormatterTestClass>(utf8);
+                var utf8Value = JsonConverter.UTF8.Deserialize<EncodingFormatterTestClass>(utf8);
                 Assert.AreEqual(testValue, utf8Value.value);
             }
             else
             {
                 var utf16 = JsonConverter.UTF16.Serialize(obj);
                 Assert.AreEqual(utf16, json);
-                var utf16Value = JsonConverter.UTF16.Deserialize<EncodinFormatterTestClass>(utf16);
+                var utf16Value = JsonConverter.UTF16.Deserialize<EncodingFormatterTestClass>(utf16);
                 Assert.AreEqual(testValue, utf16Value.value);
             }
         }
@@ -68,7 +76,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
-    internal sealed partial class EncodinFormatterTestClass
+    internal sealed partial class EncodingFormatterTestClass
     {
         [SerdeJsonFormatter(typeof(TestEncodingFormatter))]
         public string value;

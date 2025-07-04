@@ -542,7 +542,6 @@ namespace PeroTools2.Serde.Json
             if (remains[0] != '"')
             {
                 var r = remains;
-                Debug.Log(r[0]);
                 key = default;
                 return false;
             }

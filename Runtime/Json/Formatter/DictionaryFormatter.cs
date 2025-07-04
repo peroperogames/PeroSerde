@@ -36,9 +36,19 @@ namespace PeroTools2.Serde.Json
             var index = 0;
             var count = dic.Count - 1;
             writer.WriteBeginObject();
-            foreach (var kv in dic)
+            if (dic is Dictionary<TKey, TValue> concreteDictionary)
             {
-                writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                foreach (var kv in concreteDictionary)
+                {
+                    writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                }
+            }
+            else
+            {
+                foreach (var kv in dic)
+                {
+                    writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                }
             }
             writer.WriteEndObject();
         }
@@ -54,9 +64,19 @@ namespace PeroTools2.Serde.Json
             var count = dic.Count - 1;
 
             writer.WriteBeginObject();
-            foreach (var kv in dic)
+            if (dic is Dictionary<TKey, TValue> concreteDictionary)
             {
-                writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                foreach (var kv in concreteDictionary)
+                {
+                    writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                }
+            }
+            else
+            {
+                foreach (var kv in dic)
+                {
+                    writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                }
             }
             writer.WriteEndObject();
         }
