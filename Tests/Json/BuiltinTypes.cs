@@ -11,6 +11,8 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using UnityEngine;
 
 namespace PeroTools2.Serde.Json.Editor.Tests
@@ -389,6 +391,30 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
+    public partial struct QuaternionType
+    {
+        [JsonConverter(typeof(QuaternionConverter))]
+        public Quaternion value;
+
+        public QuaternionType(Quaternion value) => this.value = value;
+
+        private sealed class QuaternionConverter : JsonConverter<Quaternion>
+        {
+            public override void WriteJson(Newtonsoft.Json.JsonWriter writer, Quaternion value, JsonSerializer serializer)
+            {
+                writer.WriteValue($"({value.x},{value.y},{value.z},{value.w})");
+            }
+
+            public override Quaternion ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, Quaternion existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                var rgba = (reader.Value as string)?.Replace("(", "").Replace(")", "").Split(',');
+                if (rgba == null) return new Quaternion(0, 0, 0, 0);
+                return new Quaternion(float.Parse(rgba[0]), float.Parse(rgba[1]), float.Parse(rgba[2]), float.Parse(rgba[3]));
+            }
+        }
+    }
+
+    [SerdeJsonSerializable]
     public partial struct ColorType
     {
         [JsonConverter(typeof(ColorConverter))]
@@ -473,6 +499,44 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public bool Equals(ListObjectType other) => value.SequenceEqual(other.value);
 
         public override bool Equals(object obj) => obj is ListObjectType other && Equals(other);
+
+        public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct CollectionDictionaryStringType : IEquatable<CollectionDictionaryStringType>
+    {
+        [JsonConverter(typeof(DictionaryConverter<string, BoolType>))]
+        public Dictionary<string, BoolType> value;
+
+        public CollectionDictionaryStringType(Dictionary<string, BoolType> value) => this.value = value;
+
+        public bool Equals(CollectionDictionaryStringType other) =>
+            value != null && other.value != null &&
+            value.Count == other.value.Count &&
+            // ReSharper disable once UsageOfDefaultStructEquality
+            !value.Except(other.value).Any();
+
+        public override bool Equals(object obj) => obj is CollectionDictionaryStringType other && Equals(other);
+
+        public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct CollectionDictionaryNumberType : IEquatable<CollectionDictionaryNumberType>
+    {
+        [JsonConverter(typeof(DictionaryConverter<int, BoolType>))]
+        public Dictionary<int, BoolType> value;
+
+        public CollectionDictionaryNumberType(Dictionary<int, BoolType> value) => this.value = value;
+
+        public bool Equals(CollectionDictionaryNumberType other) =>
+            value != null && other.value != null &&
+            value.Count == other.value.Count &&
+            // ReSharper disable once UsageOfDefaultStructEquality
+            !value.Except(other.value).Any();
+
+        public override bool Equals(object obj) => obj is CollectionDictionaryNumberType other && Equals(other);
 
         public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
     }
@@ -641,5 +705,44 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     {
         public Nullable<BoolType> value;
         public NullableType(BoolType? value) => this.value = value;
+    }
+
+    internal sealed class DictionaryConverter<TKey, TValue> : JsonConverter<Dictionary<TKey, TValue>>
+    {
+        /// <inheritdoc />
+        public override void WriteJson(Newtonsoft.Json.JsonWriter writer, Dictionary<TKey, TValue> dict, JsonSerializer serializer)
+        {
+            writer.WriteStartArray();
+            foreach (var item in dict)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName(item.Key.ToString());
+                serializer.Serialize(writer, item.Value);
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+        }
+
+        /// <inheritdoc />
+        public override Dictionary<TKey, TValue> ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, Dictionary<TKey, TValue> existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            var dict = new Dictionary<TKey, TValue>();
+            if (reader.TokenType != JsonToken.StartArray)
+            {
+                return dict;
+            }
+            reader.Read();
+            while (reader.TokenType != JsonToken.EndArray)
+            {
+                reader.Read();
+                var key = (TKey) Convert.ChangeType(reader.Value, typeof(TKey));
+                reader.Read();
+                var value = serializer.Deserialize<TValue>(reader);
+                dict.Add(key!, value);
+                reader.Read();
+                reader.Read();
+            }
+            return dict;
+        }
     }
 }

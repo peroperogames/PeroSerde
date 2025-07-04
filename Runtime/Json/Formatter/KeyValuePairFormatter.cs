@@ -44,7 +44,12 @@ namespace PeroTools2.Serde.Json
                 var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf8();
                 var result = stackalloc byte[maxLength];
                 var length = s_KeyFixedFormatter.SerializeUtf8Unsafe(kv.Key, result);
-                writer.WriteNamedValue(MemoryMarshal.Cast<byte, char>(new ReadOnlySpan<byte>(result, length)), kv.Value);
+                var chars = stackalloc char[length];
+                for (var i = 0; i < length; i++)
+                {
+                    chars[i] = (char) result[i];
+                }
+                writer.WriteNamedValue(new ReadOnlySpan<char>(chars, length), kv.Value);
             }
             writer.WriteEndObject();
         }
@@ -77,8 +82,10 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe KeyValuePair<TKey, TValue> DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
         {
+            reader.ReadBeginObject();
             var keyStr = reader.ReadKey();
             var value = reader.ReadValue<TValue>();
+            reader.ReadEndObject();
             return s_KeyType switch
             {
                 TypeCode.Empty => throw SerdeException.ThrowNotSupportedType(typeof(TKey)),
@@ -129,8 +136,10 @@ namespace PeroTools2.Serde.Json
 
         public unsafe KeyValuePair<TKey, TValue> DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
         {
+            reader.ReadBeginObject();
             var keyStr = reader.ReadKey();
             var value = reader.ReadValue<TValue>();
+            reader.ReadEndObject();
             return s_KeyType switch
             {
                 TypeCode.Empty => throw SerdeException.ThrowNotSupportedType(typeof(TKey)),
@@ -180,6 +189,6 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static TKey CastKey<TFrom>(TFrom value) => Unsafe.As<TFrom, TKey>(ref value);
+        private static TKey CastKey<TFrom>(TFrom value) => Unsafe.As<TFrom, TKey>(ref value);
     }
 }
