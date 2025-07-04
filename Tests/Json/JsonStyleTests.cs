@@ -4,6 +4,7 @@
  * Created On: 2025/01/08-19:46:33
  */
 
+using System.Collections.Generic;
 using NUnit.Framework;
 using PeroTools2.Serde.Editor.Tests;
 
@@ -49,6 +50,27 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.IsNotNull(obj);
             Assert.AreEqual(obj.a, "A ");
             Assert.AreEqual(obj.b, " B");
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void NonNewtonSoftJsonStyleDictionaryTest(Encoding encoding)
+        {
+            var dict = new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } };
+            var obj = new NonNewtonSoftJsonStyleDictionaryNumberType(dict);
+            NonNewtonSoftJsonStyleDictionaryNumberType newObj = default;
+            if (encoding == Encoding.UTF8)
+            {
+                var json = JsonConverter.UTF8.Serialize(obj);
+                newObj = JsonConverter.UTF8.Deserialize<NonNewtonSoftJsonStyleDictionaryNumberType>(json);
+            }
+            else
+            {
+                var json = JsonConverter.UTF16.Serialize(obj);
+                newObj = JsonConverter.UTF16.Deserialize<NonNewtonSoftJsonStyleDictionaryNumberType>(json);
+            }
+            Assert.AreEqual(true, newObj.value[1]);
+            Assert.AreEqual(false, newObj.value[2]);
         }
     }
 

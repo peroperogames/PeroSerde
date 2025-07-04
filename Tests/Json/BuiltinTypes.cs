@@ -515,6 +515,27 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
     }
 
+    /// <summary>
+    /// 用来测试非NewtonSoftJsonStyle的字典序列化的结构体
+    /// </summary>
+    [SerdeJsonSerializable]
+    public partial struct NonNewtonSoftJsonStyleDictionaryNumberType : IEquatable<NonNewtonSoftJsonStyleDictionaryNumberType>
+    {
+        public Dictionary<int, BoolType> value;
+
+        public NonNewtonSoftJsonStyleDictionaryNumberType(Dictionary<int, BoolType> value) => this.value = value;
+
+        public bool Equals(NonNewtonSoftJsonStyleDictionaryNumberType other) =>
+            value != null && other.value != null &&
+            value.Count == other.value.Count &&
+            // ReSharper disable once UsageOfDefaultStructEquality
+            !value.Except(other.value).Any();
+
+        public override bool Equals(object obj) => obj is NonNewtonSoftJsonStyleDictionaryNumberType other && Equals(other);
+
+        public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
+    }
+
     [SerdeJsonSerializable]
     public partial struct NumberEnumType
     {
