@@ -17,7 +17,9 @@ namespace PeroTools2.Serde.Json
     /// <typeparam name="TKey">键类型</typeparam>
     /// <typeparam name="TValue">值类型</typeparam>
     [PublicAPI]
-    public sealed class DictionaryFormatter<TKey, TValue> : DictionaryFormatter<Dictionary<TKey, TValue>, TKey, TValue> { }
+    public sealed class DictionaryFormatter<TKey, TValue> : DictionaryFormatter<Dictionary<TKey, TValue>, TKey, TValue>
+    {
+    }
 
     /// <summary>
     /// Newtonsoft.Json 风格的 Dictionary 格式化器
@@ -38,40 +40,80 @@ namespace PeroTools2.Serde.Json
                 writer.WriteNull();
                 return;
             }
-            var index = 0;
-            var count = dic.Count - 1;
-            writer.WriteBeginObject();
-
-            if (s_KeyFixedFormatter == null)
+            if (dic is Dictionary<TKey, TValue> dictionary)
             {
-                foreach (var kv in dic)
+                var index = 0;
+                var count = dictionary.Count - 1;
+                writer.WriteBeginObject();
+
+                if (s_KeyFixedFormatter == null)
                 {
-                    if (kv.Key is string key)
+                    foreach (var kv in dictionary)
                     {
-                        writer.WriteNamedValue(key, kv.Value, index++ != count);
-                    }
-                    else
-                    {
-                        writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        if (kv.Key is string key)
+                        {
+                            writer.WriteNamedValue(key, kv.Value, index++ != count);
+                        }
+                        else
+                        {
+                            writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        }
                     }
                 }
+                else
+                {
+                    var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf8();
+                    var result = stackalloc byte[maxLength];
+                    var chars = stackalloc char[maxLength];
+                    foreach (var kv in dictionary)
+                    {
+                        var length = s_KeyFixedFormatter.SerializeUtf8Unsafe(kv.Key, result);
+                        for (var i = 0; i < length; i++)
+                        {
+                            chars[i] = (char) result[i];
+                        }
+                        writer.WriteNamedValue(new ReadOnlySpan<char>(chars, length), kv.Value, index++ != count);
+                    }
+                }
+                writer.WriteEndObject();
             }
             else
             {
-                var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf8();
-                var result = stackalloc byte[maxLength];
-                var chars = stackalloc char[maxLength];
-                foreach (var kv in dic)
+                var index = 0;
+                var count = dic.Count - 1;
+                writer.WriteBeginObject();
+
+                if (s_KeyFixedFormatter == null)
                 {
-                    var length = s_KeyFixedFormatter.SerializeUtf8Unsafe(kv.Key, result);
-                    for (var i = 0; i < length; i++)
+                    foreach (var kv in dic)
                     {
-                        chars[i] = (char) result[i];
+                        if (kv.Key is string key)
+                        {
+                            writer.WriteNamedValue(key, kv.Value, index++ != count);
+                        }
+                        else
+                        {
+                            writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        }
                     }
-                    writer.WriteNamedValue(new ReadOnlySpan<char>(chars, length), kv.Value, index++ != count);
                 }
+                else
+                {
+                    var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf8();
+                    var result = stackalloc byte[maxLength];
+                    var chars = stackalloc char[maxLength];
+                    foreach (var kv in dic)
+                    {
+                        var length = s_KeyFixedFormatter.SerializeUtf8Unsafe(kv.Key, result);
+                        for (var i = 0; i < length; i++)
+                        {
+                            chars[i] = (char) result[i];
+                        }
+                        writer.WriteNamedValue(new ReadOnlySpan<char>(chars, length), kv.Value, index++ != count);
+                    }
+                }
+                writer.WriteEndObject();
             }
-            writer.WriteEndObject();
         }
 
         public unsafe void SerializeUtf16(TDictionary dic, ref JsonWriterUtf16 writer)
@@ -81,35 +123,70 @@ namespace PeroTools2.Serde.Json
                 writer.WriteNull();
                 return;
             }
-            var index = 0;
-            var count = dic.Count - 1;
-
-            writer.WriteBeginObject();
-            if (s_KeyFixedFormatter == null)
+            if (dic is Dictionary<TKey, TValue> dictionary)
             {
-                foreach (var kv in dic)
+                var index = 0;
+                var count = dictionary.Count - 1;
+
+                writer.WriteBeginObject();
+                if (s_KeyFixedFormatter == null)
                 {
-                    if (kv.Key is string key)
+                    foreach (var kv in dictionary)
                     {
-                        writer.WriteNamedValue(key, kv.Value, index++ != count);
-                    }
-                    else
-                    {
-                        writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        if (kv.Key is string key)
+                        {
+                            writer.WriteNamedValue(key, kv.Value, index++ != count);
+                        }
+                        else
+                        {
+                            writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        }
                     }
                 }
+                else
+                {
+                    var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf16();
+                    var result = stackalloc char[maxLength];
+                    foreach (var kv in dictionary)
+                    {
+                        var length = s_KeyFixedFormatter.SerializeUtf16Unsafe(kv.Key, result);
+                        writer.WriteNamedValue(new ReadOnlySpan<char>(result, length), kv.Value, index++ != count);
+                    }
+                }
+                writer.WriteEndObject();
             }
             else
             {
-                var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf16();
-                var result = stackalloc char[maxLength];
-                foreach (var kv in dic)
+                var index = 0;
+                var count = dic.Count - 1;
+
+                writer.WriteBeginObject();
+                if (s_KeyFixedFormatter == null)
                 {
-                    var length = s_KeyFixedFormatter.SerializeUtf16Unsafe(kv.Key, result);
-                    writer.WriteNamedValue(new ReadOnlySpan<char>(result, length), kv.Value, index++ != count);
+                    foreach (var kv in dic)
+                    {
+                        if (kv.Key is string key)
+                        {
+                            writer.WriteNamedValue(key, kv.Value, index++ != count);
+                        }
+                        else
+                        {
+                            writer.WriteNamedValue(kv.Key.ToString(), kv.Value, index++ != count);
+                        }
+                    }
                 }
+                else
+                {
+                    var maxLength = s_KeyFixedFormatter.GetMaxRequiredSizeUtf16();
+                    var result = stackalloc char[maxLength];
+                    foreach (var kv in dic)
+                    {
+                        var length = s_KeyFixedFormatter.SerializeUtf16Unsafe(kv.Key, result);
+                        writer.WriteNamedValue(new ReadOnlySpan<char>(result, length), kv.Value, index++ != count);
+                    }
+                }
+                writer.WriteEndObject();
             }
-            writer.WriteEndObject();
         }
 
         public TDictionary DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)

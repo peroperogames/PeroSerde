@@ -86,7 +86,7 @@ public partial class SerdeJsonGenerator : ISourceGenerator
         return diagnostic != null;
     }
 
-    private sealed class SyntaxContentReceiver : ISyntaxContextReceiver
+    public sealed class SyntaxContentReceiver : ISyntaxContextReceiver
     {
         public HashSet<BaseTypeDeclarationSyntax> typeDeclarations { get; } = [];
 

@@ -13,14 +13,6 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 {
     public sealed class CustomFormatterTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-            // 在测试前先进行一次注册
-            SerdeJsonFormatterProvider.Register(new TestPrimitiveFormatter());
-            SerdeJsonFormatterProvider.Register(new TestEncodingFormatter());
-        }
-
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EncodingFormatterTests(Encoding encoding)

@@ -71,7 +71,11 @@ public partial class SerdeJsonGenerator
                     formatterRegistry.AppendLine("            }");
                 }
             }
-            formatterRegistry.AppendLine($"            global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(s_{member.name}Formatter = new {formatter}());");
+            formatterRegistry.AppendLine($"            s_{member.name}Formatter = new {formatter}();");
+            if (member.formatter == null)
+            {
+                formatterRegistry.AppendLine($"            global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(s_{member.name}Formatter);");
+            }
         }
         return $$"""
                  partial {{type.GetTypeKind()}} {{typeName}}

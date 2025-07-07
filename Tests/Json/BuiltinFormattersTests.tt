@@ -49,10 +49,10 @@
     ("DictionaryNumberType", "new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} }", 1 , 3),
     // 由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），String对象也需要创建，因此反序列化会有五次分配
     ("DictionaryStringType", "new Dictionary<string, BoolType> { {\"True\", new BoolType(true)}, {\"False\", new BoolType(false)} }", 1, 5),
-    // 由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），因此反序列化会有三次分配
-    ("CollectionDictionaryNumberType", "new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} }", 1 , 3),
-    // 由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），String对象也需要创建，因此反序列化会有五次分配
-    ("CollectionDictionaryStringType", "new Dictionary<string, BoolType> { {\"True\", new BoolType(true)}, {\"False\", new BoolType(false)} }", 1, 5),
+    // CollectionDictionary 走泛型迭代器而不走鸭子方法，因此会有 2 次分配，由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），因此反序列化会有三次分配
+    ("CollectionDictionaryNumberType", "new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} }", 2 , 3),
+    // CollectionDictionary 走泛型迭代器而不走鸭子方法，因此会有 2 次分配，由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），String对象也需要创建，因此反序列化会有五次分配
+    ("CollectionDictionaryStringType", "new Dictionary<string, BoolType> { {\"True\", new BoolType(true)}, {\"False\", new BoolType(false)} }", 2, 5),
     ("NumberEnumType", "NumberEnum.BEnum", 1 ,0),
     ("StringEnumType", "StringEnum.BEnum", 1 ,0),
     ("StringNumberEnumType", "StringNumberEnum.BEnum", 1 ,0),

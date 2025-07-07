@@ -3048,7 +3048,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
             var action = new TestDelegate(() => { Serialize(encoding, obj); });
             // 因为会序列化出来字符串，所以必然会有分配
-            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+            Assert.That(action, Is.Not.AllocatingGCMemory(2));
 
             static void Serialize(Encoding encodingType, CollectionDictionaryNumberType serializeObj)
             {
@@ -3121,7 +3121,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
             var action = new TestDelegate(() => { Serialize(encoding, obj); });
             // 因为会序列化出来字符串，所以必然会有分配
-            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+            Assert.That(action, Is.Not.AllocatingGCMemory(2));
 
             static void Serialize(Encoding encodingType, CollectionDictionaryStringType serializeObj)
             {
