@@ -14,14 +14,6 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 {
     public sealed class BuiltinFormattersTests
     {
-        [SetUp]
-        public void SetUp()
-        {
-            // 测试前要恢复默认的Formatters
-            SerdeJsonFormatterProvider.RegisterPrimitiveFormatters();
-            SerdeJsonFormatterProvider.RegisterBuiltinFormatters();
-        }
-
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void BoolSerializeTest(Encoding encoding)
