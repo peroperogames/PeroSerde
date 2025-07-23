@@ -11,8 +11,6 @@ using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using UnityEngine;
 
 namespace PeroTools2.Serde.Json.Editor.Tests
@@ -684,6 +682,27 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     {
         public Nullable<BoolType> value;
         public NullableType(BoolType? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct GenericType<T>
+    {
+        public T data;
+        public GenericType(T data) => this.data = data;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct GenericTypeCollection : IEquatable<GenericTypeCollection>
+    {
+        public List<GenericType<int>> data;
+        public GenericTypeCollection(List<GenericType<int>> data) => this.data = data;
+
+        // ReSharper disable once UsageOfDefaultStructEquality
+        public bool Equals(GenericTypeCollection other) => data.SequenceEqual(other.data);
+
+        public override bool Equals(object obj) => obj is GenericTypeCollection other && Equals(other);
+
+        public readonly override int GetHashCode() => data != null ? data.GetHashCode() : 0;
     }
 
     internal sealed class DictionaryConverter<TKey, TValue> : JsonConverter<Dictionary<TKey, TValue>>

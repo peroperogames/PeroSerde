@@ -93,7 +93,7 @@ namespace PeroTools2.Serde.Json
     /// <typeparam name="T">元素类型</typeparam>
     [PublicAPI]
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
-    public sealed class GReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : IReadOnlyCollection<T>, new()
+    public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : IReadOnlyCollection<T>, new()
     {
         private static readonly IFixedSerdeJsonFormatter<T> s_FixedFormatter;
         private static readonly ISerdeJsonFormatter<T> s_UnfixedFormatter;
@@ -117,7 +117,7 @@ namespace PeroTools2.Serde.Json
         private static readonly bool s_IsConcurrentQueue = typeof(TCollection) == typeof(ConcurrentQueue<T>);
         private static readonly bool s_IsConcurrentStack = typeof(TCollection) == typeof(ConcurrentStack<T>);
 
-        static GReadonlyCollectionFormatter()
+        static ReadonlyCollectionFormatter()
         {
             if (!SerdeJsonFormatterProvider.IsRegistered<T>())
             {

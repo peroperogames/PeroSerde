@@ -60,6 +60,7 @@ namespace PeroTools2.Serde.Json
     /// 向 Serde 指示使用何种方式为枚举类型提供默认的序列化器和反序列化器
     /// </summary>
     [PublicAPI]
+    [AttributeUsage(AttributeTargets.Enum)]
     public class SerdeJsonEnumFormatterAttribute : Attribute
     {
         /// <summary>

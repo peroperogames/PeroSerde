@@ -61,7 +61,9 @@
     ("StringFlagsType", "StringFlags.BFlag | StringFlags.CFlag", 1, 0),
     // 由于会生成一个Lazy对象和一个String对象，因此反序列化会有两次分配
     ("LazyType", "new Lazy<string>(\"LazyString\")", 1, 2),
-    ("NullableType", "new BoolType(true)", 1, 0)
+    ("NullableType", "new BoolType(true)", 1, 0),
+    // 由于List存在扩容，加上List本身需要创建，因此反序列化会有两次分配
+    ("GenericTypeCollection", "new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) }", 1, 2)
 ];
 #>
 /*
