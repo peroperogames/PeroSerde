@@ -39,10 +39,20 @@ internal static class Extensions
         return false;
     }
 
+    internal static string GetGenericString(this INamedTypeSymbol symbol)
+        => string.Join(", ", symbol.TypeArguments.Select(static t => t.ToDisplayString()));
+
+    internal static string ToDisplayNameWithoutGeneric(this ITypeSymbol symbol)
+        => string.IsNullOrEmpty(symbol.ContainingNamespace?.ToDisplayString())
+            ? symbol.Name
+            : $"{symbol.ContainingNamespace!.ToDisplayString()}.{symbol.Name}";
+
     internal static bool ContainsInterface(this ITypeSymbol symbol, INamedTypeSymbol interfaceType)
         => Enumerable.Any(symbol.AllInterfaces, item => SymbolEqualityComparer.Default.Equals(item, interfaceType)
                                                         || interfaceType.IsGenericType
                                                         && Regex.Replace(interfaceType.ToDisplayString(), "<.+>", "") == Regex.Replace(item.ToDisplayString(), "<.+>", ""));
+
+    internal static bool IsGeneric(this ITypeSymbol symbol) => symbol is INamedTypeSymbol { IsGenericType: true };
 
     internal static bool IsGenericTypeOf(this ITypeSymbol symbol, INamedTypeSymbol genericType)
         => SymbolEqualityComparer.Default.Equals(symbol, genericType)

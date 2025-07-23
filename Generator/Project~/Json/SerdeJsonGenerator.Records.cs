@@ -56,7 +56,16 @@ public partial class SerdeJsonGenerator
                 {
                     formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
                     formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine($"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementType.ToDisplayString()}.{elementType.Name}JsonFormatter());");
+                    formatterRegistry.AppendLine(
+                        $"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementType.ToDisplayString()}.JsonFormatter());");
+                    formatterRegistry.AppendLine("            }");
+                }
+                else if (elementType.ContainsAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute))
+                {
+                    formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
+                    formatterRegistry.AppendLine("            {");
+                    formatterRegistry.AppendLine(
+                        $"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementType.ToDisplayString()}.JsonFormatter());");
                     formatterRegistry.AppendLine("            }");
                 }
                 else if (TryGetFormatterType(new MemberMeta
@@ -78,19 +87,25 @@ public partial class SerdeJsonGenerator
             }
         }
         return $$"""
-                 partial {{type.GetTypeKind()}} {{typeName}}
-                 {
-                 {{formatterBuilder}}
-                 #if UNITY_EDITOR
-                     [global::UnityEditor.InitializeOnLoadMethod]
-                 #else
-                     [global::UnityEngine.RuntimeInitializeOnLoadMethod(global::UnityEngine.RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-                 #endif
-                     private static void RegisterFormattersFor{{typeName}}()
+               // Registry
+               partial {{type.GetTypeKind()}} {{typeName}}
+               {
+               {{formatterBuilder}}
+               """ + (type.IsGeneric()
+                   ? $"    static {type.Name}()"
+                   : $"""
+                         #if UNITY_EDITOR
+                         [global::UnityEditor.InitializeOnLoadMethod]
+                         #else
+                         [global::UnityEngine.RuntimeInitializeOnLoadMethod(global::UnityEngine.RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+                         #endif
+                         private static void RegisterFormattersFor{typeName}()
+                     """) + "\n" +
+               $$"""
                      {
                          if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{{type.ToDisplayString()}}>())
                          {
-                             global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {{typeName}}JsonFormatter());
+                             global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new JsonFormatter());
                  {{formatterRegistry}}
                          }
                      }
@@ -195,15 +210,15 @@ public partial class SerdeJsonGenerator
 
         deserializerBuilder.AppendLine("            reader.ReadEndObject();");
         deserializerBuilder.Append("            return obj;");
-        if(utf8Builder.Length > 0) utf8Builder.Remove(utf8Builder.Length - 1, 1);
-        if(utf16Builder.Length > 0) utf16Builder.Remove(utf16Builder.Length - 1, 1);
+        if (utf8Builder.Length > 0) utf8Builder.Remove(utf8Builder.Length - 1, 1);
+        if (utf16Builder.Length > 0) utf16Builder.Remove(utf16Builder.Length - 1, 1);
 
         // 生成分部序列化器
         return $$"""
                  // Deserializer
                  partial {{type.GetTypeKind()}} {{typeName}}
                  {
-                     internal partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
+                     public partial class JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
                      {
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> value, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
@@ -261,7 +276,7 @@ public partial class SerdeJsonGenerator
                  // Serializer
                  partial {{type.GetTypeKind()}} {{typeName}}
                  {
-                     internal partial class {{typeName}}JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
+                     public partial class JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
                      {
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public void SerializeUtf16({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf16 writer)

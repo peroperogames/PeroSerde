@@ -3737,5 +3737,78 @@ namespace PeroTools2.Serde.Json.Editor.Tests
                 }
             }
         }
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void GenericCollectionSerializeTest(Encoding encoding)
+        {
+            var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<GenericTypeCollection>(json));
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void GenericCollectionDeserializeTest(Encoding encoding)
+        {
+            var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var newObj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<GenericTypeCollection>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<GenericTypeCollection>(json);
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void GenericCollectionSerializeNoGCTest(Encoding encoding)
+        {
+            var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
+            // 先进行一次调用，解决对象池的问题
+            Serialize(encoding, obj);
+
+            var action = new TestDelegate(() => { Serialize(encoding, obj); });
+            // 因为会序列化出来字符串，所以必然会有分配
+            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+
+            static void Serialize(Encoding encodingType, GenericTypeCollection serializeObj)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Serialize(serializeObj);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Serialize(serializeObj);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void GenericCollectionDeserializeNoGCTest(Encoding encoding)
+        {
+            var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
+            // 先调用一次，解决对象池的分配
+            Deserialize(encoding, json, utf8Bytes);
+
+            var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
+            Assert.That(action, Is.Not.AllocatingGCMemory(2));
+
+            static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<GenericTypeCollection>(utf8);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<GenericTypeCollection>(jsonText);
+                }
+            }
+        }
     }
 }
