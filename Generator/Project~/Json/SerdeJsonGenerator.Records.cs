@@ -49,8 +49,7 @@ public partial class SerdeJsonGenerator
 
             // 在注册 Collection 之前需要先注册元素类型，以免找不到 Formatter
             if (member.kind is BuiltinKind.Collection or BuiltinKind.Array or BuiltinKind.ReadonlyCollection
-                && member.type is INamedTypeSymbol colType
-                && colType.TryGetCollectionElementType(out var elementType))
+                && member.type.TryGetCollectionElementType(out var elementType))
             {
                 if (m_TypeSymbols.Any(kv => SymbolEqualityComparer.Default.Equals(kv.Key, elementType)))
                 {
