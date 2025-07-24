@@ -23,8 +23,13 @@ internal static class Extensions
         return attributeData != null;
     }
 
-    internal static bool TryGetCollectionElementType(this INamedTypeSymbol symbol, out ITypeSymbol elementType)
+    internal static bool TryGetCollectionElementType(this ITypeSymbol symbol, out ITypeSymbol elementType)
     {
+        if (symbol is IArrayTypeSymbol arrayType)
+        {
+            elementType = arrayType.ElementType;
+            return true;
+        }
         var listName = ReferenceSymbols.i_collection_type_fullname.Replace("`1", string.Empty);
         var readonlyListName = ReferenceSymbols.i_readonly_collection_type_fullname.Replace("`1", string.Empty);
         foreach (var interfaceType in symbol.AllInterfaces)
