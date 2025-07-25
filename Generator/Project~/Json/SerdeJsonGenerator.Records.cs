@@ -55,16 +55,14 @@ public partial class SerdeJsonGenerator
                 {
                     formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
                     formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine(
-                        $"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementType.ToDisplayString()}.JsonFormatter());");
+                    formatterRegistry.AppendLine($"                {elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
                     formatterRegistry.AppendLine("            }");
                 }
                 else if (elementType.ContainsAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute))
                 {
                     formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
                     formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine(
-                        $"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementType.ToDisplayString()}.JsonFormatter());");
+                    formatterRegistry.AppendLine($"                {elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
                     formatterRegistry.AppendLine("            }");
                 }
                 else if (TryGetFormatterType(new MemberMeta
@@ -85,22 +83,7 @@ public partial class SerdeJsonGenerator
                 formatterRegistry.AppendLine($"            global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(s_{member.name}Formatter);");
             }
         }
-        return $$"""
-               // Registry
-               partial {{type.GetTypeKind()}} {{typeName}}
-               {
-               {{formatterBuilder}}
-               """ + (type.IsGeneric()
-                   ? $"    static {type.Name}()"
-                   : $"""
-                         #if UNITY_EDITOR
-                         [global::UnityEditor.InitializeOnLoadMethod]
-                         #else
-                         [global::UnityEngine.RuntimeInitializeOnLoadMethod(global::UnityEngine.RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-                         #endif
-                         private static void RegisterFormattersFor{typeName}()
-                     """) + "\n" +
-               $$"""
+        var body = $$"""
                      {
                          if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{{type.ToDisplayString()}}>())
                          {
@@ -108,8 +91,32 @@ public partial class SerdeJsonGenerator
                  {{formatterRegistry}}
                          }
                      }
-                 }
                  """;
+        return
+            $$"""
+            // Registry
+            partial {{type.GetTypeKind()}} {{typeName}}
+            {
+            {{formatterBuilder}}
+                static {{type.Name}}()
+            {{body}}
+            """
+            + '\n'
+            + (type.IsGeneric()
+                ? string.Empty
+                : """
+                      #if UNITY_EDITOR
+                      [global::UnityEditor.InitializeOnLoadMethod]
+                      #else
+                      [global::UnityEngine.RuntimeInitializeOnLoadMethod(global::UnityEngine.RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+                      #endif
+                  """)
+            + '\n'
+            + $$"""
+                  public static void RegisterFormattersFor{{typeName}}()
+              {{body}}
+              }
+              """;
 
         static bool TryGetFormatterType(MemberMeta member, out string formatter)
         {
