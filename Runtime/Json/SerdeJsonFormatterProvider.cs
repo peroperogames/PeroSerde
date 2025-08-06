@@ -29,6 +29,8 @@ namespace PeroTools2.Serde.Json
             Register(new Vector2Formatter());
             Register(new Vector3Formatter());
             Register(new Vector4Formatter());
+            Register(new Vector2IntFormatter());
+            Register(new Vector3IntFormatter());
             Register(new QuaternionFormatter());
             Register(new ColorFormatter());
             Register(new DateTimeFormatter());
