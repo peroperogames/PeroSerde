@@ -51,6 +51,31 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(obj.a, "A ");
             Assert.AreEqual(obj.b, " B");
         }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void NullMemberSerializeTest(Encoding encoding)
+        {
+            var obj = new SampleTest { a = null, b = null };
+            const string expected = "{\"a\":null,\"b\":null}";
+            if (encoding == Encoding.UTF8)
+            {
+                var json = JsonConverter.UTF8.Serialize(obj);
+                Assert.AreEqual(json, expected);
+            }
+            else
+            {
+                var json = System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj));
+                Assert.AreEqual(json, expected);
+            }
+        }
+    }
+
+    [SerdeJsonSerializable]
+    public partial class SampleTest
+    {
+        public JsonObject a;
+        public int? b;
     }
 
     [SerdeJsonSerializable]

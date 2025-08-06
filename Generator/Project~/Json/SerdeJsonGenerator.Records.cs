@@ -263,7 +263,19 @@ public partial class SerdeJsonGenerator
 
         // 添加成员序列化写入
         var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("writer.WriteBeginObject();");
+        if (type.IsNullable())
+        {
+            stringBuilder.AppendLine("if (value == null)");
+            stringBuilder.AppendLine("            {");
+            stringBuilder.AppendLine("                writer.WriteNull();");
+            stringBuilder.AppendLine("                return;");
+            stringBuilder.AppendLine("            }");
+            stringBuilder.AppendLine("            writer.WriteBeginObject();");
+        }
+        else
+        {
+            stringBuilder.AppendLine("writer.WriteBeginObject();");
+        }
         for (var index = 0; index < members.Length; index++)
         {
             var member = members[index];
@@ -271,9 +283,7 @@ public partial class SerdeJsonGenerator
             var args = member.useFormatter
                 ? $"\"{member.formatName}\", value.{member.name}, s_{member.name}Formatter, {writeComma}"
                 : $"\"{member.formatName}\", value.{member.name}, {writeComma}";
-
-            var memberWriteStr = $"writer.WriteNamedValue({args});";
-            stringBuilder.AppendLine($"            {memberWriteStr}");
+            stringBuilder.AppendLine($"            writer.WriteNamedValue({args});");
         }
         stringBuilder.Append("            writer.WriteEndObject();");
 

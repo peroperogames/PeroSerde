@@ -59,6 +59,10 @@ internal static class Extensions
 
     internal static bool IsGeneric(this ITypeSymbol symbol) => symbol is INamedTypeSymbol { IsGenericType: true };
 
+    internal static bool IsNullable(this ITypeSymbol symbol) => !symbol.IsValueType ||
+                                                                symbol is INamedTypeSymbol { IsGenericType: true } namedType &&
+                                                                "System.Nullable`1" == Regex.Replace(namedType.ToDisplayString(), "<.+>", "");
+
     internal static bool IsGenericTypeOf(this ITypeSymbol symbol, INamedTypeSymbol genericType)
         => SymbolEqualityComparer.Default.Equals(symbol, genericType)
            || genericType.IsGenericType
