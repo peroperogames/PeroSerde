@@ -365,6 +365,54 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
+    public partial struct Vector2IntType
+    {
+        [JsonConverter(typeof(Vector2IntConverter))]
+        public Vector2Int value;
+
+        public Vector2IntType(Vector2Int value) => this.value = value;
+
+        private sealed class Vector2IntConverter : JsonConverter<Vector2Int>
+        {
+            public override void WriteJson(Newtonsoft.Json.JsonWriter writer, Vector2Int value, JsonSerializer serializer)
+            {
+                writer.WriteValue($"({value.x},{value.y})");
+            }
+
+            public override Vector2Int ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, Vector2Int existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                var rgba = (reader.Value as string)?.Replace("(", "").Replace(")", "").Split(',');
+                if (rgba == null) return new Vector2Int(0, 0);
+                return new Vector2Int(int.Parse(rgba[0]), int.Parse(rgba[1]));
+            }
+        }
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct Vector3IntType
+    {
+        [JsonConverter(typeof(Vector3IntConverter))]
+        public Vector3Int value;
+
+        public Vector3IntType(Vector3Int value) => this.value = value;
+
+        private sealed class Vector3IntConverter : JsonConverter<Vector3Int>
+        {
+            public override void WriteJson(Newtonsoft.Json.JsonWriter writer, Vector3Int value, JsonSerializer serializer)
+            {
+                writer.WriteValue($"({value.x},{value.y},{value.z})");
+            }
+
+            public override Vector3Int ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, Vector3Int existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                var rgba = (reader.Value as string)?.Replace("(", "").Replace(")", "").Split(',');
+                if (rgba == null) return new Vector3Int(0, 0, 0);
+                return new Vector3Int(int.Parse(rgba[0]), int.Parse(rgba[1]), int.Parse(rgba[2]));
+            }
+        }
+    }
+
+    [SerdeJsonSerializable]
     public partial struct Vector4Type
     {
         [JsonConverter(typeof(Vector4Converter))]

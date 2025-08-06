@@ -37,6 +37,8 @@
     ("Vector2Type", "new Vector2(0.5f, 0.5f)", 1, 0),
     ("Vector3Type", "new Vector3(0.5f, 0.5f, 0.5f)", 1, 0),
     ("Vector4Type", "new Vector4(0.5f, 0.5f, 0.5f, 0.5f)", 1, 0),
+    ("Vector2IntType", "new Vector2Int(12, 34)", 1, 0),
+    ("Vector3IntType", "new Vector3Int(12, 34, 56)", 1, 0),
     ("QuaternionType", "new Quaternion(0.5f, 0.5f, 0.5f, 0.5f)", 1, 0),
     ("ColorType", "new Color(0.5f, 0.5f, 0.5f, 0.5f)", 1, 0),
     ("HexColorType", "new Color(0.5f, 0.5f, 0.5f, 0.5f)", 1 ,0),
