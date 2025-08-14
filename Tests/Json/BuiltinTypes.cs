@@ -550,47 +550,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
-    public partial struct CollectionDictionaryStringType : IEquatable<CollectionDictionaryStringType>
-    {
-        [JsonConverter(typeof(DictionaryConverter<string, BoolType>))]
-        public Dictionary<string, BoolType> value;
-
-        public CollectionDictionaryStringType(Dictionary<string, BoolType> value) => this.value = value;
-
-        public bool Equals(CollectionDictionaryStringType other) =>
-            value != null && other.value != null &&
-            value.Count == other.value.Count &&
-            // ReSharper disable once UsageOfDefaultStructEquality
-            !value.Except(other.value).Any();
-
-        public override bool Equals(object obj) => obj is CollectionDictionaryStringType other && Equals(other);
-
-        public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
-    }
-
-    [SerdeJsonSerializable]
-    public partial struct CollectionDictionaryNumberType : IEquatable<CollectionDictionaryNumberType>
-    {
-        [JsonConverter(typeof(DictionaryConverter<int, BoolType>))]
-        public Dictionary<int, BoolType> value;
-
-        public CollectionDictionaryNumberType(Dictionary<int, BoolType> value) => this.value = value;
-
-        public bool Equals(CollectionDictionaryNumberType other) =>
-            value != null && other.value != null &&
-            value.Count == other.value.Count &&
-            // ReSharper disable once UsageOfDefaultStructEquality
-            !value.Except(other.value).Any();
-
-        public override bool Equals(object obj) => obj is CollectionDictionaryNumberType other && Equals(other);
-
-        public override int GetHashCode() => value != null ? value.GetHashCode() : 0;
-    }
-
-    [SerdeJsonSerializable]
     public partial struct DictionaryStringType : IEquatable<DictionaryStringType>
     {
-        [SerdeJsonFormatter(typeof(DictionaryFormatter<string, BoolType>))]
         public Dictionary<string, BoolType> value;
 
         public DictionaryStringType(Dictionary<string, BoolType> value) => this.value = value;

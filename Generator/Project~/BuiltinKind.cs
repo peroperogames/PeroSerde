@@ -19,4 +19,5 @@ public enum BuiltinKind
     Collection,
     ReadonlyCollection,
     KeyValuePair,
+    Dictionary
 }
