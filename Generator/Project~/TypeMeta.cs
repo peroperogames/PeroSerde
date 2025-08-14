@@ -86,6 +86,10 @@ public struct TypeMeta
         {
             return BuiltinKind.Array;
         }
+        if (type.IsGenericTypeOf(referenceSymbols.dictionaryType))
+        {
+            return BuiltinKind.Dictionary;
+        }
         if (type.IsGenericTypeOf(referenceSymbols.lazyType))
         {
             return BuiltinKind.Lazy;

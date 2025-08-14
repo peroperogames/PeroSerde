@@ -5,6 +5,7 @@
  */
 
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
@@ -48,35 +49,8 @@ public partial class SerdeJsonGenerator
             formatterBuilder.AppendLine($"    private static {formatter} s_{member.name}Formatter;");
 
             // 在注册 Collection 之前需要先注册元素类型，以免找不到 Formatter
-            if (member.kind is BuiltinKind.Collection or BuiltinKind.Array or BuiltinKind.ReadonlyCollection
-                && member.type.TryGetCollectionElementType(out var elementType))
-            {
-                if (m_TypeSymbols.Any(kv => SymbolEqualityComparer.Default.Equals(kv.Key, elementType)))
-                {
-                    formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
-                    formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine($"                {elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
-                    formatterRegistry.AppendLine("            }");
-                }
-                else if (elementType.ContainsAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute))
-                {
-                    formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
-                    formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine($"                {elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
-                    formatterRegistry.AppendLine("            }");
-                }
-                else if (TryGetFormatterType(new MemberMeta
-                         {
-                             type = elementType,
-                             kind = TypeMeta.GetMemberKind(elementType, m_ReferenceSymbols)
-                         }, out var elementFormatter))
-                {
-                    formatterRegistry.AppendLine($"            if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
-                    formatterRegistry.AppendLine("            {");
-                    formatterRegistry.AppendLine($"                global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementFormatter}());");
-                    formatterRegistry.AppendLine("            }");
-                }
-            }
+            RegisterElementTypes(member.kind, member.type, 12);
+
             formatterRegistry.AppendLine($"            s_{member.name}Formatter = new {formatter}();");
             if (member.formatter == null)
             {
@@ -118,6 +92,54 @@ public partial class SerdeJsonGenerator
               }
               """;
 
+        void RegisterElementTypes(BuiltinKind kind, ITypeSymbol type, int padding)
+        {
+            if (kind is not (BuiltinKind.Collection or BuiltinKind.Array or BuiltinKind.ReadonlyCollection or BuiltinKind.Dictionary) || !type.TryGetCollectionElementType(out var elementType))
+            {
+                return;
+            }
+            var elementKind = TypeMeta.GetMemberKind(elementType, m_ReferenceSymbols);
+            if (m_TypeSymbols.Any(kv => SymbolEqualityComparer.Default.Equals(kv.Key, elementType)))
+            {
+                formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
+                formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
+                formatterRegistry.AppendLine($"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
+                formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
+            }
+            else if (elementType.ContainsAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute))
+            {
+                formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
+                formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
+                formatterRegistry.AppendLine($"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
+                formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
+            }
+            else if (TryGetFormatterType(new MemberMeta
+                     {
+                         type = elementType,
+                         kind = kind == BuiltinKind.Dictionary ? BuiltinKind.Dictionary : elementKind
+                     }, out var elementFormatter))
+            {
+                if (kind == BuiltinKind.Dictionary && elementType is INamedTypeSymbol kvType)
+                {
+                    var keyType = kvType.TypeArguments[0];
+                    var valueType = kvType.TypeArguments[1];
+                    RegisterElementTypes(BuiltinKind.Dictionary, valueType, padding);
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<System.Collections.Generic.Dictionary<{keyType.ToDisplayString()}, {valueType.ToDisplayString()}>>())");
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
+                    formatterRegistry.AppendLine($"{new string(' ', padding + 4)}global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementFormatter}());");
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
+                }
+                else
+                {
+                    RegisterElementTypes(elementKind, elementType, padding);
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
+                    formatterRegistry.AppendLine($"{new string(' ', padding + 4)}global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementFormatter}());");
+                    formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
+                }
+            }
+        }
+
         static bool TryGetFormatterType(MemberMeta member, out string formatter)
         {
             formatter = member switch
@@ -130,12 +152,10 @@ public partial class SerdeJsonGenerator
 
                 { type: INamedTypeSymbol namedTypeSymbol } => namedTypeSymbol switch
                 {
-                    _ when member.kind is BuiltinKind.Collection &&
-                           namedTypeSymbol.TryGetCollectionElementType(out var elementType)
+                    _ when member.kind is BuiltinKind.Collection && namedTypeSymbol.TryGetCollectionElementType(out var elementType)
                         => $"PeroTools2.Serde.Json.CollectionFormatter<{member.type.ToDisplayString()}, {elementType.ToDisplayString()}>",
 
-                    _ when member.kind is BuiltinKind.ReadonlyCollection &&
-                           namedTypeSymbol.TryGetCollectionElementType(out var elementType)
+                    _ when member.kind is BuiltinKind.ReadonlyCollection && namedTypeSymbol.TryGetCollectionElementType(out var elementType)
                         => $"PeroTools2.Serde.Json.ReadonlyCollectionFormatter<{member.type.ToDisplayString()}, {elementType.ToDisplayString()}>",
 
                     _ when member.kind is BuiltinKind.Nullable
@@ -143,6 +163,9 @@ public partial class SerdeJsonGenerator
 
                     _ when member.kind is BuiltinKind.Lazy
                         => $"PeroTools2.Serde.Json.LazyFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}>",
+
+                    _ when member.kind is BuiltinKind.Dictionary
+                        => $"PeroTools2.Serde.Json.DictionaryFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}, {namedTypeSymbol.TypeArguments[1].ToDisplayString()}>",
 
                     _ when member.kind is BuiltinKind.KeyValuePair
                         => $"PeroTools2.Serde.Json.KeyValuePairFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}, {namedTypeSymbol.TypeArguments[1].ToDisplayString()}>",
@@ -164,7 +187,14 @@ public partial class SerdeJsonGenerator
         var deserializerBuilder = new StringBuilder();
         var utf16Builder = new StringBuilder();
         var utf8Builder = new StringBuilder();
-        deserializerBuilder.AppendLine($"var obj = new {typeName}();");
+        if (type.IsNullable())
+        {
+            deserializerBuilder.AppendLine("if (reader.TryReadNull())");
+            deserializerBuilder.AppendLine("            {");
+            deserializerBuilder.AppendLine("                return null;");
+            deserializerBuilder.AppendLine("            }");
+        }
+        deserializerBuilder.AppendLine($"            var obj = new {typeName}();");
         deserializerBuilder.AppendLine("            reader.ReadBeginObject();");
         if (ignoreMissingMember)
         {

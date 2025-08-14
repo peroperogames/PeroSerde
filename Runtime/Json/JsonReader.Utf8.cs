@@ -19,18 +19,18 @@ namespace PeroTools2.Serde.Json
             for (var i = 0; i < maxLength; i++)
             {
                 var character = (char) span[i];
-                var isWiteSpace = StringHelper.IsWhiteSpace(character);
+                var isWhiteSpace = StringHelper.IsWhiteSpace(character);
                 // 不包括结尾
-                if (!isWiteSpace && character is not ('{' or '}' or '[' or ']' or ','))
+                if (!isWhiteSpace && character is not ('{' or '}' or '[' or ']' or ','))
                 {
                     continue;
                 }
-                if (isWiteSpace)
+                if (isWhiteSpace)
                 {
                     // 把剩下的读完
-                    for (var j = i; i < span.Length; j++)
+                    for (var j = i; j < span.Length; j++)
                     {
-                        if (character is not ('{' or '}' or '[' or ']' or ','))
+                        if ((char) span[j] is not ('{' or '}' or '[' or ']' or ','))
                         {
                             continue;
                         }

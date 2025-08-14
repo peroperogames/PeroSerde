@@ -71,11 +71,11 @@ namespace PeroTools2.Serde.Json
             {
                 if (s_IsFixed)
                 {
-                    reader.ReadCollection(list, s_FixedFormatter, false, out _);
+                    reader.ReadCollection(list, s_FixedFormatter, false);
                 }
                 else
                 {
-                    reader.ReadCollection(list, s_UnfixedFormatter, false, out _);
+                    reader.ReadCollection(list, s_UnfixedFormatter, false);
                 }
 
                 return list?.ToArray();
@@ -94,11 +94,11 @@ namespace PeroTools2.Serde.Json
             {
                 if (s_IsFixed)
                 {
-                    reader.ReadCollection(list, s_FixedFormatter, false, out _);
+                    reader.ReadCollection(list, s_FixedFormatter, false);
                 }
                 else
                 {
-                    reader.ReadCollection(list, s_UnfixedFormatter, false, out _);
+                    reader.ReadCollection(list, s_UnfixedFormatter, false);
                 }
 
                 return list?.ToArray();

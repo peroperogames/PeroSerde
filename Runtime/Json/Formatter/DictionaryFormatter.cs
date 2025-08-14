@@ -191,7 +191,7 @@ namespace PeroTools2.Serde.Json
 
         public TDictionary DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
         {
-            if (remains.Length >= 4 && SpanConverter.IsNull(remains.Slice(0, 4)))
+            if (reader.TryReadNull())
             {
                 return default;
             }
@@ -261,7 +261,7 @@ namespace PeroTools2.Serde.Json
 
         public TDictionary DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
         {
-            if (remains.Length >= 4 && SpanConverter.IsNull(remains.Slice(0, 4)))
+            if (reader.TryReadNull())
             {
                 return default;
             }

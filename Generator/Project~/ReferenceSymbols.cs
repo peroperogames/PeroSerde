@@ -21,6 +21,7 @@ public sealed class ReferenceSymbols
     private const string i_collection_type_name = "ICollection`1";
     private const string i_readonly_collection_type_name = "IReadOnlyCollection`1";
 
+    private const string dictionary_type_name = "Dictionary`2";
     private const string lazy_type_name = "Lazy`1";
     private const string nuallable_type_name = "Nullable`1";
     private const string key_value_pair_type_name = "KeyValuePair`2";
@@ -44,6 +45,7 @@ public sealed class ReferenceSymbols
     internal const string key_value_pair_type_fullname = $"{system_collection_generic_namespace}.{key_value_pair_type_name}";
     internal const string i_collection_type_fullname = $"{system_collection_generic_namespace}.{i_collection_type_name}";
     internal const string i_readonly_collection_type_fullname = $"{system_collection_generic_namespace}.{i_readonly_collection_type_name}";
+    internal const string dictionary_type_fullname = $"{system_collection_generic_namespace}.{dictionary_type_name}";
 
     private readonly Compilation m_Compilation;
 
@@ -61,6 +63,7 @@ public sealed class ReferenceSymbols
     public INamedTypeSymbol keyValuePairType { get; }
     public INamedTypeSymbol lazyType { get; }
     public INamedTypeSymbol nullableType { get; }
+    public INamedTypeSymbol dictionaryType { get; }
 
     public ReferenceSymbols(Compilation compilation)
     {
@@ -77,6 +80,7 @@ public sealed class ReferenceSymbols
         lazyType = GetTypeByMetaDataName(lazy_type_fullname);
         nullableType = GetTypeByMetaDataName(nullable_type_fullname);
         keyValuePairType = GetTypeByMetaDataName(key_value_pair_type_fullname);
+        dictionaryType = GetTypeByMetaDataName(dictionary_type_fullname);
     }
 
     public INamedTypeSymbol GetTypeByMetaDataName(string metaDataName)
