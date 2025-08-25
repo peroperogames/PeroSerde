@@ -109,6 +109,12 @@ namespace PeroTools2.Serde.Json
         internal void ReadCollection<T>(ICollection<T> col, IFixedSerdeJsonFormatter<T> formatter, bool readComma)
         {
             ReadBeginArray();
+            ReadWhiteSpace();
+            if(m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                return;
+            }
             while (true)
             {
                 ReadWhiteSpace();
@@ -130,6 +136,12 @@ namespace PeroTools2.Serde.Json
         internal void ReadCollection<T>(ICollection<T> col, ISerdeJsonFormatter<T> formatter, bool readComma)
         {
             ReadBeginArray();
+            ReadWhiteSpace();
+            if(m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                return;
+            }
             while (true)
             {
                 ReadWhiteSpace();
@@ -423,6 +435,12 @@ namespace PeroTools2.Serde.Json
         internal void ReadCollection<T>(ICollection<T> col, IFixedSerdeJsonFormatter<T> formatter, bool readComma)
         {
             ReadBeginArray();
+            ReadWhiteSpace();
+            if(m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                return;
+            }
             while (true)
             {
                 ReadWhiteSpace();
@@ -444,6 +462,12 @@ namespace PeroTools2.Serde.Json
         internal void ReadCollection<T>(ICollection<T> col, ISerdeJsonFormatter<T> formatter, bool readComma)
         {
             ReadBeginArray();
+            ReadWhiteSpace();
+            if(m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                return;
+            }
             while (true)
             {
                 ReadWhiteSpace();

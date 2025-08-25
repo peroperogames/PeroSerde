@@ -109,6 +109,29 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.IsTrue(obj.c[3][2] == null);
             Assert.IsTrue(obj.c[3][3] == "d");
         }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void EmptyCollectionSeriializeTest(Encoding encoding)
+        {
+            const string json =
+                "{\"a\":  [], \"b\": [], \"c\": {}}";
+            var obj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<Collection>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<Collection>(json);
+            Assert.IsNotNull(obj);
+            Assert.AreEqual(0, obj.a.Length);
+            Assert.AreEqual(0, obj.b.Count);
+            Assert.AreEqual(0, obj.c.Count);
+        }
+    }
+
+    [SerdeJsonSerializable]
+    public partial class Collection
+    {
+        public string[] a;
+        public List<string> b;
+        public Dictionary<int, string> c;
     }
 
     [SerdeJsonSerializable]
