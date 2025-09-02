@@ -26,16 +26,21 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string DeserializeUtf8(ref ReadOnlySpan<byte> span, ref JsonReaderUtf8 reader)
         {
+            var remains = reader.remains;
             var result = reader.ReadUntilEnd();
             if (SpanConverter.IsNull(result)) return null;
+            if(remains[0] != (byte) '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
             return SpanConverter.IsNull(result) ? null : Encoding.UTF8.GetString(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string DeserializeUtf16(ref ReadOnlySpan<char> span, ref JsonReaderUtf16 reader)
         {
+            var remains = reader.remains;
             var result = reader.ReadUntilEnd();
-            return SpanConverter.IsNull(result) ? null : result.ToString();
+            if (SpanConverter.IsNull(result)) return null;
+            if(remains[0] != '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
+            return result.ToString();
         }
     }
 }

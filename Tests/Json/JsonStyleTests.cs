@@ -26,6 +26,85 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
+        public void RedundantMemberDeserializeTest(Encoding encoding)
+        {
+            const string json = "{ \"d\":\"xxx\", \"a\":\"A1\", \"b\":\"B2\", \"c\":1.0}";
+            var obj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<JsonObject>(json);
+            Assert.AreEqual("A1", obj.a);
+            Assert.AreEqual("B2", obj.b);
+            Assert.AreEqual(1f, obj.c);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void MissMatchTypeMemberDeserializeTest(Encoding encoding)
+        {
+            const string json1 = "{ \"a\" : {\"d\": \"{{{\" } , \"b\" : \" B1\" , \"c\" : 1.1 }";
+            const string json2 = "{ \"a\" : \"Test\" , \"b\" : \" B1\" , \"c\" : \"Test\" }";
+            const string json3 = "{ \"a\" : \"Test\" , \"b\" : \" B1\" , \"c\" : {} }";
+            const string json4 = "{ \"a\" : \"Test\" , \"b\" : \" B1\" , \"c\" : [] }";
+            const string json5 = "{ \"a\" : \"Test\" , \"b\" : \" B1\" , \"c\" : null }";
+            Assert.Throws<SerdeException>(() =>
+            {
+                if (encoding == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json1));
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<JsonObject>(json1);
+                }
+            });
+            Assert.Throws<SerdeException>(() =>
+            {
+                if (encoding == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json2));
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<JsonObject>(json2);
+                }
+            });
+            Assert.Throws<SerdeException>(() =>
+            {
+                if (encoding == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json3));
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<JsonObject>(json3);
+                }
+            });
+            Assert.Throws<SerdeException>(() =>
+            {
+                if (encoding == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json4));
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<JsonObject>(json4);
+                }
+            });
+            Assert.Throws<SerdeException>(() =>
+            {
+                if (encoding == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json5));
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<JsonObject>(json5);
+                }
+            });
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
         public void WriteSpaceStyleDeserializeArrayTest(Encoding encoding)
         {
             const string json = " [ { \"a\" : \"A1 \" , \"b\" : \" B1\" , \"c\" : 1.1 } , { \"a\" : \"A2 \" , \"b\" : \" B2\" , \"c\" : 1.2 } ] ";
@@ -112,7 +191,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void EmptyCollectionSeriializeTest(Encoding encoding)
+        public void EmptyCollectionSerializeTest(Encoding encoding)
         {
             const string json =
                 "{\"a\":  [], \"b\": [], \"c\": {}}";

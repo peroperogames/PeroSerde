@@ -69,7 +69,7 @@ namespace PeroTools2.Serde.Json
             var component = 1;
             if (span[0] != (byte) '(' || span[span.Length - 1] != (byte) ')')
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Color>();
             }
             for (var i = 1; i < span.Length; i++)
             {
@@ -177,7 +177,7 @@ namespace PeroTools2.Serde.Json
                     }
                     else
                     {
-                        throw SerdeException.ThrowInvalidParsing();
+                        throw SerdeException.ThrowInvalidParsing<Color>();
                     }
 
                     i += length;
@@ -269,7 +269,7 @@ namespace PeroTools2.Serde.Json
             var span = new ReadOnlySpan<byte>(src + 1, 9);
             if (span[0] != '#' || src[0] != (byte) '"' || src[10] != (byte) '"')
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Color>();
             }
             span = span.Slice(1, span.Length - 1);
 #if NET8_0_OR_GREATER
@@ -293,7 +293,7 @@ namespace PeroTools2.Serde.Json
                     return ch - (byte) 'A' + 10;
                 if (ch >= (byte) 'a' && ch <= (byte) 'f')
                     return ch - (byte) 'a' + 10;
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Color>();
             }
 #endif
         }
@@ -303,7 +303,7 @@ namespace PeroTools2.Serde.Json
             var span = new ReadOnlySpan<char>(src + 1, 9);
             if (span[0] != '#' || src[0] != '"' || src[10] != '"')
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Color>();
             }
             span = span.Slice(1, span.Length - 1);
             advance = 11;

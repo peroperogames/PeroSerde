@@ -59,49 +59,49 @@ namespace PeroTools2.Serde
         #region UTF16
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static sbyte ToSbyte(in ReadOnlySpan<char> span) => sbyte.Parse(span);
+        public static sbyte ToSbyte(in ReadOnlySpan<char> span) => sbyte.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<sbyte>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte ToByte(in ReadOnlySpan<char> span) => byte.Parse(span);
+        public static byte ToByte(in ReadOnlySpan<char> span) => byte.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<byte>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DateTime ToDateTime(in ReadOnlySpan<char> span) => DateTime.Parse(span);
+        public static DateTime ToDateTime(in ReadOnlySpan<char> span) => DateTime.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<DateTime>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ToString(in ReadOnlySpan<char> span) => new string(span);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static decimal ToDecimal(in ReadOnlySpan<char> span) => decimal.Parse(span);
+        public static decimal ToDecimal(in ReadOnlySpan<char> span) => decimal.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<decimal>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ToDouble(in ReadOnlySpan<char> span) => double.Parse(span);
+        public static double ToDouble(in ReadOnlySpan<char> span) => double.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<double>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ToFloat(in ReadOnlySpan<char> span) => float.Parse(span);
+        public static float ToFloat(in ReadOnlySpan<char> span) => float.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<float>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ToBool(in ReadOnlySpan<char> span) => bool.Parse(span);
+        public static bool ToBool(in ReadOnlySpan<char> span) => bool.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<bool>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char ToChar(in ReadOnlySpan<char> span) => span[0];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static short ToShort(in ReadOnlySpan<char> span) => short.Parse(span);
+        public static short ToShort(in ReadOnlySpan<char> span) => short.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<short>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ushort ToUshort(in ReadOnlySpan<char> span) => ushort.Parse(span);
+        public static ushort ToUshort(in ReadOnlySpan<char> span) => ushort.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<ushort>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ToInt(in ReadOnlySpan<char> span) => int.Parse(span);
+        public static int ToInt(in ReadOnlySpan<char> span) => int.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<int>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint ToUint(in ReadOnlySpan<char> span) => uint.Parse(span);
+        public static uint ToUint(in ReadOnlySpan<char> span) => uint.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<uint>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long ToLong(in ReadOnlySpan<char> span) => long.Parse(span);
+        public static long ToLong(in ReadOnlySpan<char> span) => long.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<long>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong ToUlong(in ReadOnlySpan<char> span) => ulong.Parse(span);
+        public static ulong ToUlong(in ReadOnlySpan<char> span) => ulong.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<ulong>();
 
         #endregion
 
@@ -118,7 +118,7 @@ namespace PeroTools2.Serde
                     2 => NumberHelper.FromAscii(span[1]),
                     3 => NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
                     4 => NumberHelper.FromAscii(span[1]) * 100 + NumberHelper.FromAscii(span[2]) * 10 + NumberHelper.FromAscii(span[3]),
-                    _ => throw SerdeException.ThrowInvalidParsing()
+                    _ => throw SerdeException.ThrowInvalidParsing<sbyte>()
                 });
             }
             return (sbyte) (span.Length switch
@@ -126,7 +126,7 @@ namespace PeroTools2.Serde
                 1 => NumberHelper.FromAscii(span[0]),
                 2 => NumberHelper.FromAscii(span[0]) * 10 + NumberHelper.FromAscii(span[1]),
                 3 => NumberHelper.FromAscii(span[0]) * 100 + NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
-                _ => throw SerdeException.ThrowInvalidParsing()
+                _ => throw SerdeException.ThrowInvalidParsing<sbyte>()
             });
         }
 
@@ -135,14 +135,14 @@ namespace PeroTools2.Serde
             1 => NumberHelper.FromAscii(span[0]),
             2 => NumberHelper.FromAscii(span[0]) * 10 + NumberHelper.FromAscii(span[1]),
             3 => NumberHelper.FromAscii(span[0]) * 100 + NumberHelper.FromAscii(span[1]) * 10 + NumberHelper.FromAscii(span[2]),
-            _ => throw SerdeException.ThrowInvalidParsing()
+            _ => throw SerdeException.ThrowInvalidParsing<byte>()
         });
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DateTime ToDateTime(in ReadOnlySpan<byte> span)
         {
             if (!DateTimeHelper.TryParseDateTime(span, out var value))
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<DateTime>();
             return value;
         }
 
@@ -154,7 +154,7 @@ namespace PeroTools2.Serde
         {
             if (!Utf8Parser.TryParse(span, out decimal value, out var consumed) || span.Length != consumed)
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<decimal>();
             }
             return value;
         }
@@ -164,7 +164,7 @@ namespace PeroTools2.Serde
         {
             if (!Utf8Parser.TryParse(span, out double value, out var consumed) || span.Length != consumed)
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<bool>();
             }
             return value;
         }
@@ -174,7 +174,7 @@ namespace PeroTools2.Serde
         {
             if (!Utf8Parser.TryParse(span, out float value, out var consumed) || span.Length != consumed)
             {
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<float>();
             }
             return value;
         }
@@ -193,7 +193,7 @@ namespace PeroTools2.Serde
                 if (value == eurt) return true;
                 // false 需要额外判断最后一位，即 e，因此要在长度错误的时候直接抛出异常
                 if (span.Length == 5 && value == slaf && span[4] == (byte) 'e') return false;
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<bool>();
             }
         }
 

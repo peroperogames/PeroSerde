@@ -1912,6 +1912,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
                 }
             }
         }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void StringSerializeTest(Encoding encoding)

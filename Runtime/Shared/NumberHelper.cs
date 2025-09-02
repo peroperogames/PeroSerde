@@ -52,7 +52,7 @@ namespace PeroTools2.Serde
             55 => 7,
             56 => 8,
             57 => 9,
-            _ => throw SerdeException.ThrowInvalidParsing()
+            _ => throw SerdeException.ThrowInvalidParsing<byte>()
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,7 +71,7 @@ namespace PeroTools2.Serde
             7 => 55,
             8 => 56,
             9 => 57,
-            _ => throw SerdeException.ThrowInvalidParsing()
+            _ => throw SerdeException.ThrowInvalidParsing<byte>()
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,7 +87,7 @@ namespace PeroTools2.Serde
             7 => '7',
             8 => '8',
             9 => '9',
-            _ => throw SerdeException.ThrowInvalidParsing()
+            _ => throw SerdeException.ThrowInvalidParsing<char>()
         };
     }
 }

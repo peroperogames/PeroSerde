@@ -47,7 +47,7 @@ namespace PeroTools2.Serde.Json
         {
             var span = JsonReader.ReadValueUntilEndUtf8(src, 38, out advance);
             if (!Utf8Parser.TryParse(span, out Guid guid, out var consumed) || consumed != span.Length)
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Guid>();
             return guid;
         }
 
@@ -57,7 +57,7 @@ namespace PeroTools2.Serde.Json
             var span = JsonReader.ReadValueUntilEndUtf16(src, 38, out advance);
             var format = 'D';
             if (!Guid.TryParseExact(span, MemoryMarshal.CreateSpan(ref format, 1), out var value))
-                throw SerdeException.ThrowInvalidParsing();
+                throw SerdeException.ThrowInvalidParsing<Guid>();
             return value;
         }
     }
