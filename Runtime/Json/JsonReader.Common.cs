@@ -295,13 +295,12 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ReadChar(char c)
         {
-            var length = m_Json.Length - m_Advanced;
-            var span = m_Json.Slice(m_Advanced, length);
-            if (!TryGetIndexFromSpan(ref span, length, (byte) c, out var index))
+            ReadWhiteSpace();
+            if (remains[0] != (byte) c)
             {
                 throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
-            Advance(index + 1);
+            Advance(1);
         }
 
         /// <summary>
@@ -621,13 +620,12 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ReadChar(char c)
         {
-            var length = m_Json.Length - m_Advanced;
-            var span = m_Json.Slice(m_Advanced, length);
-            if (!TryGetIndexFromSpan(ref span, length, c, out var index))
+            ReadWhiteSpace();
+            if (remains[0] != c)
             {
                 throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
-            Advance(index + 1);
+            Advance(1);
         }
 
         /// <summary>

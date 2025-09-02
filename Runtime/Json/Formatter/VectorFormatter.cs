@@ -82,7 +82,7 @@ namespace PeroTools2.Serde.Json
                             y = SpanConverter.ToFloat(span.Slice(yStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector2>();
                     }
 
                     i += length;
@@ -129,7 +129,7 @@ namespace PeroTools2.Serde.Json
                             y = SpanConverter.ToFloat(span.Slice(yStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector2>();
                     }
 
                     i += length;
@@ -225,7 +225,7 @@ namespace PeroTools2.Serde.Json
                             z = SpanConverter.ToFloat(span.Slice(zStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector3>();
                     }
 
                     i += length;
@@ -281,7 +281,7 @@ namespace PeroTools2.Serde.Json
                             z = SpanConverter.ToFloat(span.Slice(zStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector3>();
                     }
 
                     i += length;
@@ -390,7 +390,7 @@ namespace PeroTools2.Serde.Json
                             w = SpanConverter.ToFloat(span.Slice(wStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector4>();
                     }
                     i += length;
                     component++;
@@ -454,7 +454,7 @@ namespace PeroTools2.Serde.Json
                             w = SpanConverter.ToFloat(span.Slice(wStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector4>();
                     }
 
                     i += length;
@@ -536,7 +536,7 @@ namespace PeroTools2.Serde.Json
                             y = SpanConverter.ToInt(span.Slice(yStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector2Int>();
                     }
 
                     i += length;
@@ -583,7 +583,7 @@ namespace PeroTools2.Serde.Json
                             y = SpanConverter.ToInt(span.Slice(yStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector2Int>();
                     }
 
                     i += length;
@@ -679,7 +679,7 @@ namespace PeroTools2.Serde.Json
                             z = SpanConverter.ToInt(span.Slice(zStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector3Int>();
                     }
 
                     i += length;
@@ -735,7 +735,7 @@ namespace PeroTools2.Serde.Json
                             z = SpanConverter.ToInt(span.Slice(zStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Vector3Int>();
                     }
 
                     i += length;

@@ -109,7 +109,7 @@ namespace PeroTools2.Serde.Json
                             w = SpanConverter.ToFloat(span.Slice(wStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Quaternion>();
                     }
                     i += length;
                     component++;
@@ -173,7 +173,7 @@ namespace PeroTools2.Serde.Json
                             w = SpanConverter.ToFloat(span.Slice(wStart, length));
                             break;
                         default:
-                            throw SerdeException.ThrowInvalidParsing();
+                            throw SerdeException.ThrowInvalidParsing<Quaternion>();
                     }
 
                     i += length;

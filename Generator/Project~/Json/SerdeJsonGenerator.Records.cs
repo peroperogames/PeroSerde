@@ -17,16 +17,14 @@ public partial class SerdeJsonGenerator
     {
         var ns = typeSymbol.ContainingNamespace;
         var sb = new StringBuilder();
-        var ignoreMissingMember = typeSymbol.TryGetAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute, out var attributeData)
-            ? (bool) attributeData!.ConstructorArguments[0].Value!
-            : true;
+
         if (ns is { IsGlobalNamespace: false })
         {
             sb.AppendLine($"namespace {ns} {{");
         }
         sb.AppendLine(GenerateRecordsFormatterRegistry(typeSymbol, typeMeta));
         sb.AppendLine(GenerateRecordsSerialization(typeSymbol, typeMeta));
-        sb.Append(GenerateRecordsDeserialization(typeSymbol, typeMeta, ignoreMissingMember));
+        sb.Append(GenerateRecordsDeserialization(typeSymbol, typeMeta));
         if (ns is { IsGlobalNamespace: false })
         {
             sb.AppendLine("}");
@@ -103,14 +101,16 @@ public partial class SerdeJsonGenerator
             {
                 formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
                 formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
-                formatterRegistry.AppendLine($"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
+                formatterRegistry.AppendLine(
+                    $"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
                 formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
             }
             else if (elementType.ContainsAttribute(m_ReferenceSymbols.serdeJsonSerializableAttribute))
             {
                 formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<{elementType.ToDisplayString()}>())");
                 formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
-                formatterRegistry.AppendLine($"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
+                formatterRegistry.AppendLine(
+                    $"{new string(' ', padding + 4)}{elementType.ToDisplayString()}.RegisterFormattersFor{elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}();");
                 formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
             }
             else if (TryGetFormatterType(new MemberMeta
@@ -124,7 +124,8 @@ public partial class SerdeJsonGenerator
                     var keyType = kvType.TypeArguments[0];
                     var valueType = kvType.TypeArguments[1];
                     RegisterElementTypes(BuiltinKind.Dictionary, valueType, padding);
-                    formatterRegistry.AppendLine($"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<System.Collections.Generic.Dictionary<{keyType.ToDisplayString()}, {valueType.ToDisplayString()}>>())");
+                    formatterRegistry.AppendLine(
+                        $"{new string(' ', padding)}if (!global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsRegistered<System.Collections.Generic.Dictionary<{keyType.ToDisplayString()}, {valueType.ToDisplayString()}>>())");
                     formatterRegistry.AppendLine($"{new string(' ', padding)}{{");
                     formatterRegistry.AppendLine($"{new string(' ', padding + 4)}global::PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Register(new {elementFormatter}());");
                     formatterRegistry.AppendLine($"{new string(' ', padding)}}}");
@@ -178,7 +179,7 @@ public partial class SerdeJsonGenerator
         }
     }
 
-    private static string GenerateRecordsDeserialization(ITypeSymbol type, TypeMeta typeMeta, bool ignoreMissingMember)
+    private static string GenerateRecordsDeserialization(ITypeSymbol type, TypeMeta typeMeta)
     {
         var typeName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         var members = typeMeta.members;
@@ -196,58 +197,44 @@ public partial class SerdeJsonGenerator
         }
         deserializerBuilder.AppendLine($"            var obj = new {typeName}();");
         deserializerBuilder.AppendLine("            reader.ReadBeginObject();");
-        if (ignoreMissingMember)
+
+        deserializerBuilder.AppendLine("""
+                                                   while (reader.TryReadKey(out key))
+                                                   {
+                                                       OnReadKey(ref key, ref obj, ref reader);
+                                                       reader.TryReadComma();
+                                                   }
+                                                   reader.ReadEndObject();
+                                                   return obj;
+                                       """);
+        for (var index = 0; index < members.Length; index++)
         {
-            for (var index = 0; index < members.Length; index++)
-            {
-                var member = members[index];
-                var readComma = (index == members.Length - 1).ToString().ToLower();
-                var memberTypeName = member.type.ToDisplayString();
-                var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
-                deserializerBuilder.AppendLine($$"""
-                                                           if (reader.TryReadKey(out key))
-                                                               OnReadKey(ref key, ref obj, ref reader, {{readComma}});
-                                                           else
-                                                           {
-                                                               reader.ReadEndObject();
-                                                               return obj;
-                                                           }
-                                               
-                                               """);
-                utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
-                utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
-                var memberReadStr = $$"""
+            var member = members[index];
+            var memberTypeName = member.type.ToDisplayString();
+            var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
+            utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
+            utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
+            var memberReadStr = $$"""
                                                   {
                                                       obj.{{member.name}} = reader.ReadValue<{{memberTypeName}}>({{formatter}}false);
-                                                      if(!isEnd) reader.TryReadComma();
                                                   }
                                       """;
-                utf16Builder.AppendLine(memberReadStr);
-                utf8Builder.AppendLine(memberReadStr);
-            }
+            utf16Builder.AppendLine(memberReadStr);
+            utf8Builder.AppendLine(memberReadStr);
         }
-        else
+        if (members.Length > 0)
         {
-            for (var index = 0; index < members.Length; index++)
-            {
-                var member = members[index];
-                var readComma = (index == members.Length - 1).ToString().ToLower();
-                var memberTypeName = member.type.ToDisplayString();
-                var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
-                deserializerBuilder.AppendLine("            key = reader.ReadKey();");
-                deserializerBuilder.AppendLine($"            OnReadKey(ref key, ref obj, ref reader, {readComma});");
-                utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
-                utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
-                var memberReadStr = $"                obj.{member.name} = reader.ReadValue<{memberTypeName}>({formatter}isEnd);";
-                utf16Builder.AppendLine(memberReadStr);
-                utf8Builder.AppendLine(memberReadStr);
-            }
+            // 如果是冗余的Json属性，那么直接读
+            var finalCheck =
+                """
+                            else
+                            {
+                                reader.ReadUntilEnd();
+                            }
+                """;
+            utf16Builder.Append(finalCheck);
+            utf8Builder.Append(finalCheck);
         }
-
-        deserializerBuilder.AppendLine("            reader.ReadEndObject();");
-        deserializerBuilder.Append("            return obj;");
-        if (utf8Builder.Length > 0) utf8Builder.Remove(utf8Builder.Length - 1, 1);
-        if (utf16Builder.Length > 0) utf16Builder.Remove(utf16Builder.Length - 1, 1);
 
         // 生成分部序列化器
         return $$"""
@@ -260,24 +247,24 @@ public partial class SerdeJsonGenerator
                          public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> value, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
                              System.ReadOnlySpan<byte> key;
-                             {{deserializerBuilder}}
+                 {{deserializerBuilder}}
                          }
 
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public {{typeName}} DeserializeUtf16(ref System.ReadOnlySpan<char> value, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
                          {
                              System.ReadOnlySpan<char> key;
-                             {{deserializerBuilder}}
+                 {{deserializerBuilder}}
                          }
 
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                         private void OnReadKey(ref System.ReadOnlySpan<byte> key, ref {{type.ToDisplayString()}} obj, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader, bool isEnd)
+                         private void OnReadKey(ref System.ReadOnlySpan<byte> key, ref {{type.ToDisplayString()}} obj, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
                  {{utf8Builder}}
                          }
 
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-                         private void OnReadKey(ref System.ReadOnlySpan<char> key, ref {{type.ToDisplayString()}} obj, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader, bool isEnd)
+                         private void OnReadKey(ref System.ReadOnlySpan<char> key, ref {{type.ToDisplayString()}} obj, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
                          {
                  {{utf16Builder}}
                          }

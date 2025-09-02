@@ -23,9 +23,6 @@ namespace PeroTools2.Serde
         internal static SerdeException ThrowInvalidSurrogateChar(char c) => new($"Surrogate char is not supported. Char: {c}");
 
         [DoesNotReturn]
-        internal static SerdeException ThrowInvalidParsing() => new("Invalid parsing.");
-
-        [DoesNotReturn]
         internal static SerdeException ThrowInvalidAdvance() => new("Cannot advance past the end of the buffer.");
 
         [DoesNotReturn]
@@ -36,6 +33,9 @@ namespace PeroTools2.Serde
 
         [DoesNotReturn]
         internal static SerdeException ThrowInvalidJson(string json) => new($"Invalid json: {json}");
+
+        [DoesNotReturn]
+        internal static SerdeException ThrowInvalidParsing<T>() => new($"Invalid parsing for type{typeof(T)}");
 
         [DoesNotReturn]
         internal static SerdeException ThrowFormatterNotFound(Type type) => new($"Cannot found formatter for type \"{type.Name}\".");

@@ -124,7 +124,7 @@ namespace PeroTools2.Serde
                 for (var i = 0; i < span.Length; i++)
                 {
                     if (span[i] < (byte) '0' || span[i] > (byte) '9')
-                        throw SerdeException.ThrowInvalidParsing();
+                        throw SerdeException.ThrowInvalidParsing<DateTime>();
                     result = result * 10 + (span[i] - (byte) '0');
                 }
                 return result;
