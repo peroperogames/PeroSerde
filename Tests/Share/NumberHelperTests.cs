@@ -11,14 +11,14 @@ namespace PeroTools2.Serde.Editor.Tests
 {
     public sealed class NumberHelperTests
     {
-        [TestCase(Encoding.UTF8, 0.12f)]
-        [TestCase(Encoding.UTF8, -0.12f)]
-        [TestCase(Encoding.UTF8, 10.12f)]
-        [TestCase(Encoding.UTF8, -10.12f)]
-        [TestCase(Encoding.UTF16, 0.12f)]
-        [TestCase(Encoding.UTF16, -0.12f)]
-        [TestCase(Encoding.UTF16, 10.12f)]
-        [TestCase(Encoding.UTF16, -10.12f)]
+        [TestCase(Encoding.UTF8, 0.15f)]
+        [TestCase(Encoding.UTF8, -0.15f)]
+        [TestCase(Encoding.UTF8, 10.15f)]
+        [TestCase(Encoding.UTF8, -10.15f)]
+        [TestCase(Encoding.UTF16, 0.15f)]
+        [TestCase(Encoding.UTF16, -0.15f)]
+        [TestCase(Encoding.UTF16, 10.15f)]
+        [TestCase(Encoding.UTF16, -10.15f)]
         public unsafe void FloatToStringTests(Encoding encoding, float value)
         {
             if (encoding == Encoding.UTF8)
@@ -27,7 +27,7 @@ namespace PeroTools2.Serde.Editor.Tests
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs(float.Parse(System.Text.Encoding.UTF8.GetString(span)) - value);
-                Assert.Less(result, 0.05f);
+                Assert.LessOrEqual(result, 0.001f);
             }
             else
             {
@@ -35,18 +35,18 @@ namespace PeroTools2.Serde.Editor.Tests
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 var result = MathF.Abs(float.Parse(span) - value);
-                Assert.Less(result, 0.05f);
+                Assert.LessOrEqual(result, 0.001f);
             }
         }
 
-        [TestCase(Encoding.UTF8, 0.12d)]
-        [TestCase(Encoding.UTF8, -0.12d)]
-        [TestCase(Encoding.UTF8, 10.12d)]
-        [TestCase(Encoding.UTF8, -10.12d)]
-        [TestCase(Encoding.UTF16, 0.12d)]
-        [TestCase(Encoding.UTF16, -0.12d)]
-        [TestCase(Encoding.UTF16, 10.12d)]
-        [TestCase(Encoding.UTF16, -10.12d)]
+        [TestCase(Encoding.UTF8, 0.15d)]
+        [TestCase(Encoding.UTF8, -0.15d)]
+        [TestCase(Encoding.UTF8, 10.15d)]
+        [TestCase(Encoding.UTF8, -10.15d)]
+        [TestCase(Encoding.UTF16, 0.15d)]
+        [TestCase(Encoding.UTF16, -0.15d)]
+        [TestCase(Encoding.UTF16, 10.15d)]
+        [TestCase(Encoding.UTF16, -10.15d)]
         public unsafe void DoubleToStringTests(Encoding encoding, double value)
         {
             if (encoding == Encoding.UTF8)
@@ -55,7 +55,7 @@ namespace PeroTools2.Serde.Editor.Tests
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs((float) (double.Parse(System.Text.Encoding.UTF8.GetString(span)) - value));
-                Assert.Less(result, 0.05f);
+                Assert.LessOrEqual(result, 0.001d);
             }
             else
             {
@@ -63,7 +63,7 @@ namespace PeroTools2.Serde.Editor.Tests
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 var result = MathF.Abs((float) (double.Parse(span) - value));
-                Assert.Less(result, 0.05f);
+                Assert.LessOrEqual(result, 0.001d);
             }
         }
 

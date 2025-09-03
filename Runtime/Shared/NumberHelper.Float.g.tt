@@ -90,13 +90,8 @@ namespace PeroTools2.Serde
                 *dest = <#= castStr #>'0';
                 *(dest + 1) = <#= castStr #>dot_sign;
                 dest += 2;
-                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                // 整数是零，所以不需要再移动小数点，直接写入小数部分
                 To<#= utf #>StringUnsafe(mantissa, dest);
-                // 小数部分整体向后错一位, 来放小数点
-                for (var i = lengthOfFractional; i > 0;)
-                {
-                    dest[i] = dest[--i];
-                }
                 dest += lengthOfFractional;
             }
             else

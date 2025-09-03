@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
 {
-    internal static partial class NumberHelper {
+    static partial class NumberHelper {
         /// <summary>将一个float值格式化为utf16字符串.</summary>
         /// <remarks>
         /// 必须确保dest的空间足够, 最大需要<see cref="max_float_string_length"/>个字节
@@ -78,13 +78,8 @@ namespace PeroTools2.Serde
                 *dest = '0';
                 *(dest + 1) = dot_sign;
                 dest += 2;
-                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                // 整数是零，所以不需要再移动小数点，直接写入小数部分
                 ToUtf16StringUnsafe(mantissa, dest);
-                // 小数部分整体向后错一位, 来放小数点
-                for (var i = lengthOfFractional; i > 0;)
-                {
-                    dest[i] = dest[--i];
-                }
                 dest += lengthOfFractional;
             }
             else
@@ -190,13 +185,8 @@ namespace PeroTools2.Serde
                 *dest = (byte) '0';
                 *(dest + 1) = (byte) dot_sign;
                 dest += 2;
-                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                // 整数是零，所以不需要再移动小数点，直接写入小数部分
                 ToUtf8StringUnsafe(mantissa, dest);
-                // 小数部分整体向后错一位, 来放小数点
-                for (var i = lengthOfFractional; i > 0;)
-                {
-                    dest[i] = dest[--i];
-                }
                 dest += lengthOfFractional;
             }
             else
@@ -302,13 +292,8 @@ namespace PeroTools2.Serde
                 *dest = '0';
                 *(dest + 1) = dot_sign;
                 dest += 2;
-                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                // 整数是零，所以不需要再移动小数点，直接写入小数部分
                 ToUtf16StringUnsafe(mantissa, dest);
-                // 小数部分整体向后错一位, 来放小数点
-                for (var i = lengthOfFractional; i > 0;)
-                {
-                    dest[i] = dest[--i];
-                }
                 dest += lengthOfFractional;
             }
             else
@@ -414,13 +399,8 @@ namespace PeroTools2.Serde
                 *dest = (byte) '0';
                 *(dest + 1) = (byte) dot_sign;
                 dest += 2;
-                // 有小数位的部分, 先按照整数写入, 再写入小数点
+                // 整数是零，所以不需要再移动小数点，直接写入小数部分
                 ToUtf8StringUnsafe(mantissa, dest);
-                // 小数部分整体向后错一位, 来放小数点
-                for (var i = lengthOfFractional; i > 0;)
-                {
-                    dest[i] = dest[--i];
-                }
                 dest += lengthOfFractional;
             }
             else
