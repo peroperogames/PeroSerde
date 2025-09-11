@@ -79,8 +79,15 @@ namespace PeroTools2.Serde
                 *(dest + 1) = dot_sign;
                 dest += 2;
                 // 整数是零，所以不需要再移动小数点，直接写入小数部分
+                var fractionalExponent = GetExponent(mantissa);
+                var firstNumIndex = lengthOfFractional - (fractionalExponent + 1);
+                for (int i = 0; i < firstNumIndex; i++)
+                {
+                    dest[i] = '0';
+                }
+                dest += firstNumIndex;
                 ToUtf16StringUnsafe(mantissa, dest);
-                dest += lengthOfFractional;
+                dest += fractionalExponent + 1;
             }
             else
             {
@@ -186,8 +193,15 @@ namespace PeroTools2.Serde
                 *(dest + 1) = (byte) dot_sign;
                 dest += 2;
                 // 整数是零，所以不需要再移动小数点，直接写入小数部分
+                var fractionalExponent = GetExponent(mantissa);
+                var firstNumIndex = lengthOfFractional - (fractionalExponent + 1);
+                for (int i = 0; i < firstNumIndex; i++)
+                {
+                    dest[i] = (byte) '0';
+                }
+                dest += firstNumIndex;
                 ToUtf8StringUnsafe(mantissa, dest);
-                dest += lengthOfFractional;
+                dest += fractionalExponent + 1;
             }
             else
             {
@@ -293,8 +307,15 @@ namespace PeroTools2.Serde
                 *(dest + 1) = dot_sign;
                 dest += 2;
                 // 整数是零，所以不需要再移动小数点，直接写入小数部分
+                var fractionalExponent = GetExponent(mantissa);
+                var firstNumIndex = lengthOfFractional - (fractionalExponent + 1);
+                for (int i = 0; i < firstNumIndex; i++)
+                {
+                    dest[i] = '0';
+                }
+                dest += firstNumIndex;
                 ToUtf16StringUnsafe(mantissa, dest);
-                dest += lengthOfFractional;
+                dest += fractionalExponent + 1;
             }
             else
             {
@@ -400,8 +421,15 @@ namespace PeroTools2.Serde
                 *(dest + 1) = (byte) dot_sign;
                 dest += 2;
                 // 整数是零，所以不需要再移动小数点，直接写入小数部分
+                var fractionalExponent = GetExponent(mantissa);
+                var firstNumIndex = lengthOfFractional - (fractionalExponent + 1);
+                for (int i = 0; i < firstNumIndex; i++)
+                {
+                    dest[i] = (byte) '0';
+                }
+                dest += firstNumIndex;
                 ToUtf8StringUnsafe(mantissa, dest);
-                dest += lengthOfFractional;
+                dest += fractionalExponent + 1;
             }
             else
             {

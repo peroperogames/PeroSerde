@@ -12,10 +12,12 @@ namespace PeroTools2.Serde.Editor.Tests
     public sealed class NumberHelperTests
     {
         [TestCase(Encoding.UTF8, 0.15f)]
+        [TestCase(Encoding.UTF8, 0.05f)]
         [TestCase(Encoding.UTF8, -0.15f)]
         [TestCase(Encoding.UTF8, 10.15f)]
         [TestCase(Encoding.UTF8, -10.15f)]
         [TestCase(Encoding.UTF16, 0.15f)]
+        [TestCase(Encoding.UTF16, 0.05f)]
         [TestCase(Encoding.UTF16, -0.15f)]
         [TestCase(Encoding.UTF16, 10.15f)]
         [TestCase(Encoding.UTF16, -10.15f)]
@@ -34,16 +36,19 @@ namespace PeroTools2.Serde.Editor.Tests
                 var dest = stackalloc char[NumberHelper.max_float_string_length];
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
+                Assert.AreEqual(value.ToString(), new String(span));
                 var result = MathF.Abs(float.Parse(span) - value);
                 Assert.LessOrEqual(result, 0.001f);
             }
         }
 
         [TestCase(Encoding.UTF8, 0.15d)]
+        [TestCase(Encoding.UTF8, 0.05d)]
         [TestCase(Encoding.UTF8, -0.15d)]
         [TestCase(Encoding.UTF8, 10.15d)]
         [TestCase(Encoding.UTF8, -10.15d)]
         [TestCase(Encoding.UTF16, 0.15d)]
+        [TestCase(Encoding.UTF16, 0.05d)]
         [TestCase(Encoding.UTF16, -0.15d)]
         [TestCase(Encoding.UTF16, 10.15d)]
         [TestCase(Encoding.UTF16, -10.15d)]
