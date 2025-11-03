@@ -75,7 +75,7 @@ public partial class SerdeJsonGenerator
             """
             + '\n'
             + (type.IsGeneric()
-                ? string.Empty
+                ? string.Empty // 泛型不允许饿汉注册
                 : """
                       #if UNITY_EDITOR
                       [global::UnityEditor.InitializeOnLoadMethod]

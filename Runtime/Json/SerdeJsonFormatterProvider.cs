@@ -36,14 +36,17 @@ namespace PeroTools2.Serde.Json
             Register(new DateTimeFormatter());
         }
 
-        public static bool IsRegistered<T>() => Cache<T>.registered || FixedCache<T>.registered;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsRegistered<T>() => Cache<T>.registered || FixedCache<T>.registered || GenericCache<T>.registered;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Register<T>(ISerdeJsonFormatter<T> formatter)
         {
             Cache<T>.registered = true;
             Cache<T>.formatter = formatter;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Register<T>(IFixedSerdeJsonFormatter<T> formatter)
         {
             FixedCache<T>.registered = true;
@@ -105,6 +108,17 @@ namespace PeroTools2.Serde.Json
             // ReSharper disable once StaticMemberInGenericType
             public static bool registered;
             public static IFixedSerdeJsonFormatter<T> formatter;
+        }
+
+        private static class GenericCache<T>
+        {
+            // ReSharper disable once StaticMemberInGenericType
+            public static bool registered => Cache<T>.registered;
+
+            /// <summary>
+            /// 泛型无法饿汉注册，需要显式调用静态构造函数
+            /// </summary>
+            static GenericCache() => RuntimeHelpers.RunClassConstructor(typeof(T).TypeHandle);
         }
     }
 }
