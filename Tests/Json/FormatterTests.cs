@@ -11,8 +11,14 @@ using PeroTools2.Serde.Editor.Tests;
 
 namespace PeroTools2.Serde.Json.Editor.Tests
 {
-    public sealed class CustomFormatterTests
+    public sealed class FormatterTests
     {
+        [Test]
+        public void GenericRegisterTests()
+        {
+            Assert.IsTrue(SerdeJsonFormatterProvider.IsRegistered<TestGenericType<GenericType<int>>>());
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EncodingFormatterTests(Encoding encoding)
@@ -90,5 +96,11 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public override ReadOnlySpan<char> SerializeUtf16(string value) => $"\"{value}\"".AsSpan();
 
         public override ReadOnlySpan<byte> SerializeUtf8(string value) => System.Text.Encoding.UTF8.GetBytes($"\"{value}\"");
+    }
+
+    [SerdeJsonSerializable]
+    internal partial class TestGenericType<T>
+    {
+        public T data;
     }
 }
