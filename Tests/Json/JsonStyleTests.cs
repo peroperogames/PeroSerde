@@ -17,7 +17,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         [TestCase(Encoding.UTF16)]
         public void MissingMemberDeserializeTest(Encoding encoding)
         {
-            const string json = "{ \"a\":\"A1\"} ";
+            const string json = "{ \"a\":\"A1\", \"not_exists_array\":[], \"not_exists_object\":{}, \"not_exists_number\": 123, \"not_exists_string\": \"123\"} ";
             var obj = encoding == Encoding.UTF8
                 ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<JsonObject>(json);
