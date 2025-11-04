@@ -82,7 +82,7 @@ namespace PeroTools2.Serde.Json
                 {
                     arrayCount++;
                 }
-                else if (character is '}')
+                else if (character is ']')
                 {
                     arrayCount--;
                 }
@@ -95,6 +95,7 @@ namespace PeroTools2.Serde.Json
                 {
                     continue;
                 }
+                i++; //读最后一个括号
                 advance = i;
                 // 把剩下的读完
                 for (var j = i; j < span.Length; j++)
