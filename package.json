@@ -2,7 +2,7 @@
   "name": "com.prpr.serde",
   "displayName": "PeroSerde",
   "description": "Universal Serializer & Deserializer For Unity, Aims To Be Efficient, Generic And Easy To Use.",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "unity": "2021.3",
   "author": {
     "name": "PeroPero",
