@@ -143,7 +143,7 @@ namespace PeroTools2.Serde.Json
                 1 => 4,
                 2 => 6,
                 4 => 11,
-                _ => NumberHelper.max_uint64_numbers_length
+                _ => UlongFormatter.max_size
             };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,7 +152,7 @@ namespace PeroTools2.Serde.Json
             1 => 4,
             2 => 6,
             4 => 11,
-            _ => NumberHelper.max_uint64_numbers_length
+            _ => UlongFormatter.max_size
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
