@@ -235,6 +235,11 @@ public partial class SerdeJsonGenerator
             utf16Builder.Append(finalCheck);
             utf8Builder.Append(finalCheck);
         }
+        else
+        {
+            utf8Builder.AppendLine("                reader.ReadUntilEnd();");
+            utf16Builder.AppendLine("                reader.ReadUntilEnd();");
+        }
 
         // 生成分部序列化器
         return $$"""

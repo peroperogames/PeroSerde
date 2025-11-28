@@ -15,6 +15,17 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     {
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
+        public void EmptyBodyDeserializeTest(Encoding encoding)
+        {
+            const string json = "{ \"a\":\"A1\", \"not_exists_array\":[], \"not_exists_object\":{}, \"not_exists_number\": 123, \"not_exists_string\": \"123\"} ";
+            var obj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<EmptyJsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<EmptyJsonObject>(json);
+            Assert.IsNotNull(obj);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
         public void MissingMemberDeserializeTest(Encoding encoding)
         {
             const string json = "{ \"a\":\"A1\", \"not_exists_array\":[], \"not_exists_object\":{}, \"not_exists_number\": 123, \"not_exists_string\": \"123\"} ";
@@ -238,4 +249,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public string b { get; private set; }
         public float c { get; private set; }
     }
+
+    [SerdeJsonSerializable]
+    public partial class EmptyJsonObject { }
 }
