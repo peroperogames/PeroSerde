@@ -131,7 +131,7 @@ namespace PeroTools2.Serde.Json
         {
             Utf8Formatter.TryFormat(
                 value,
-                new Span<byte>(dest, NumberHelper.max_decimal_string_length),
+                new Span<byte>(dest, DecimalFormatter.max_size),
                 out var bytesWritten
             );
             return bytesWritten;

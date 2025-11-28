@@ -52,7 +52,7 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteDecimalUtf16(char* dest, decimal value)
         {
-            var destSpan = new Span<char>(dest, NumberHelper.max_decimal_string_length);
+            var destSpan = new Span<char>(dest, DecimalFormatter.max_size);
             value.TryFormat(destSpan, out var charsWritten, default, CultureInfo.InvariantCulture);
             return charsWritten;
         }

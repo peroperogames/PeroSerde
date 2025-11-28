@@ -6,6 +6,7 @@
 
 using System;
 using NUnit.Framework;
+using PeroTools2.Serde.Json;
 
 namespace PeroTools2.Serde.Editor.Tests
 {
@@ -25,7 +26,7 @@ namespace PeroTools2.Serde.Editor.Tests
         {
             if (encoding == Encoding.UTF8)
             {
-                var dest = stackalloc byte[NumberHelper.max_float_string_length];
+                var dest = stackalloc byte[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs(float.Parse(System.Text.Encoding.UTF8.GetString(span)) - value);
@@ -33,7 +34,7 @@ namespace PeroTools2.Serde.Editor.Tests
             }
             else
             {
-                var dest = stackalloc char[NumberHelper.max_float_string_length];
+                var dest = stackalloc char[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 Assert.AreEqual(value.ToString(), new String(span));
@@ -56,7 +57,7 @@ namespace PeroTools2.Serde.Editor.Tests
         {
             if (encoding == Encoding.UTF8)
             {
-                var dest = stackalloc byte[NumberHelper.max_float_string_length];
+                var dest = stackalloc byte[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs((float) (double.Parse(System.Text.Encoding.UTF8.GetString(span)) - value));
@@ -64,7 +65,7 @@ namespace PeroTools2.Serde.Editor.Tests
             }
             else
             {
-                var dest = stackalloc char[NumberHelper.max_float_string_length];
+                var dest = stackalloc char[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 var result = MathF.Abs((float) (double.Parse(span) - value));
@@ -80,7 +81,7 @@ namespace PeroTools2.Serde.Editor.Tests
         {
             if (encoding == Encoding.UTF8)
             {
-                var dest = stackalloc byte[NumberHelper.max_float_string_length];
+                var dest = stackalloc byte[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs(long.Parse(System.Text.Encoding.UTF8.GetString(span)) - value);
@@ -88,7 +89,7 @@ namespace PeroTools2.Serde.Editor.Tests
             }
             else
             {
-                var dest = stackalloc char[NumberHelper.max_float_string_length];
+                var dest = stackalloc char[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 var result = MathF.Abs(long.Parse(span) - value);
@@ -102,7 +103,7 @@ namespace PeroTools2.Serde.Editor.Tests
         {
             if (encoding == Encoding.UTF8)
             {
-                var dest = stackalloc byte[NumberHelper.max_float_string_length];
+                var dest = stackalloc byte[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
                 var span = new Span<byte>(dest, length);
                 var result = MathF.Abs(ulong.Parse(System.Text.Encoding.UTF8.GetString(span)) - value);
@@ -110,7 +111,7 @@ namespace PeroTools2.Serde.Editor.Tests
             }
             else
             {
-                var dest = stackalloc char[NumberHelper.max_float_string_length];
+                var dest = stackalloc char[FloatFormatter.max_size];
                 var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
                 var span = new Span<char>(dest, length);
                 var result = MathF.Abs(ulong.Parse(span) - value);

@@ -162,87 +162,87 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableCharType
+    public partial struct NullableCharType
     {
         public char? value;
-        public NuallableCharType(char? value) => this.value = value;
+        public NullableCharType(char? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableByteType
+    public partial struct NullableByteType
     {
         public byte? value;
-        public NuallableByteType(byte? value) => this.value = value;
+        public NullableByteType(byte? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableSbyteType
+    public partial struct NullableSbyteType
     {
         public sbyte? value;
-        public NuallableSbyteType(sbyte? value) => this.value = value;
+        public NullableSbyteType(sbyte? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableShortType
+    public partial struct NullableShortType
     {
         public short? value;
-        public NuallableShortType(short? value) => this.value = value;
+        public NullableShortType(short? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableUshortType
+    public partial struct NullableUshortType
     {
         public ushort? value;
-        public NuallableUshortType(ushort? value) => this.value = value;
+        public NullableUshortType(ushort? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableIntType
+    public partial struct NullableIntType
     {
         public int? value;
-        public NuallableIntType(int? value) => this.value = value;
+        public NullableIntType(int? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableUintType
+    public partial struct NullableUintType
     {
         public uint? value;
-        public NuallableUintType(uint? value) => this.value = value;
+        public NullableUintType(uint? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableLongType
+    public partial struct NullableLongType
     {
         public long? value;
-        public NuallableLongType(long? value) => this.value = value;
+        public NullableLongType(long? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableUlongType
+    public partial struct NullableUlongType
     {
         public ulong? value;
-        public NuallableUlongType(ulong? value) => this.value = value;
+        public NullableUlongType(ulong? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableFloatType
+    public partial struct NullableFloatType
     {
         public float? value;
-        public NuallableFloatType(float? value) => this.value = value;
+        public NullableFloatType(float? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableDoubleType
+    public partial struct NullableDoubleType
     {
         public double? value;
-        public NuallableDoubleType(double? value) => this.value = value;
+        public NullableDoubleType(double? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
-    public partial struct NuallableDecimalType
+    public partial struct NullableDecimalType
     {
         public decimal? value;
-        public NuallableDecimalType(decimal? value) => this.value = value;
+        public NullableDecimalType(decimal? value) => this.value = value;
     }
 
     [SerdeJsonSerializable]
@@ -701,6 +701,246 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
+    public partial struct StringBoolType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<bool>))]
+        public bool value;
+
+        public StringBoolType(bool value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringByteType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<byte>))]
+        public byte value;
+
+        public StringByteType(byte value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringSbyteType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<sbyte>))]
+        public sbyte value;
+
+        public StringSbyteType(sbyte value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringShortType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<short>))]
+        public short value;
+
+        public StringShortType(short value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringUshortType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<ushort>))]
+        public ushort value;
+
+        public StringUshortType(ushort value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringIntType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<int>))]
+        public int value;
+
+        public StringIntType(int value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringUintType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<uint>))]
+        public uint value;
+
+        public StringUintType(uint value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringLongType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<long>))]
+        public long value;
+
+        public StringLongType(long value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringUlongType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<ulong>))]
+        public ulong value;
+
+        public StringUlongType(ulong value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringFloatType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<float>))]
+        public float value;
+
+        public StringFloatType(float value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringDoubleType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<double>))]
+        public double value;
+
+        public StringDoubleType(double value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringDecimalType
+    {
+        [SerdeJsonFormatter(typeof(StringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<decimal>))]
+        public decimal value;
+
+        public StringDecimalType(decimal value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableBoolType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<bool?>))]
+        public bool? value;
+
+        public StringNullableBoolType(bool? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableByteType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<byte?>))]
+        public byte? value;
+
+        public StringNullableByteType(byte? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableSbyteType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<sbyte?>))]
+        public sbyte? value;
+
+        public StringNullableSbyteType(sbyte? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableShortType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<short?>))]
+        public short? value;
+
+        public StringNullableShortType(short? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableUshortType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<ushort?>))]
+        public ushort? value;
+
+        public StringNullableUshortType(ushort? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableIntType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<int?>))]
+        public int? value;
+
+        public StringNullableIntType(int? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableUintType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<uint?>))]
+        public uint? value;
+
+        public StringNullableUintType(uint? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableLongType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<long?>))]
+        public long? value;
+
+        public StringNullableLongType(long? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableUlongType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<ulong?>))]
+        public ulong? value;
+
+        public StringNullableUlongType(ulong? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableFloatType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<float?>))]
+        public float? value;
+
+        public StringNullableFloatType(float? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableDoubleType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<double?>))]
+        public double? value;
+
+        public StringNullableDoubleType(double? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StringNullableDecimalType
+    {
+        [SerdeJsonFormatter(typeof(NullableStringPrimitiveFormatter))]
+        [JsonConverter(typeof(StringPrimitiveConverter<decimal?>))]
+        public decimal? value;
+
+        public StringNullableDecimalType(decimal? value) => this.value = value;
+    }
+
+    [SerdeJsonSerializable]
     public partial struct GenericTypeCollection : IEquatable<GenericTypeCollection>
     {
         public List<GenericType<int>> data;
@@ -712,6 +952,13 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public override bool Equals(object obj) => obj is GenericTypeCollection other && Equals(other);
 
         public readonly override int GetHashCode() => data != null ? data.GetHashCode() : 0;
+    }
+
+    internal sealed class StringPrimitiveConverter<T> : JsonConverter<T>
+    {
+        public override void WriteJson(Newtonsoft.Json.JsonWriter writer, T value, JsonSerializer serializer) => writer.WriteValue(value.ToString().ToLower());
+
+        public override T ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer) => reader.Value == null ? default : (T) Convert.ChangeType(reader.Value, typeof(T));
     }
 
     internal sealed class DictionaryConverter<TKey, TValue> : JsonConverter<Dictionary<TKey, TValue>>

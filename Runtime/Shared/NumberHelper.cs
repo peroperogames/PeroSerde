@@ -14,21 +14,6 @@ namespace PeroTools2.Serde
     /// </summary>
     internal static partial class NumberHelper
     {
-        /// <summary>float值格式化为字符串后的最大长度</summary>
-        internal const int max_float_string_length = 24;
-
-        /// <summary>double值格式化为字符串后的最大长度</summary>
-        internal const int max_double_string_length = 32;
-
-        /// <summary>decimal值格式化为字符串后的最大长度</summary>
-        internal const int max_decimal_string_length = 32;
-
-        /// <summary>long值格式化为字符串后的最大长度</summary>
-        internal const int max_int64_numbers_length = 20; // 0 到 18446744073709551615
-
-        /// <summary>ulong值格式化为字符串后的最大长度</summary>
-        internal const int max_uint64_numbers_length = 20; // -9223372036854775808 到 9223372036854775807
-
         private const char positive_sign = '+';
         private const char negative_sign = '-';
         private const char dot_sign = '.';
