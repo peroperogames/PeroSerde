@@ -188,13 +188,12 @@ public partial class SerdeJsonGenerator
         var deserializerBuilder = new StringBuilder();
         var utf16Builder = new StringBuilder();
         var utf8Builder = new StringBuilder();
-        if (type.IsNullable())
-        {
-            deserializerBuilder.AppendLine("if (reader.TryReadNull())");
-            deserializerBuilder.AppendLine("            {");
-            deserializerBuilder.AppendLine("                return null;");
-            deserializerBuilder.AppendLine("            }");
-        }
+
+        deserializerBuilder.AppendLine("if (reader.TryReadNull())");
+        deserializerBuilder.AppendLine("            {");
+        deserializerBuilder.AppendLine("                return default;");
+        deserializerBuilder.AppendLine("            }");
+
         deserializerBuilder.AppendLine($"            var obj = new {typeName}();");
         deserializerBuilder.AppendLine("            reader.ReadBeginObject();");
 

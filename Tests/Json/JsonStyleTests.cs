@@ -151,7 +151,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public void NullMemberSerializeTest(Encoding encoding)
         {
             var obj = new SampleTest { a = null, b = null, c = null, d = null, e = new List<int?> { null, null, null, null } };
-            const string expected = "{\"a\":null,\"b\":null,\"c\":null,\"d\":null,\"e\":[null,null,null,null]}";
+            const string expected = "{\"a\":null,\"b\":null,\"c\":null,\"d\":null,\"e\":[null,null,null,null],\"f\":{\"obj\":null}}";
             if (encoding == Encoding.UTF8)
             {
                 var json = JsonConverter.UTF8.Serialize(obj);
@@ -168,7 +168,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         [TestCase(Encoding.UTF16)]
         public void NullMemberDeserializeTest(Encoding encoding)
         {
-            const string json = "{\"a\":  null,\"b\": null ,\"d\":null,\"c\":\"abc\", \"e\" :  [ null,null , null, null] }";
+            const string json = "{\"a\":  null,\"b\": null ,\"d\":null,\"c\":\"abc\", \"e\" :  [ null,null , null, null], \"f\" : null }";
             var obj = encoding == Encoding.UTF8
                 ? JsonConverter.UTF8.Deserialize<SampleTest>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<SampleTest>(json);
@@ -177,6 +177,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(obj.b, null);
             Assert.AreEqual(obj.c, "abc");
             Assert.AreEqual(obj.d, null);
+            Assert.AreEqual(obj.f, default(StructObject));
+            Assert.AreEqual(obj.f.obj, null);
         }
 
         [TestCase(Encoding.UTF8)]
@@ -240,6 +242,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public string c;
         public List<int> d;
         public List<int?> e;
+        public StructObject f;
     }
 
     [SerdeJsonSerializable]
@@ -248,6 +251,12 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public string a { get; private set; }
         public string b { get; private set; }
         public float c { get; private set; }
+    }
+
+    [SerdeJsonSerializable]
+    public partial struct StructObject
+    {
+        public string obj;
     }
 
     [SerdeJsonSerializable]
