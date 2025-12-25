@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace PeroTools2.Serde.Json
 {
@@ -408,12 +408,11 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length + 2;
-            fixed (byte* desPtr = GetSpan(length))
+            fixed (byte* desPtr = GetSpan(Encoding.UTF8.GetMaxByteCount(value.Length) + 2))
             {
-                JsonWriter.WriteDoubleQuoteUtf8(desPtr);
-                JsonWriter.WriteStringValueUtf8(value, desPtr + 1);
-                JsonWriter.WriteDoubleQuoteUtf8(desPtr + length - 1);
+                var length = JsonWriter.WriteDoubleQuoteUtf8(desPtr);
+                length += JsonWriter.WriteStringValueUtf8(value, desPtr + length);
+                length += JsonWriter.WriteDoubleQuoteUtf8(desPtr + length);
                 Advance(length);
             }
         }
@@ -427,11 +426,9 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length;
-            fixed (byte* desPtr = GetSpan(length))
+            fixed (byte* desPtr = GetSpan(Encoding.UTF8.GetMaxByteCount(value.Length)))
             {
-                JsonWriter.WriteStringValueUtf8(value, desPtr);
-                Advance(length);
+                Advance(JsonWriter.WriteStringValueUtf8(value, desPtr));
             }
         }
 
@@ -917,12 +914,11 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length + 2;
-            fixed (char* desPtr = GetSpan(length))
+            fixed (char* desPtr = GetSpan(value.Length + 2))
             {
-                JsonWriter.WriteDoubleQuoteUtf16(desPtr);
-                JsonWriter.WriteStringValueUtf16(value, desPtr + 1);
-                JsonWriter.WriteDoubleQuoteUtf16(desPtr + length - 1);
+                var length = JsonWriter.WriteDoubleQuoteUtf16(desPtr);
+                length += JsonWriter.WriteStringValueUtf16(value, desPtr + length);
+                length += JsonWriter.WriteDoubleQuoteUtf16(desPtr + length);
                 Advance(length);
             }
         }
@@ -936,11 +932,9 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length;
-            fixed (char* desPtr = GetSpan(length))
+            fixed (char* desPtr = GetSpan(value.Length))
             {
-                JsonWriter.WriteStringValueUtf16(value, desPtr);
-                Advance(length);
+                Advance(JsonWriter.WriteStringValueUtf16(value, desPtr));
             }
         }
 

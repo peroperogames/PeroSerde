@@ -1,9 +1,9 @@
 ﻿<#@ template language="C#"#>
 <#@ output extension=".cs" encoding="utf-8"#>
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace PeroTools2.Serde.Json
 {
@@ -331,12 +331,11 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length + 2; 
-            fixed (<#= charType #>* desPtr = GetSpan(length))
+            fixed (<#= charType #>* desPtr = GetSpan(<#= utf == "Utf8" ? "Encoding.UTF8.GetMaxByteCount(value.Length)" :  "value.Length" #> + 2))
             {
-                JsonWriter.WriteDoubleQuote<#= utf #>(desPtr);
-                JsonWriter.WriteStringValue<#= utf #>(value, desPtr + 1);
-                JsonWriter.WriteDoubleQuote<#= utf #>(desPtr + length - 1);
+                var length = JsonWriter.WriteDoubleQuote<#= utf #>(desPtr);
+                length += JsonWriter.WriteStringValue<#= utf #>(value, desPtr + length);
+                length += JsonWriter.WriteDoubleQuote<#= utf #>(desPtr + length);
                 Advance(length);
             }
         }
@@ -350,11 +349,9 @@ namespace PeroTools2.Serde.Json
                 WriteNull();
                 return;
             }
-            var length = value.Length;
-            fixed (<#= charType #>* desPtr = GetSpan(length))
+            fixed (<#= charType #>* desPtr = GetSpan(<#= utf == "Utf8" ? "Encoding.UTF8.GetMaxByteCount(value.Length)" :  "value.Length" #>))
             {
-                JsonWriter.WriteStringValue<#= utf #>(value, desPtr);
-                Advance(length);
+                Advance(JsonWriter.WriteStringValue<#= utf #>(value, desPtr));
             }
         }
 
