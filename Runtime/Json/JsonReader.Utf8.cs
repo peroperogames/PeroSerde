@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace PeroTools2.Serde.Json
 {
@@ -113,7 +114,7 @@ namespace PeroTools2.Serde.Json
 
         public static ReadOnlySpan<byte> ReadValueUntilEndUtf8(byte* src, int maxLength, out int advance)
         {
-            var span = new ReadOnlySpan<byte>(src, maxLength);
+            var span = new Span<byte>(src, maxLength);
             // 数组/对象
             if (span[0] == '[' || span[0] == '{')
             {
@@ -125,15 +126,34 @@ namespace PeroTools2.Serde.Json
                 return ReadPrimitiveUntilEndUtf8(src, maxLength, out advance);
             }
             // 字符串
-            for (var i = 1; i < maxLength + 1; i++)
+            var index = 0;
+            advance = 0;
+            Span<byte> result = stackalloc byte[maxLength];
+            for (var i = 1; i < span.Length; i++)
             {
-                var character = (char) span[i];
-                if (character is '"' && (char) span[i - 1] != '\\')
+                var character = span[i];
+                if (character == '\\')
+                {
+                    result[index++] = (byte) ReadEscapedCharUtf8(src + i, out var length);
+                    i += length - 1; // -1 跳过当前字符
+                }
+                else if (character == '"')
                 {
                     // 包括双引号
                     advance = i + 1;
-                    // 不包括双引号
-                    return span.Slice(1, i - 1);
+
+                    // 如果达到最大长度，说明没有转义
+                    if (index + 2 == advance)
+                    {
+                        // 不用在堆上分配新字符串, 不包括双引号
+                        return span[1..(advance - 1)];
+                    }
+                    // 分配一个新的字符串
+                    return result[..index].ToArray();
+                }
+                else
+                {
+                    result[index++] = character;
                 }
             }
             throw SerdeException.ThrowInvalidAdvance();
@@ -238,6 +258,61 @@ namespace PeroTools2.Serde.Json
         #endregion
 
         #region Read Primitive
+
+        /// <summary>读转义字符, 支持UTF8和UTF16</summary>
+        // ReSharper disable once CognitiveComplexity
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static char ReadEscapedCharUtf8(byte* src, out int advance)
+        {
+            // Expect starting backslash
+            if (src[0] != '\\') throw SerdeException.ThrowInvalidEscapedChar(src[0]);
+
+            var esc = (char) src[1];
+            switch (esc)
+            {
+                case '"':
+                    advance = 2; return '"';
+                case '\\':
+                    advance = 2; return '\\';
+                case '/':
+                    advance = 2; return '/';
+                case 'b':
+                    advance = 2; return '\b';
+                case 't':
+                    advance = 2; return '\t';
+                case 'n':
+                    advance = 2; return '\n';
+                case 'f':
+                    advance = 2; return '\f';
+                case 'r':
+                    advance = 2; return '\r';
+                case 'u':
+                {
+                    // Expect \uXXXX (4 hex digits)
+                    // src[0] == '\\', src[1] == 'u', hex digits at src[2..5]
+                    var h1 = Hex(src[2]);
+                    var h2 = Hex(src[3]);
+                    var h3 = Hex(src[4]);
+                    var h4 = Hex(src[5]);
+                    if (h1 < 0 || h2 < 0 || h3 < 0 || h4 < 0)
+                        throw SerdeException.ThrowInvalidEscapedChar(esc);
+                    var code = (h1 << 12) | (h2 << 8) | (h3 << 4) | h4;
+                    advance = 6;
+                    return (char) code;
+                }
+                default:
+                    throw SerdeException.ThrowInvalidEscapedChar(esc);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static int Hex(byte c)
+            {
+                if (c is >= (byte) '0' and <= (byte) '9') return c - '0';
+                if (c is >= (byte) 'A' and <= (byte) 'F') return c - 'A' + 10;
+                if (c is >= (byte) 'a' and <= (byte) 'f') return c - 'a' + 10;
+                return -1;
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ReadByteUtf8(byte* src, out int advance)
