@@ -61,7 +61,7 @@ namespace PeroTools2.Serde.Json
                     {
                         dest += WriteStringValueNoEscapeUtf8(str[from..(i - from)], dest);
                     }
-                    dest += WriteCharUtf8(dest, c);
+                    dest += WriteEscapedCharUtf8(c, dest);
                     from = i + 1;
                 }
             }

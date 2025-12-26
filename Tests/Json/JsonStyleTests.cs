@@ -4,15 +4,161 @@
  * Created On: 2025/01/08-19:46:33
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using PeroTools2.Serde.Editor.Tests;
+using UnityEngine;
 
 namespace PeroTools2.Serde.Json.Editor.Tests
 {
     public sealed class JsonStyleTests
     {
+        public static IEnumerable<TestCaseData> HandlesVariousCharactersSerializeTestCases()
+        {
+            var testCases = new[]
+            {
+                ("Mayor", "ASCII字符"),
+                ("市长", "CJK字符"),
+                ("😀", "Emoji"),
+                ("\uD842\uDFB7", "代理对"),
+                ("e\u0301", "组合字符"),
+                ("市长Mayor😀", "混合字符")
+            };
+
+            foreach (var (value, description) in testCases)
+            {
+                yield return new TestCaseData(Encoding.UTF8, value, description)
+                    .SetName($"Serialize_UTF8_{description}");
+
+                yield return new TestCaseData(Encoding.UTF16, value, description)
+                    .SetName($"Serialize_UTF16_{description}");
+            }
+        }
+
+        [TestCaseSource(nameof(HandlesVariousCharactersSerializeTestCases))]
+        public void HandlesVariousCharactersSerialize(Encoding kind, string value, string _)
+        {
+            var str = kind switch
+            {
+                Encoding.UTF8 => System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(value)),
+                Encoding.UTF16 => JsonConverter.UTF16.Serialize(value),
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            };
+            Assert.AreEqual($"\"{value}\"", str);
+            Assert.IsFalse(str.Contains("\uFFFD"));
+        }
+
+        public static IEnumerable<TestCaseData> HandlesVariousCharactersDeserializeTestCases()
+        {
+            var testCases = new[]
+            {
+                ("{ \"b\": \"Mayor\" }", "Mayor", "ASCII字符"),
+                ("{ \"b\": \"市长\" }", "市长", "CJK字符"),
+                ("{ \"b\": \"😀\" }", "😀", "Emoji"),
+                ("{ \"b\": \"\uD842\uDFB7\" }", "\uD842\uDFB7", "代理对"),
+                ("{ \"b\": \"e\u0301\" }", "e\u0301", "组合字符"),
+                ("{ \"b\": \"市长Mayor😀\" }", "市长Mayor😀", "混合字符"),
+                ("{ \"b\": \"\" }", "", "空字符串"),
+                ("{ \"b\": null }", null, "null值")
+            };
+
+            foreach (var (json, expectedValue, description) in testCases)
+            {
+                yield return new TestCaseData(Encoding.UTF8, json, expectedValue, description)
+                    .SetName($"Deserialize_UTF8_{description}");
+
+                yield return new TestCaseData(Encoding.UTF16, json, expectedValue, description)
+                    .SetName($"Deserialize_UTF16_{description}");
+            }
+        }
+
+        [TestCaseSource(nameof(HandlesVariousCharactersDeserializeTestCases))]
+        public void HandlesVariousCharactersDeserialize(Encoding kind, string json, string expectedValue, string _)
+        {
+            var result = kind switch
+            {
+                Encoding.UTF8 => JsonConverter.UTF8.Deserialize<DeserializeJsonObject>(System.Text.Encoding.UTF8.GetBytes(json)),
+                Encoding.UTF16 => JsonConverter.UTF16.Deserialize<DeserializeJsonObject>(json),
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            };
+            Assert.IsNotNull(result);
+            Assert.AreEqual(expectedValue, result.b);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void EscapeCharacterSerializeTest(Encoding encoding)
+        {
+            var obj = new EscapeCharacterJsonObject { value = "\b\f\n\r\t\"\\" };
+            var json = "{\"value\":\"\\b\\f\\n\\r\\t\\\"\\\\\"}";
+            var result = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(json, result);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void EscapeCharacterDeserializeTest(Encoding encoding)
+        {
+            var json = "{\"value\":\"\\b\\f\\n\\r\\t\\\"\\\\\"}";
+            var value = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<EscapeCharacterJsonObject>(json);
+            Assert.AreEqual("\b\f\n\r\t\"\\", value.value);
+        }
+
+        public static IEnumerable<TestCaseData> EmptyDeserializeTestCases()
+        {
+            var testCases = new[]
+            {
+                ("", "空"),
+                (" ", "空格"),
+            };
+
+            var testTypeCases = new[]
+            {
+                typeof(List<int>),
+                typeof(List<string>),
+                typeof(string),
+                typeof(EmptyJsonObject),
+                typeof(Dictionary<int, string>)
+            };
+
+            foreach (var type in testTypeCases)
+            {
+                foreach (var (json, description) in testCases)
+                {
+                    yield return new TestCaseData(type, Encoding.UTF8, json)
+                        .SetName($"Deserialize_UTF8_{type.Name}_{description}");
+                    yield return new TestCaseData(type, Encoding.UTF16, json)
+                        .SetName($"Deserialize_UTF16_{type.Name}_{description}");
+                }
+            }
+        }
+
+        [TestCaseSource(nameof(EmptyDeserializeTestCases))]
+        public void EmptyDeserializeTest(System.Type type, Encoding encoding, string json)
+        {
+            var method = typeof(JsonStyleTests).GetMethod(nameof(GenericEmptyDeserializeTest), BindingFlags.NonPublic | BindingFlags.Instance);
+            var genericMethod = method!.MakeGenericMethod(type);
+            genericMethod.Invoke(this, new object[] { encoding, json });
+        }
+
+        private void GenericEmptyDeserializeTest<T>(Encoding encoding, string json)
+        {
+            var result = encoding switch
+            {
+                Encoding.UTF8 => JsonConverter.UTF8.Deserialize<T>(System.Text.Encoding.UTF8.GetBytes(json)),
+                Encoding.UTF16 => JsonConverter.UTF16.Deserialize<T>(json),
+                _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, null)
+            };
+            Assert.AreEqual(default(T), result);
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EmptyBodyDeserializeTest(Encoding encoding)
@@ -141,9 +287,9 @@ namespace PeroTools2.Serde.Json.Editor.Tests
                 ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<JsonObject>(json);
             Assert.IsNotNull(obj);
-            Assert.AreEqual(obj.a, "A ");
-            Assert.AreEqual(obj.b, " B");
-            Assert.AreEqual(obj.c, 1.1f);
+            Assert.AreEqual("A ", obj.a);
+            Assert.AreEqual(" B", obj.b);
+            Assert.AreEqual(1.1f, obj.c);
         }
 
         [TestCase(Encoding.UTF8)]
@@ -204,7 +350,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void EmptyCollectionSerializeTest(Encoding encoding)
+        public void EmptyCollectionDeserializeTest(Encoding encoding)
         {
             const string json =
                 "{\"a\":  [], \"b\": [], \"c\": {}}";
@@ -260,5 +406,20 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     }
 
     [SerdeJsonSerializable]
-    public partial class EmptyJsonObject { }
+    public partial class EmptyJsonObject
+    {
+    }
+
+    [SerdeJsonSerializable]
+    public partial class DeserializeJsonObject
+    {
+        public string a { get; private set; }
+        public string b { get; private set; }
+    }
+
+    [SerdeJsonSerializable]
+    public partial class EscapeCharacterJsonObject
+    {
+        public string value;
+    }
 }

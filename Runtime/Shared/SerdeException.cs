@@ -32,6 +32,9 @@ namespace PeroTools2.Serde
         internal static SerdeException ThrowInvalidEscapedChar(char ch) => new($"Invalid Escaped Char: {ch}");
 
         [DoesNotReturn]
+        internal static SerdeException ThrowInvalidEscapedChar(byte ch) => new($"Invalid Escaped Char: {ch}");
+
+        [DoesNotReturn]
         internal static SerdeException ThrowInvalidJson(string json) => new($"Invalid json: {json}");
 
         [DoesNotReturn]
