@@ -116,6 +116,11 @@ namespace PeroTools2.Serde
             /// <exception cref="SerdeException">当该类型的格式化器从未注册时抛出</exception>
             public static T Deserialize<T>(ReadOnlySpan<char> json)
             {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+
                 if (!SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
@@ -127,7 +132,7 @@ namespace PeroTools2.Serde
                         throw SerdeException.ThrowFormatterNotFound(typeof(T));
                     }
                 }
-                return new JsonReaderUtf16(json).ReadValue<T>();
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
             }
 
             /// <summary>
@@ -138,7 +143,14 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter) => new JsonReaderUtf16(json).ReadValue(formatter);
+            public static T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter)
+            {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
+            }
 
             /// <summary>
             /// 将 UTF-16 字符串反序列化成对象
@@ -148,7 +160,40 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter) => new JsonReaderUtf16(json).ReadValue(formatter);
+            public static T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter)
+            {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
+            }
+
+            /// <summary>
+            /// 将开头的空白字符去除
+            /// </summary>
+            /// <param name="origin"></param>
+            /// <param name="trimmed"></param>
+            /// <returns>如果全部都是空白字符，则返回true，否则返回false</returns>
+            private static bool TrimWhiteSpace(ReadOnlySpan<char> origin, out ReadOnlySpan<char> trimmed)
+            {
+                if (origin.IsEmpty)
+                {
+                    trimmed = origin;
+                    return true;
+                }
+
+                for (var i = 0; i < origin.Length; i++)
+                {
+                    if (origin[i] != ' ')
+                    {
+                        trimmed = origin.Slice(i, origin.Length - i);
+                        return false;
+                    }
+                }
+                trimmed = origin;
+                return true;
+            }
         }
 
         public static class UTF8
@@ -246,6 +291,11 @@ namespace PeroTools2.Serde
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static T Deserialize<T>(ReadOnlySpan<byte> json)
             {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+
                 if (!SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
@@ -257,7 +307,7 @@ namespace PeroTools2.Serde
                         throw SerdeException.ThrowFormatterNotFound(typeof(T));
                     }
                 }
-                return new JsonReaderUtf8(json).ReadValue<T>();
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
             }
 
             /// <summary>
@@ -268,7 +318,14 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter) => new JsonReaderUtf8(json).ReadValue(formatter);
+            public static T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
+            {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+            }
 
             /// <summary>
             /// 将 UTF-8 字符串反序列化成对象
@@ -278,7 +335,40 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter) => new JsonReaderUtf8(json).ReadValue(formatter);
+            public static T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
+            {
+                if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
+                {
+                    return default;
+                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+            }
+
+            /// <summary>
+            /// 将开头的空白字符去除
+            /// </summary>
+            /// <param name="origin"></param>
+            /// <param name="trimmed"></param>
+            /// <returns>如果全部都是空白字符，则返回true，否则返回false</returns>
+            private static bool TrimWhiteSpace(ReadOnlySpan<byte> origin, out ReadOnlySpan<byte> trimmed)
+            {
+                if (origin.IsEmpty)
+                {
+                    trimmed = origin;
+                    return true;
+                }
+
+                for (var i = 0; i < origin.Length; i++)
+                {
+                    if (origin[i] != (byte) ' ')
+                    {
+                        trimmed = origin.Slice(i, origin.Length - i);
+                        return false;
+                    }
+                }
+                trimmed = origin;
+                return true;
+            }
         }
 
         /// <summary>
