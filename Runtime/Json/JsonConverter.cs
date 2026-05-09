@@ -9,7 +9,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using PeroTools2.Serde.Json;
-using UnityEngine;
 
 namespace PeroTools2.Serde
 {
@@ -384,7 +383,7 @@ namespace PeroTools2.Serde
             {
                 if (typeof(T).IsArray)
                 {
-                    var type = typeof(ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
+                    var type = typeof(Json.ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
@@ -396,20 +395,20 @@ namespace PeroTools2.Serde
                 }
                 if (IsCollection(typeof(T)))
                 {
-                    var type = typeof(ArrayFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
+                    var type = typeof(CollectionFormatter<,>).MakeGenericType(typeof(T), typeof(T).GenericTypeArguments[0]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
                 if (IsKeyValuePair(typeof(T)))
                 {
                     var args = typeof(T).GenericTypeArguments;
-                    var type = typeof(KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
+                    var type = typeof(Json.KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
                 if (IsNullable(typeof(T)))
                 {
-                    var type = typeof(NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
+                    var type = typeof(Json.NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }

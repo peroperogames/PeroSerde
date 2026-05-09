@@ -16,7 +16,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     {
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void BoolSerializeTest(Encoding encoding)
+        public void BoolTypeSerializeTest(Encoding encoding)
         {
             var obj = new BoolType(true);
             var json = encoding == Encoding.UTF8
@@ -27,7 +27,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void BoolDeserializeTest(Encoding encoding)
+        public void BoolTypeDeserializeTest(Encoding encoding)
         {
             var obj = new BoolType(true);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -39,7 +39,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void BoolSerializeNoGCTest(Encoding encoding)
+        public void BoolTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new BoolType(true);
             // 先进行一次调用，解决对象池的问题
@@ -64,7 +64,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void BoolDeserializeNoGCTest(Encoding encoding)
+        public void BoolTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new BoolType(true);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -90,7 +90,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void CharSerializeTest(Encoding encoding)
+        public void CharTypeSerializeTest(Encoding encoding)
         {
             var obj = new CharType('\ufff0');
             var json = encoding == Encoding.UTF8
@@ -101,7 +101,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void CharDeserializeTest(Encoding encoding)
+        public void CharTypeDeserializeTest(Encoding encoding)
         {
             var obj = new CharType('\ufff0');
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -113,7 +113,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void CharSerializeNoGCTest(Encoding encoding)
+        public void CharTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new CharType('\ufff0');
             // 先进行一次调用，解决对象池的问题
@@ -138,7 +138,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void CharDeserializeNoGCTest(Encoding encoding)
+        public void CharTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new CharType('\ufff0');
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -164,7 +164,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ByteSerializeTest(Encoding encoding)
+        public void ByteTypeSerializeTest(Encoding encoding)
         {
             var obj = new ByteType(10);
             var json = encoding == Encoding.UTF8
@@ -175,7 +175,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ByteDeserializeTest(Encoding encoding)
+        public void ByteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new ByteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -187,7 +187,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ByteSerializeNoGCTest(Encoding encoding)
+        public void ByteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new ByteType(10);
             // 先进行一次调用，解决对象池的问题
@@ -212,7 +212,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ByteDeserializeNoGCTest(Encoding encoding)
+        public void ByteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new ByteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -238,7 +238,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void SbyteSerializeTest(Encoding encoding)
+        public void SbyteTypeSerializeTest(Encoding encoding)
         {
             var obj = new SbyteType(10);
             var json = encoding == Encoding.UTF8
@@ -249,7 +249,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void SbyteDeserializeTest(Encoding encoding)
+        public void SbyteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new SbyteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -261,7 +261,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void SbyteSerializeNoGCTest(Encoding encoding)
+        public void SbyteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new SbyteType(10);
             // 先进行一次调用，解决对象池的问题
@@ -286,7 +286,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void SbyteDeserializeNoGCTest(Encoding encoding)
+        public void SbyteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new SbyteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -312,7 +312,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ShortSerializeTest(Encoding encoding)
+        public void ShortTypeSerializeTest(Encoding encoding)
         {
             var obj = new ShortType(10);
             var json = encoding == Encoding.UTF8
@@ -323,7 +323,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ShortDeserializeTest(Encoding encoding)
+        public void ShortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new ShortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -335,7 +335,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ShortSerializeNoGCTest(Encoding encoding)
+        public void ShortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new ShortType(10);
             // 先进行一次调用，解决对象池的问题
@@ -360,7 +360,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ShortDeserializeNoGCTest(Encoding encoding)
+        public void ShortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new ShortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -386,7 +386,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UshortSerializeTest(Encoding encoding)
+        public void UshortTypeSerializeTest(Encoding encoding)
         {
             var obj = new UshortType(10);
             var json = encoding == Encoding.UTF8
@@ -397,7 +397,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UshortDeserializeTest(Encoding encoding)
+        public void UshortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new UshortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -409,7 +409,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UshortSerializeNoGCTest(Encoding encoding)
+        public void UshortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new UshortType(10);
             // 先进行一次调用，解决对象池的问题
@@ -434,7 +434,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UshortDeserializeNoGCTest(Encoding encoding)
+        public void UshortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new UshortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -460,7 +460,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void IntSerializeTest(Encoding encoding)
+        public void IntTypeSerializeTest(Encoding encoding)
         {
             var obj = new IntType(10);
             var json = encoding == Encoding.UTF8
@@ -471,7 +471,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void IntDeserializeTest(Encoding encoding)
+        public void IntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new IntType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -483,7 +483,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void IntSerializeNoGCTest(Encoding encoding)
+        public void IntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new IntType(10);
             // 先进行一次调用，解决对象池的问题
@@ -508,7 +508,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void IntDeserializeNoGCTest(Encoding encoding)
+        public void IntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new IntType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -534,7 +534,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UintSerializeTest(Encoding encoding)
+        public void UintTypeSerializeTest(Encoding encoding)
         {
             var obj = new UintType(10);
             var json = encoding == Encoding.UTF8
@@ -545,7 +545,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UintDeserializeTest(Encoding encoding)
+        public void UintTypeDeserializeTest(Encoding encoding)
         {
             var obj = new UintType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -557,7 +557,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UintSerializeNoGCTest(Encoding encoding)
+        public void UintTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new UintType(10);
             // 先进行一次调用，解决对象池的问题
@@ -582,7 +582,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UintDeserializeNoGCTest(Encoding encoding)
+        public void UintTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new UintType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -608,7 +608,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LongSerializeTest(Encoding encoding)
+        public void LongTypeSerializeTest(Encoding encoding)
         {
             var obj = new LongType(10);
             var json = encoding == Encoding.UTF8
@@ -619,7 +619,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LongDeserializeTest(Encoding encoding)
+        public void LongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new LongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -631,7 +631,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LongSerializeNoGCTest(Encoding encoding)
+        public void LongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new LongType(10);
             // 先进行一次调用，解决对象池的问题
@@ -656,7 +656,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LongDeserializeNoGCTest(Encoding encoding)
+        public void LongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new LongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -682,7 +682,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UlongSerializeTest(Encoding encoding)
+        public void UlongTypeSerializeTest(Encoding encoding)
         {
             var obj = new UlongType(10);
             var json = encoding == Encoding.UTF8
@@ -693,7 +693,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UlongDeserializeTest(Encoding encoding)
+        public void UlongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new UlongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -705,7 +705,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UlongSerializeNoGCTest(Encoding encoding)
+        public void UlongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new UlongType(10);
             // 先进行一次调用，解决对象池的问题
@@ -730,7 +730,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UlongDeserializeNoGCTest(Encoding encoding)
+        public void UlongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new UlongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -756,7 +756,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void FloatSerializeTest(Encoding encoding)
+        public void FloatTypeSerializeTest(Encoding encoding)
         {
             var obj = new FloatType(10.4f);
             var json = encoding == Encoding.UTF8
@@ -767,7 +767,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void FloatDeserializeTest(Encoding encoding)
+        public void FloatTypeDeserializeTest(Encoding encoding)
         {
             var obj = new FloatType(10.4f);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -779,7 +779,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void FloatSerializeNoGCTest(Encoding encoding)
+        public void FloatTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new FloatType(10.4f);
             // 先进行一次调用，解决对象池的问题
@@ -804,7 +804,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void FloatDeserializeNoGCTest(Encoding encoding)
+        public void FloatTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new FloatType(10.4f);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -830,7 +830,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DoubleSerializeTest(Encoding encoding)
+        public void DoubleTypeSerializeTest(Encoding encoding)
         {
             var obj = new DoubleType(10.4d);
             var json = encoding == Encoding.UTF8
@@ -841,7 +841,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DoubleDeserializeTest(Encoding encoding)
+        public void DoubleTypeDeserializeTest(Encoding encoding)
         {
             var obj = new DoubleType(10.4d);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -853,7 +853,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DoubleSerializeNoGCTest(Encoding encoding)
+        public void DoubleTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new DoubleType(10.4d);
             // 先进行一次调用，解决对象池的问题
@@ -878,7 +878,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DoubleDeserializeNoGCTest(Encoding encoding)
+        public void DoubleTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new DoubleType(10.4d);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -904,7 +904,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DecimalSerializeTest(Encoding encoding)
+        public void DecimalTypeSerializeTest(Encoding encoding)
         {
             var obj = new DecimalType(13 / 2);
             var json = encoding == Encoding.UTF8
@@ -915,7 +915,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DecimalDeserializeTest(Encoding encoding)
+        public void DecimalTypeDeserializeTest(Encoding encoding)
         {
             var obj = new DecimalType(13 / 2);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -927,7 +927,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DecimalSerializeNoGCTest(Encoding encoding)
+        public void DecimalTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new DecimalType(13 / 2);
             // 先进行一次调用，解决对象池的问题
@@ -952,7 +952,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DecimalDeserializeNoGCTest(Encoding encoding)
+        public void DecimalTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new DecimalType(13 / 2);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -978,7 +978,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableBoolSerializeTest(Encoding encoding)
+        public void NullableBoolTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableBoolType(null);
             var json = encoding == Encoding.UTF8
@@ -989,7 +989,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableBoolDeserializeTest(Encoding encoding)
+        public void NullableBoolTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableBoolType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1001,7 +1001,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableBoolSerializeNoGCTest(Encoding encoding)
+        public void NullableBoolTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableBoolType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1026,7 +1026,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableBoolDeserializeNoGCTest(Encoding encoding)
+        public void NullableBoolTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableBoolType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1052,7 +1052,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableCharSerializeTest(Encoding encoding)
+        public void NullableCharTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableCharType(null);
             var json = encoding == Encoding.UTF8
@@ -1063,7 +1063,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableCharDeserializeTest(Encoding encoding)
+        public void NullableCharTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableCharType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1075,7 +1075,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableCharSerializeNoGCTest(Encoding encoding)
+        public void NullableCharTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableCharType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1100,7 +1100,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableCharDeserializeNoGCTest(Encoding encoding)
+        public void NullableCharTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableCharType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1126,7 +1126,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableByteSerializeTest(Encoding encoding)
+        public void NullableByteTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableByteType(null);
             var json = encoding == Encoding.UTF8
@@ -1137,7 +1137,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableByteDeserializeTest(Encoding encoding)
+        public void NullableByteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableByteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1149,7 +1149,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableByteSerializeNoGCTest(Encoding encoding)
+        public void NullableByteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableByteType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1174,7 +1174,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableByteDeserializeNoGCTest(Encoding encoding)
+        public void NullableByteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableByteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1200,7 +1200,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSbyteSerializeTest(Encoding encoding)
+        public void NullableSbyteTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableSbyteType(null);
             var json = encoding == Encoding.UTF8
@@ -1211,7 +1211,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSbyteDeserializeTest(Encoding encoding)
+        public void NullableSbyteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableSbyteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1223,7 +1223,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSbyteSerializeNoGCTest(Encoding encoding)
+        public void NullableSbyteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableSbyteType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1248,7 +1248,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSbyteDeserializeNoGCTest(Encoding encoding)
+        public void NullableSbyteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableSbyteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1274,7 +1274,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableShortSerializeTest(Encoding encoding)
+        public void NullableShortTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableShortType(null);
             var json = encoding == Encoding.UTF8
@@ -1285,7 +1285,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableShortDeserializeTest(Encoding encoding)
+        public void NullableShortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableShortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1297,7 +1297,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableShortSerializeNoGCTest(Encoding encoding)
+        public void NullableShortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableShortType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1322,7 +1322,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableShortDeserializeNoGCTest(Encoding encoding)
+        public void NullableShortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableShortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1348,7 +1348,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUshortSerializeTest(Encoding encoding)
+        public void NullableUshortTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableUshortType(null);
             var json = encoding == Encoding.UTF8
@@ -1359,7 +1359,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUshortDeserializeTest(Encoding encoding)
+        public void NullableUshortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableUshortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1371,7 +1371,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUshortSerializeNoGCTest(Encoding encoding)
+        public void NullableUshortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUshortType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1396,7 +1396,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUshortDeserializeNoGCTest(Encoding encoding)
+        public void NullableUshortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUshortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1422,7 +1422,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableIntSerializeTest(Encoding encoding)
+        public void NullableIntTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableIntType(null);
             var json = encoding == Encoding.UTF8
@@ -1433,7 +1433,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableIntDeserializeTest(Encoding encoding)
+        public void NullableIntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableIntType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1445,7 +1445,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableIntSerializeNoGCTest(Encoding encoding)
+        public void NullableIntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableIntType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1470,7 +1470,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableIntDeserializeNoGCTest(Encoding encoding)
+        public void NullableIntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableIntType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1496,7 +1496,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUintSerializeTest(Encoding encoding)
+        public void NullableUintTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableUintType(null);
             var json = encoding == Encoding.UTF8
@@ -1507,7 +1507,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUintDeserializeTest(Encoding encoding)
+        public void NullableUintTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableUintType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1519,7 +1519,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUintSerializeNoGCTest(Encoding encoding)
+        public void NullableUintTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUintType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1544,7 +1544,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUintDeserializeNoGCTest(Encoding encoding)
+        public void NullableUintTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUintType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1570,7 +1570,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableLongSerializeTest(Encoding encoding)
+        public void NullableLongTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableLongType(null);
             var json = encoding == Encoding.UTF8
@@ -1581,7 +1581,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableLongDeserializeTest(Encoding encoding)
+        public void NullableLongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableLongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1593,7 +1593,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableLongSerializeNoGCTest(Encoding encoding)
+        public void NullableLongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableLongType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1618,7 +1618,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableLongDeserializeNoGCTest(Encoding encoding)
+        public void NullableLongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableLongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1644,7 +1644,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUlongSerializeTest(Encoding encoding)
+        public void NullableUlongTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableUlongType(null);
             var json = encoding == Encoding.UTF8
@@ -1655,7 +1655,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUlongDeserializeTest(Encoding encoding)
+        public void NullableUlongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableUlongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1667,7 +1667,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUlongSerializeNoGCTest(Encoding encoding)
+        public void NullableUlongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUlongType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1692,7 +1692,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableUlongDeserializeNoGCTest(Encoding encoding)
+        public void NullableUlongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableUlongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1718,7 +1718,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableFloatSerializeTest(Encoding encoding)
+        public void NullableFloatTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableFloatType(null);
             var json = encoding == Encoding.UTF8
@@ -1729,7 +1729,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableFloatDeserializeTest(Encoding encoding)
+        public void NullableFloatTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableFloatType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1741,7 +1741,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableFloatSerializeNoGCTest(Encoding encoding)
+        public void NullableFloatTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableFloatType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1766,7 +1766,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableFloatDeserializeNoGCTest(Encoding encoding)
+        public void NullableFloatTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableFloatType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1792,7 +1792,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDoubleSerializeTest(Encoding encoding)
+        public void NullableDoubleTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableDoubleType(null);
             var json = encoding == Encoding.UTF8
@@ -1803,7 +1803,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDoubleDeserializeTest(Encoding encoding)
+        public void NullableDoubleTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableDoubleType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1815,7 +1815,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDoubleSerializeNoGCTest(Encoding encoding)
+        public void NullableDoubleTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableDoubleType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1840,7 +1840,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDoubleDeserializeNoGCTest(Encoding encoding)
+        public void NullableDoubleTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableDoubleType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1866,7 +1866,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDecimalSerializeTest(Encoding encoding)
+        public void NullableDecimalTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableDecimalType(null);
             var json = encoding == Encoding.UTF8
@@ -1877,7 +1877,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDecimalDeserializeTest(Encoding encoding)
+        public void NullableDecimalTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableDecimalType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1889,7 +1889,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDecimalSerializeNoGCTest(Encoding encoding)
+        public void NullableDecimalTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableDecimalType(null);
             // 先进行一次调用，解决对象池的问题
@@ -1914,7 +1914,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDecimalDeserializeNoGCTest(Encoding encoding)
+        public void NullableDecimalTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableDecimalType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1940,7 +1940,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringBoolSerializeTest(Encoding encoding)
+        public void StringBoolTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringBoolType(true);
             var json = encoding == Encoding.UTF8
@@ -1951,7 +1951,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringBoolDeserializeTest(Encoding encoding)
+        public void StringBoolTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringBoolType(true);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -1963,7 +1963,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringBoolSerializeNoGCTest(Encoding encoding)
+        public void StringBoolTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringBoolType(true);
             // 先进行一次调用，解决对象池的问题
@@ -1988,7 +1988,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringBoolDeserializeNoGCTest(Encoding encoding)
+        public void StringBoolTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringBoolType(true);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2014,26 +2014,18 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringByteSerializeTest(Encoding encoding)
+        public void StringByteTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringByteType(10);
             var json = encoding == Encoding.UTF8
                 ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
                 : JsonConverter.UTF16.Serialize(obj);
-            try
-            {
-                var result = Newtonsoft.Json.JsonConvert.DeserializeObject<StringByteType>(json);
-                Assert.AreEqual(obj, result);
-            }
-            catch
-            {
-                Debug.LogError(json);
-            }
+            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<StringByteType>(json));
         }
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringByteDeserializeTest(Encoding encoding)
+        public void StringByteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringByteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2045,7 +2037,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringByteSerializeNoGCTest(Encoding encoding)
+        public void StringByteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringByteType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2070,7 +2062,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringByteDeserializeNoGCTest(Encoding encoding)
+        public void StringByteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringByteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2096,7 +2088,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSbyteSerializeTest(Encoding encoding)
+        public void StringSbyteTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringSbyteType(10);
             var json = encoding == Encoding.UTF8
@@ -2107,7 +2099,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSbyteDeserializeTest(Encoding encoding)
+        public void StringSbyteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringSbyteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2119,7 +2111,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSbyteSerializeNoGCTest(Encoding encoding)
+        public void StringSbyteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringSbyteType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2144,7 +2136,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSbyteDeserializeNoGCTest(Encoding encoding)
+        public void StringSbyteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringSbyteType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2170,7 +2162,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringShortSerializeTest(Encoding encoding)
+        public void StringShortTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringShortType(10);
             var json = encoding == Encoding.UTF8
@@ -2181,7 +2173,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringShortDeserializeTest(Encoding encoding)
+        public void StringShortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringShortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2193,7 +2185,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringShortSerializeNoGCTest(Encoding encoding)
+        public void StringShortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringShortType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2218,7 +2210,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringShortDeserializeNoGCTest(Encoding encoding)
+        public void StringShortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringShortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2244,7 +2236,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUshortSerializeTest(Encoding encoding)
+        public void StringUshortTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringUshortType(10);
             var json = encoding == Encoding.UTF8
@@ -2255,7 +2247,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUshortDeserializeTest(Encoding encoding)
+        public void StringUshortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringUshortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2267,7 +2259,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUshortSerializeNoGCTest(Encoding encoding)
+        public void StringUshortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUshortType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2292,7 +2284,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUshortDeserializeNoGCTest(Encoding encoding)
+        public void StringUshortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUshortType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2318,7 +2310,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringIntSerializeTest(Encoding encoding)
+        public void StringIntTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringIntType(10);
             var json = encoding == Encoding.UTF8
@@ -2329,7 +2321,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringIntDeserializeTest(Encoding encoding)
+        public void StringIntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringIntType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2341,7 +2333,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringIntSerializeNoGCTest(Encoding encoding)
+        public void StringIntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringIntType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2366,7 +2358,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringIntDeserializeNoGCTest(Encoding encoding)
+        public void StringIntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringIntType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2392,7 +2384,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUintSerializeTest(Encoding encoding)
+        public void StringUintTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringUintType(10);
             var json = encoding == Encoding.UTF8
@@ -2403,7 +2395,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUintDeserializeTest(Encoding encoding)
+        public void StringUintTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringUintType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2415,7 +2407,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUintSerializeNoGCTest(Encoding encoding)
+        public void StringUintTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUintType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2440,7 +2432,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUintDeserializeNoGCTest(Encoding encoding)
+        public void StringUintTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUintType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2466,7 +2458,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringLongSerializeTest(Encoding encoding)
+        public void StringLongTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringLongType(10);
             var json = encoding == Encoding.UTF8
@@ -2477,7 +2469,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringLongDeserializeTest(Encoding encoding)
+        public void StringLongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringLongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2489,7 +2481,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringLongSerializeNoGCTest(Encoding encoding)
+        public void StringLongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringLongType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2514,7 +2506,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringLongDeserializeNoGCTest(Encoding encoding)
+        public void StringLongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringLongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2540,7 +2532,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUlongSerializeTest(Encoding encoding)
+        public void StringUlongTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringUlongType(10);
             var json = encoding == Encoding.UTF8
@@ -2551,7 +2543,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUlongDeserializeTest(Encoding encoding)
+        public void StringUlongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringUlongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2563,7 +2555,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUlongSerializeNoGCTest(Encoding encoding)
+        public void StringUlongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUlongType(10);
             // 先进行一次调用，解决对象池的问题
@@ -2588,7 +2580,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringUlongDeserializeNoGCTest(Encoding encoding)
+        public void StringUlongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringUlongType(10);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2614,7 +2606,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFloatSerializeTest(Encoding encoding)
+        public void StringFloatTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringFloatType(10.4f);
             var json = encoding == Encoding.UTF8
@@ -2625,7 +2617,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFloatDeserializeTest(Encoding encoding)
+        public void StringFloatTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringFloatType(10.4f);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2637,7 +2629,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFloatSerializeNoGCTest(Encoding encoding)
+        public void StringFloatTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringFloatType(10.4f);
             // 先进行一次调用，解决对象池的问题
@@ -2662,7 +2654,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFloatDeserializeNoGCTest(Encoding encoding)
+        public void StringFloatTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringFloatType(10.4f);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2688,7 +2680,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDoubleSerializeTest(Encoding encoding)
+        public void StringDoubleTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringDoubleType(10.4d);
             var json = encoding == Encoding.UTF8
@@ -2699,7 +2691,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDoubleDeserializeTest(Encoding encoding)
+        public void StringDoubleTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringDoubleType(10.4d);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2711,7 +2703,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDoubleSerializeNoGCTest(Encoding encoding)
+        public void StringDoubleTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringDoubleType(10.4d);
             // 先进行一次调用，解决对象池的问题
@@ -2736,7 +2728,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDoubleDeserializeNoGCTest(Encoding encoding)
+        public void StringDoubleTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringDoubleType(10.4d);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2762,7 +2754,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDecimalSerializeTest(Encoding encoding)
+        public void StringDecimalTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringDecimalType(13 / 2);
             var json = encoding == Encoding.UTF8
@@ -2773,7 +2765,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDecimalDeserializeTest(Encoding encoding)
+        public void StringDecimalTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringDecimalType(13 / 2);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2785,7 +2777,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDecimalSerializeNoGCTest(Encoding encoding)
+        public void StringDecimalTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringDecimalType(13 / 2);
             // 先进行一次调用，解决对象池的问题
@@ -2810,7 +2802,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDecimalDeserializeNoGCTest(Encoding encoding)
+        public void StringDecimalTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringDecimalType(13 / 2);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2836,7 +2828,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableBoolSerializeTest(Encoding encoding)
+        public void StringNullableBoolTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableBoolType(null);
             var json = encoding == Encoding.UTF8
@@ -2847,7 +2839,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableBoolDeserializeTest(Encoding encoding)
+        public void StringNullableBoolTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableBoolType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2859,7 +2851,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableBoolSerializeNoGCTest(Encoding encoding)
+        public void StringNullableBoolTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableBoolType(null);
             // 先进行一次调用，解决对象池的问题
@@ -2884,7 +2876,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableBoolDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableBoolTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableBoolType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2910,7 +2902,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableByteSerializeTest(Encoding encoding)
+        public void StringNullableByteTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableByteType(null);
             var json = encoding == Encoding.UTF8
@@ -2921,7 +2913,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableByteDeserializeTest(Encoding encoding)
+        public void StringNullableByteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableByteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2933,7 +2925,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableByteSerializeNoGCTest(Encoding encoding)
+        public void StringNullableByteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableByteType(null);
             // 先进行一次调用，解决对象池的问题
@@ -2958,7 +2950,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableByteDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableByteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableByteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -2984,7 +2976,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableSbyteSerializeTest(Encoding encoding)
+        public void StringNullableSbyteTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableSbyteType(null);
             var json = encoding == Encoding.UTF8
@@ -2995,7 +2987,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableSbyteDeserializeTest(Encoding encoding)
+        public void StringNullableSbyteTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableSbyteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3007,7 +2999,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableSbyteSerializeNoGCTest(Encoding encoding)
+        public void StringNullableSbyteTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableSbyteType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3032,7 +3024,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableSbyteDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableSbyteTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableSbyteType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3058,7 +3050,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableShortSerializeTest(Encoding encoding)
+        public void StringNullableShortTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableShortType(null);
             var json = encoding == Encoding.UTF8
@@ -3069,7 +3061,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableShortDeserializeTest(Encoding encoding)
+        public void StringNullableShortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableShortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3081,7 +3073,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableShortSerializeNoGCTest(Encoding encoding)
+        public void StringNullableShortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableShortType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3106,7 +3098,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableShortDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableShortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableShortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3132,7 +3124,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUshortSerializeTest(Encoding encoding)
+        public void StringNullableUshortTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableUshortType(null);
             var json = encoding == Encoding.UTF8
@@ -3143,7 +3135,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUshortDeserializeTest(Encoding encoding)
+        public void StringNullableUshortTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableUshortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3155,7 +3147,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUshortSerializeNoGCTest(Encoding encoding)
+        public void StringNullableUshortTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUshortType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3180,7 +3172,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUshortDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableUshortTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUshortType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3206,7 +3198,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableIntSerializeTest(Encoding encoding)
+        public void StringNullableIntTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableIntType(null);
             var json = encoding == Encoding.UTF8
@@ -3217,7 +3209,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableIntDeserializeTest(Encoding encoding)
+        public void StringNullableIntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableIntType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3229,7 +3221,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableIntSerializeNoGCTest(Encoding encoding)
+        public void StringNullableIntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableIntType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3254,7 +3246,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableIntDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableIntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableIntType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3280,7 +3272,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUintSerializeTest(Encoding encoding)
+        public void StringNullableUintTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableUintType(null);
             var json = encoding == Encoding.UTF8
@@ -3291,7 +3283,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUintDeserializeTest(Encoding encoding)
+        public void StringNullableUintTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableUintType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3303,7 +3295,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUintSerializeNoGCTest(Encoding encoding)
+        public void StringNullableUintTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUintType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3328,7 +3320,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUintDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableUintTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUintType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3354,7 +3346,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableLongSerializeTest(Encoding encoding)
+        public void StringNullableLongTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableLongType(null);
             var json = encoding == Encoding.UTF8
@@ -3365,7 +3357,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableLongDeserializeTest(Encoding encoding)
+        public void StringNullableLongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableLongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3377,7 +3369,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableLongSerializeNoGCTest(Encoding encoding)
+        public void StringNullableLongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableLongType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3402,7 +3394,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableLongDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableLongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableLongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3428,7 +3420,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUlongSerializeTest(Encoding encoding)
+        public void StringNullableUlongTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableUlongType(null);
             var json = encoding == Encoding.UTF8
@@ -3439,7 +3431,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUlongDeserializeTest(Encoding encoding)
+        public void StringNullableUlongTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableUlongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3451,7 +3443,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUlongSerializeNoGCTest(Encoding encoding)
+        public void StringNullableUlongTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUlongType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3476,7 +3468,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableUlongDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableUlongTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableUlongType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3502,7 +3494,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableFloatSerializeTest(Encoding encoding)
+        public void StringNullableFloatTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableFloatType(null);
             var json = encoding == Encoding.UTF8
@@ -3513,7 +3505,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableFloatDeserializeTest(Encoding encoding)
+        public void StringNullableFloatTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableFloatType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3525,7 +3517,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableFloatSerializeNoGCTest(Encoding encoding)
+        public void StringNullableFloatTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableFloatType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3550,7 +3542,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableFloatDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableFloatTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableFloatType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3576,7 +3568,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDoubleSerializeTest(Encoding encoding)
+        public void StringNullableDoubleTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableDoubleType(null);
             var json = encoding == Encoding.UTF8
@@ -3587,7 +3579,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDoubleDeserializeTest(Encoding encoding)
+        public void StringNullableDoubleTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableDoubleType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3599,7 +3591,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDoubleSerializeNoGCTest(Encoding encoding)
+        public void StringNullableDoubleTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableDoubleType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3624,7 +3616,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDoubleDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableDoubleTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableDoubleType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3650,7 +3642,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDecimalSerializeTest(Encoding encoding)
+        public void StringNullableDecimalTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNullableDecimalType(null);
             var json = encoding == Encoding.UTF8
@@ -3661,7 +3653,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDecimalDeserializeTest(Encoding encoding)
+        public void StringNullableDecimalTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNullableDecimalType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3673,7 +3665,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDecimalSerializeNoGCTest(Encoding encoding)
+        public void StringNullableDecimalTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableDecimalType(null);
             // 先进行一次调用，解决对象池的问题
@@ -3698,7 +3690,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNullableDecimalDeserializeNoGCTest(Encoding encoding)
+        public void StringNullableDecimalTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNullableDecimalType(null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3724,7 +3716,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSerializeTest(Encoding encoding)
+        public void StringTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringType("String");
             var json = encoding == Encoding.UTF8
@@ -3735,7 +3727,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDeserializeTest(Encoding encoding)
+        public void StringTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringType("String");
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3747,7 +3739,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringSerializeNoGCTest(Encoding encoding)
+        public void StringTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringType("String");
             // 先进行一次调用，解决对象池的问题
@@ -3772,7 +3764,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringDeserializeNoGCTest(Encoding encoding)
+        public void StringTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringType("String");
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3798,7 +3790,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DateTimeSerializeTest(Encoding encoding)
+        public void DateTimeTypeSerializeTest(Encoding encoding)
         {
             var obj = new DateTimeType(DateTime.Now);
             var json = encoding == Encoding.UTF8
@@ -3809,7 +3801,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DateTimeDeserializeTest(Encoding encoding)
+        public void DateTimeTypeDeserializeTest(Encoding encoding)
         {
             var obj = new DateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3821,7 +3813,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DateTimeSerializeNoGCTest(Encoding encoding)
+        public void DateTimeTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new DateTimeType(DateTime.Now);
             // 先进行一次调用，解决对象池的问题
@@ -3846,7 +3838,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DateTimeDeserializeNoGCTest(Encoding encoding)
+        public void DateTimeTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new DateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3872,7 +3864,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixMillisecondDateTimeSerializeTest(Encoding encoding)
+        public void UnixMillisecondDateTimeTypeSerializeTest(Encoding encoding)
         {
             var obj = new UnixMillisecondDateTimeType(DateTime.Now);
             var json = encoding == Encoding.UTF8
@@ -3883,7 +3875,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixMillisecondDateTimeDeserializeTest(Encoding encoding)
+        public void UnixMillisecondDateTimeTypeDeserializeTest(Encoding encoding)
         {
             var obj = new UnixMillisecondDateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3895,7 +3887,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixMillisecondDateTimeSerializeNoGCTest(Encoding encoding)
+        public void UnixMillisecondDateTimeTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new UnixMillisecondDateTimeType(DateTime.Now);
             // 先进行一次调用，解决对象池的问题
@@ -3920,7 +3912,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixMillisecondDateTimeDeserializeNoGCTest(Encoding encoding)
+        public void UnixMillisecondDateTimeTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new UnixMillisecondDateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3946,7 +3938,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixSecondDateTimeSerializeTest(Encoding encoding)
+        public void UnixSecondDateTimeTypeSerializeTest(Encoding encoding)
         {
             var obj = new UnixSecondDateTimeType(DateTime.Now);
             var json = encoding == Encoding.UTF8
@@ -3957,7 +3949,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixSecondDateTimeDeserializeTest(Encoding encoding)
+        public void UnixSecondDateTimeTypeDeserializeTest(Encoding encoding)
         {
             var obj = new UnixSecondDateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -3969,7 +3961,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixSecondDateTimeSerializeNoGCTest(Encoding encoding)
+        public void UnixSecondDateTimeTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new UnixSecondDateTimeType(DateTime.Now);
             // 先进行一次调用，解决对象池的问题
@@ -3994,7 +3986,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void UnixSecondDateTimeDeserializeNoGCTest(Encoding encoding)
+        public void UnixSecondDateTimeTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new UnixSecondDateTimeType(DateTime.Now);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4020,7 +4012,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2SerializeTest(Encoding encoding)
+        public void Vector2TypeSerializeTest(Encoding encoding)
         {
             var obj = new Vector2Type(new Vector2(0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4031,7 +4023,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2DeserializeTest(Encoding encoding)
+        public void Vector2TypeDeserializeTest(Encoding encoding)
         {
             var obj = new Vector2Type(new Vector2(0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4043,7 +4035,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2SerializeNoGCTest(Encoding encoding)
+        public void Vector2TypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector2Type(new Vector2(0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4068,7 +4060,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2DeserializeNoGCTest(Encoding encoding)
+        public void Vector2TypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector2Type(new Vector2(0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4094,7 +4086,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3SerializeTest(Encoding encoding)
+        public void Vector3TypeSerializeTest(Encoding encoding)
         {
             var obj = new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4105,7 +4097,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3DeserializeTest(Encoding encoding)
+        public void Vector3TypeDeserializeTest(Encoding encoding)
         {
             var obj = new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4117,7 +4109,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3SerializeNoGCTest(Encoding encoding)
+        public void Vector3TypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4142,7 +4134,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3DeserializeNoGCTest(Encoding encoding)
+        public void Vector3TypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4168,7 +4160,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector4SerializeTest(Encoding encoding)
+        public void Vector4TypeSerializeTest(Encoding encoding)
         {
             var obj = new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4179,7 +4171,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector4DeserializeTest(Encoding encoding)
+        public void Vector4TypeDeserializeTest(Encoding encoding)
         {
             var obj = new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4191,7 +4183,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector4SerializeNoGCTest(Encoding encoding)
+        public void Vector4TypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4216,7 +4208,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector4DeserializeNoGCTest(Encoding encoding)
+        public void Vector4TypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4242,7 +4234,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2IntSerializeTest(Encoding encoding)
+        public void Vector2IntTypeSerializeTest(Encoding encoding)
         {
             var obj = new Vector2IntType(new Vector2Int(12, 34));
             var json = encoding == Encoding.UTF8
@@ -4253,7 +4245,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2IntDeserializeTest(Encoding encoding)
+        public void Vector2IntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new Vector2IntType(new Vector2Int(12, 34));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4265,7 +4257,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2IntSerializeNoGCTest(Encoding encoding)
+        public void Vector2IntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector2IntType(new Vector2Int(12, 34));
             // 先进行一次调用，解决对象池的问题
@@ -4290,7 +4282,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector2IntDeserializeNoGCTest(Encoding encoding)
+        public void Vector2IntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector2IntType(new Vector2Int(12, 34));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4316,7 +4308,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3IntSerializeTest(Encoding encoding)
+        public void Vector3IntTypeSerializeTest(Encoding encoding)
         {
             var obj = new Vector3IntType(new Vector3Int(12, 34, 56));
             var json = encoding == Encoding.UTF8
@@ -4327,7 +4319,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3IntDeserializeTest(Encoding encoding)
+        public void Vector3IntTypeDeserializeTest(Encoding encoding)
         {
             var obj = new Vector3IntType(new Vector3Int(12, 34, 56));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4339,7 +4331,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3IntSerializeNoGCTest(Encoding encoding)
+        public void Vector3IntTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector3IntType(new Vector3Int(12, 34, 56));
             // 先进行一次调用，解决对象池的问题
@@ -4364,7 +4356,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void Vector3IntDeserializeNoGCTest(Encoding encoding)
+        public void Vector3IntTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new Vector3IntType(new Vector3Int(12, 34, 56));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4390,7 +4382,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void QuaternionSerializeTest(Encoding encoding)
+        public void QuaternionTypeSerializeTest(Encoding encoding)
         {
             var obj = new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4401,7 +4393,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void QuaternionDeserializeTest(Encoding encoding)
+        public void QuaternionTypeDeserializeTest(Encoding encoding)
         {
             var obj = new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4413,7 +4405,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void QuaternionSerializeNoGCTest(Encoding encoding)
+        public void QuaternionTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4438,7 +4430,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void QuaternionDeserializeNoGCTest(Encoding encoding)
+        public void QuaternionTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4464,7 +4456,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ColorSerializeTest(Encoding encoding)
+        public void ColorTypeSerializeTest(Encoding encoding)
         {
             var obj = new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4475,7 +4467,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ColorDeserializeTest(Encoding encoding)
+        public void ColorTypeDeserializeTest(Encoding encoding)
         {
             var obj = new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4487,7 +4479,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ColorSerializeNoGCTest(Encoding encoding)
+        public void ColorTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4512,7 +4504,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ColorDeserializeNoGCTest(Encoding encoding)
+        public void ColorTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4538,7 +4530,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void HexColorSerializeTest(Encoding encoding)
+        public void HexColorTypeSerializeTest(Encoding encoding)
         {
             var obj = new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = encoding == Encoding.UTF8
@@ -4549,7 +4541,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void HexColorDeserializeTest(Encoding encoding)
+        public void HexColorTypeDeserializeTest(Encoding encoding)
         {
             var obj = new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4561,7 +4553,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void HexColorSerializeNoGCTest(Encoding encoding)
+        public void HexColorTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             // 先进行一次调用，解决对象池的问题
@@ -4586,7 +4578,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void HexColorDeserializeNoGCTest(Encoding encoding)
+        public void HexColorTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4612,7 +4604,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GuidSerializeTest(Encoding encoding)
+        public void GuidTypeSerializeTest(Encoding encoding)
         {
             var obj = new GuidType(Guid.NewGuid());
             var json = encoding == Encoding.UTF8
@@ -4623,7 +4615,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GuidDeserializeTest(Encoding encoding)
+        public void GuidTypeDeserializeTest(Encoding encoding)
         {
             var obj = new GuidType(Guid.NewGuid());
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4635,7 +4627,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GuidSerializeNoGCTest(Encoding encoding)
+        public void GuidTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new GuidType(Guid.NewGuid());
             // 先进行一次调用，解决对象池的问题
@@ -4660,7 +4652,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GuidDeserializeNoGCTest(Encoding encoding)
+        public void GuidTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new GuidType(Guid.NewGuid());
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4686,7 +4678,155 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListNumberSerializeTest(Encoding encoding)
+        public void BoolTypeArraySerializeTest(Encoding encoding)
+        {
+            var obj = new BoolType[] { new(true), new(false) };
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<BoolType[]>(json));
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void BoolTypeArrayDeserializeTest(Encoding encoding)
+        {
+            var obj = new BoolType[] { new(true), new(false) };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var newObj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<BoolType[]>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<BoolType[]>(json);
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void BoolTypeArraySerializeNoGCTest(Encoding encoding)
+        {
+            var obj = new BoolType[] { new(true), new(false) };
+            // 先进行一次调用，解决对象池的问题
+            Serialize(encoding, obj);
+
+            var action = new TestDelegate(() => { Serialize(encoding, obj); });
+            // 因为会序列化出来字符串，所以必然会有分配
+            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+
+            static void Serialize(Encoding encodingType, BoolType[] serializeObj)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Serialize(serializeObj);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Serialize(serializeObj);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void BoolTypeArrayDeserializeNoGCTest(Encoding encoding)
+        {
+            var obj = new BoolType[] { new(true), new(false) };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
+            // 先调用一次，解决对象池的分配
+            Deserialize(encoding, json, utf8Bytes);
+
+            var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
+            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+
+            static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<BoolType[]>(utf8);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<BoolType[]>(jsonText);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void ListBoolTypeSerializeTest(Encoding encoding)
+        {
+            var obj = new List<BoolType> { new(true), new(false) };
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<List<BoolType>>(json));
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void ListBoolTypeDeserializeTest(Encoding encoding)
+        {
+            var obj = new List<BoolType> { new(true), new(false) };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var newObj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<List<BoolType>>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<List<BoolType>>(json);
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void ListBoolTypeSerializeNoGCTest(Encoding encoding)
+        {
+            var obj = new List<BoolType> { new(true), new(false) };
+            // 先进行一次调用，解决对象池的问题
+            Serialize(encoding, obj);
+
+            var action = new TestDelegate(() => { Serialize(encoding, obj); });
+            // 因为会序列化出来字符串，所以必然会有分配
+            Assert.That(action, Is.Not.AllocatingGCMemory(1));
+
+            static void Serialize(Encoding encodingType, List<BoolType> serializeObj)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Serialize(serializeObj);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Serialize(serializeObj);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void ListBoolTypeDeserializeNoGCTest(Encoding encoding)
+        {
+            var obj = new List<BoolType> { new(true), new(false) };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
+            // 先调用一次，解决对象池的分配
+            Deserialize(encoding, json, utf8Bytes);
+
+            var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
+            Assert.That(action, Is.Not.AllocatingGCMemory(2));
+
+            static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<List<BoolType>>(utf8);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<List<BoolType>>(jsonText);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void ListNumberTypeSerializeTest(Encoding encoding)
         {
             var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
             var json = encoding == Encoding.UTF8
@@ -4697,7 +4837,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListNumberDeserializeTest(Encoding encoding)
+        public void ListNumberTypeDeserializeTest(Encoding encoding)
         {
             var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4709,7 +4849,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListNumberSerializeNoGCTest(Encoding encoding)
+        public void ListNumberTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
             // 先进行一次调用，解决对象池的问题
@@ -4734,7 +4874,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListNumberDeserializeNoGCTest(Encoding encoding)
+        public void ListNumberTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4760,7 +4900,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListObjectSerializeTest(Encoding encoding)
+        public void ListObjectTypeSerializeTest(Encoding encoding)
         {
             var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
             var json = encoding == Encoding.UTF8
@@ -4771,7 +4911,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListObjectDeserializeTest(Encoding encoding)
+        public void ListObjectTypeDeserializeTest(Encoding encoding)
         {
             var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4783,7 +4923,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListObjectSerializeNoGCTest(Encoding encoding)
+        public void ListObjectTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
             // 先进行一次调用，解决对象池的问题
@@ -4808,7 +4948,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void ListObjectDeserializeNoGCTest(Encoding encoding)
+        public void ListObjectTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4834,7 +4974,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryNumberSerializeTest(Encoding encoding)
+        public void DictionaryNumberTypeSerializeTest(Encoding encoding)
         {
             var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
             var json = encoding == Encoding.UTF8
@@ -4845,7 +4985,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryNumberDeserializeTest(Encoding encoding)
+        public void DictionaryNumberTypeDeserializeTest(Encoding encoding)
         {
             var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4857,7 +4997,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryNumberSerializeNoGCTest(Encoding encoding)
+        public void DictionaryNumberTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
             // 先进行一次调用，解决对象池的问题
@@ -4882,7 +5022,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryNumberDeserializeNoGCTest(Encoding encoding)
+        public void DictionaryNumberTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4908,7 +5048,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryStringSerializeTest(Encoding encoding)
+        public void DictionaryStringTypeSerializeTest(Encoding encoding)
         {
             var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
             var json = encoding == Encoding.UTF8
@@ -4919,7 +5059,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryStringDeserializeTest(Encoding encoding)
+        public void DictionaryStringTypeDeserializeTest(Encoding encoding)
         {
             var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4931,7 +5071,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryStringSerializeNoGCTest(Encoding encoding)
+        public void DictionaryStringTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
             // 先进行一次调用，解决对象池的问题
@@ -4956,7 +5096,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void DictionaryStringDeserializeNoGCTest(Encoding encoding)
+        public void DictionaryStringTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -4982,7 +5122,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberEnumSerializeTest(Encoding encoding)
+        public void NumberEnumTypeSerializeTest(Encoding encoding)
         {
             var obj = new NumberEnumType(NumberEnum.BEnum);
             var json = encoding == Encoding.UTF8
@@ -4993,7 +5133,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberEnumDeserializeTest(Encoding encoding)
+        public void NumberEnumTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NumberEnumType(NumberEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5005,7 +5145,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberEnumSerializeNoGCTest(Encoding encoding)
+        public void NumberEnumTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberEnumType(NumberEnum.BEnum);
             // 先进行一次调用，解决对象池的问题
@@ -5030,7 +5170,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberEnumDeserializeNoGCTest(Encoding encoding)
+        public void NumberEnumTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberEnumType(NumberEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5056,7 +5196,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringEnumSerializeTest(Encoding encoding)
+        public void StringEnumTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringEnumType(StringEnum.BEnum);
             var json = encoding == Encoding.UTF8
@@ -5067,7 +5207,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringEnumDeserializeTest(Encoding encoding)
+        public void StringEnumTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringEnumType(StringEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5079,7 +5219,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringEnumSerializeNoGCTest(Encoding encoding)
+        public void StringEnumTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringEnumType(StringEnum.BEnum);
             // 先进行一次调用，解决对象池的问题
@@ -5104,7 +5244,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringEnumDeserializeNoGCTest(Encoding encoding)
+        public void StringEnumTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringEnumType(StringEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5130,7 +5270,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNumberEnumSerializeTest(Encoding encoding)
+        public void StringNumberEnumTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
             var json = encoding == Encoding.UTF8
@@ -5141,7 +5281,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNumberEnumDeserializeTest(Encoding encoding)
+        public void StringNumberEnumTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5153,7 +5293,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNumberEnumSerializeNoGCTest(Encoding encoding)
+        public void StringNumberEnumTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
             // 先进行一次调用，解决对象池的问题
@@ -5178,7 +5318,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringNumberEnumDeserializeNoGCTest(Encoding encoding)
+        public void StringNumberEnumTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5204,7 +5344,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberStringEnumSerializeTest(Encoding encoding)
+        public void NumberStringEnumTypeSerializeTest(Encoding encoding)
         {
             var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
             var json = encoding == Encoding.UTF8
@@ -5215,7 +5355,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberStringEnumDeserializeTest(Encoding encoding)
+        public void NumberStringEnumTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5227,7 +5367,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberStringEnumSerializeNoGCTest(Encoding encoding)
+        public void NumberStringEnumTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
             // 先进行一次调用，解决对象池的问题
@@ -5252,7 +5392,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberStringEnumDeserializeNoGCTest(Encoding encoding)
+        public void NumberStringEnumTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5278,7 +5418,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberFlagsSerializeTest(Encoding encoding)
+        public void NumberFlagsTypeSerializeTest(Encoding encoding)
         {
             var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
             var json = encoding == Encoding.UTF8
@@ -5289,7 +5429,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberFlagsDeserializeTest(Encoding encoding)
+        public void NumberFlagsTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5301,7 +5441,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberFlagsSerializeNoGCTest(Encoding encoding)
+        public void NumberFlagsTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
             // 先进行一次调用，解决对象池的问题
@@ -5326,7 +5466,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NumberFlagsDeserializeNoGCTest(Encoding encoding)
+        public void NumberFlagsTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5352,7 +5492,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFlagsSerializeTest(Encoding encoding)
+        public void StringFlagsTypeSerializeTest(Encoding encoding)
         {
             var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
             var json = encoding == Encoding.UTF8
@@ -5363,7 +5503,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFlagsDeserializeTest(Encoding encoding)
+        public void StringFlagsTypeDeserializeTest(Encoding encoding)
         {
             var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5375,7 +5515,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFlagsSerializeNoGCTest(Encoding encoding)
+        public void StringFlagsTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
             // 先进行一次调用，解决对象池的问题
@@ -5400,7 +5540,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void StringFlagsDeserializeNoGCTest(Encoding encoding)
+        public void StringFlagsTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5426,7 +5566,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LazySerializeTest(Encoding encoding)
+        public void LazyTypeSerializeTest(Encoding encoding)
         {
             var obj = new LazyType(new Lazy<string>("LazyString"));
             var json = encoding == Encoding.UTF8
@@ -5437,7 +5577,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LazyDeserializeTest(Encoding encoding)
+        public void LazyTypeDeserializeTest(Encoding encoding)
         {
             var obj = new LazyType(new Lazy<string>("LazyString"));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5449,7 +5589,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LazySerializeNoGCTest(Encoding encoding)
+        public void LazyTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new LazyType(new Lazy<string>("LazyString"));
             // 先进行一次调用，解决对象池的问题
@@ -5474,7 +5614,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void LazyDeserializeNoGCTest(Encoding encoding)
+        public void LazyTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new LazyType(new Lazy<string>("LazyString"));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5500,7 +5640,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSerializeTest(Encoding encoding)
+        public void NullableTypeSerializeTest(Encoding encoding)
         {
             var obj = new NullableType(new BoolType(true));
             var json = encoding == Encoding.UTF8
@@ -5511,7 +5651,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDeserializeTest(Encoding encoding)
+        public void NullableTypeDeserializeTest(Encoding encoding)
         {
             var obj = new NullableType(new BoolType(true));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5523,7 +5663,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableSerializeNoGCTest(Encoding encoding)
+        public void NullableTypeSerializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableType(new BoolType(true));
             // 先进行一次调用，解决对象池的问题
@@ -5548,7 +5688,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void NullableDeserializeNoGCTest(Encoding encoding)
+        public void NullableTypeDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new NullableType(new BoolType(true));
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5574,7 +5714,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GenericCollectionSerializeTest(Encoding encoding)
+        public void GenericTypeCollectionSerializeTest(Encoding encoding)
         {
             var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
             var json = encoding == Encoding.UTF8
@@ -5585,7 +5725,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GenericCollectionDeserializeTest(Encoding encoding)
+        public void GenericTypeCollectionDeserializeTest(Encoding encoding)
         {
             var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
@@ -5597,7 +5737,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GenericCollectionSerializeNoGCTest(Encoding encoding)
+        public void GenericTypeCollectionSerializeNoGCTest(Encoding encoding)
         {
             var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
             // 先进行一次调用，解决对象池的问题
@@ -5622,7 +5762,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
-        public void GenericCollectionDeserializeNoGCTest(Encoding encoding)
+        public void GenericTypeCollectionDeserializeNoGCTest(Encoding encoding)
         {
             var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
