@@ -23,6 +23,11 @@ namespace PeroTools2.Serde
         /// </summary>
         public static class UTF16
         {
+            static UTF16()
+            {
+                ReusableBufferWriter<char>.cachePool = ArrayPool.UTF16;
+            }
+
             /// <summary>
             /// 将对象序列化成 UTF-16 字符串
             /// </summary>
@@ -197,6 +202,11 @@ namespace PeroTools2.Serde
 
         public static class UTF8
         {
+            static UTF8()
+            {
+                ReusableBufferWriter<byte>.cachePool = ArrayPool.UTF8;
+            }
+
             /// <summary>
             /// 将对象序列化成 UTF-8 字符串
             /// </summary>

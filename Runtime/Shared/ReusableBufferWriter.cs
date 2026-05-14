@@ -18,6 +18,8 @@ namespace PeroTools2.Serde
     /// <typeparam name="T">缓存类型</typeparam>
     public sealed class ReusableBufferWriter<T> : IBufferWriter<T> where T : unmanaged
     {
+        internal static ArrayPool<T> cachePool = ArrayPool<T>.Shared;
+
         public static class Pool
         {
             private static readonly ConcurrentQueue<ReusableBufferWriter<T>> s_Queue = new();
@@ -84,12 +86,12 @@ namespace PeroTools2.Serde
             m_NextBufferSize ??= initial_buffer_size;
             if (sizeHint <= m_NextBufferSize)
             {
-                next = new BufferSegment<T>(m_NextBufferSize.Value);
+                next = new BufferSegment<T>(m_NextBufferSize.Value, cachePool);
                 m_NextBufferSize = MathUtil.NewArrayCapacity(m_NextBufferSize.Value);
             }
             else
             {
-                next = new BufferSegment<T>(sizeHint);
+                next = new BufferSegment<T>(sizeHint, cachePool);
             }
             // 使用NextBuffer替换CurrentBuffer
             // 旧的CurrentBuffer, 如果已经写入了一些数据, 则需要拷贝到新Buffer

@@ -5,6 +5,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -129,33 +130,43 @@ namespace PeroTools2.Serde.Json
             // 字符串
             var index = 0;
             advance = 0;
-            Span<char> result = stackalloc char[maxLength];
-            for (var i = 1; i < span.Length; i++)
+            var canAllocateOnStack = maxLength < 512;
+            var array = canAllocateOnStack ? Array.Empty<char>() : ArrayPool.UTF16.Rent(maxLength);
+            // Debug.Log($"arrayLength: {array.Length}, maxLength: {maxLength}");
+            var result = canAllocateOnStack ? stackalloc char[maxLength] : array;
+            try
             {
-                var character = span[i];
-                if (character == '\\')
+                for (var i = 1; i < span.Length; i++)
                 {
-                    result[index++] = ReadEscapedCharUtf16(src + i, out var length);
-                    i += length - 1; // -1 跳过当前字符
-                }
-                else if (character == '"')
-                {
-                    // 包括双引号
-                    advance = i + 1;
-
-                    // 如果达到最大长度，说明没有转义
-                    if (index + 2 == advance)
+                    var character = span[i];
+                    if (character == '\\')
                     {
-                        // 不用在堆上分配新字符串, 不包括双引号
-                        return span[1..(advance - 1)];
+                        result[index++] = ReadEscapedCharUtf16(src + i, out var length);
+                        i += length - 1; // -1 跳过当前字符
                     }
-                    // 分配一个新的字符串
-                    return new string(result[..index]);
+                    else if (character == '"')
+                    {
+                        // 包括双引号
+                        advance = i + 1;
+
+                        // 如果达到最大长度，说明没有转义
+                        if (index + 2 == advance)
+                        {
+                            // 不用在堆上分配新字符串, 不包括双引号
+                            return span[1..(advance - 1)];
+                        }
+                        // 分配一个新的字符串
+                        return new string(result[..index]);
+                    }
+                    else
+                    {
+                        result[index++] = character;
+                    }
                 }
-                else
-                {
-                    result[index++] = character;
-                }
+            }
+            finally
+            {
+                if (!canAllocateOnStack) ArrayPool.UTF16.Return(array);
             }
             throw SerdeException.ThrowInvalidAdvance();
         }
@@ -272,21 +283,29 @@ namespace PeroTools2.Serde.Json
             switch (esc)
             {
                 case '"':
-                    advance = 2; return '"';
+                    advance = 2;
+                    return '"';
                 case '\\':
-                    advance = 2; return '\\';
+                    advance = 2;
+                    return '\\';
                 case '/':
-                    advance = 2; return '/';
+                    advance = 2;
+                    return '/';
                 case 'b':
-                    advance = 2; return '\b';
+                    advance = 2;
+                    return '\b';
                 case 't':
-                    advance = 2; return '\t';
+                    advance = 2;
+                    return '\t';
                 case 'n':
-                    advance = 2; return '\n';
+                    advance = 2;
+                    return '\n';
                 case 'f':
-                    advance = 2; return '\f';
+                    advance = 2;
+                    return '\f';
                 case 'r':
-                    advance = 2; return '\r';
+                    advance = 2;
+                    return '\r';
                 case 'u':
                 {
                     // Expect \uXXXX (4 hex digits)

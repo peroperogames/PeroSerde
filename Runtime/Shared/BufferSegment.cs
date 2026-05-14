@@ -18,6 +18,7 @@ namespace PeroTools2.Serde
     {
         private T[] m_Buffer;
         private int m_Written;
+        public ArrayPool<T> pool;
 
         public readonly bool isNull
         {
@@ -49,9 +50,10 @@ namespace PeroTools2.Serde
             get => m_Buffer.AsSpan(m_Written);
         }
 
-        public BufferSegment(int size)
+        public BufferSegment(int size, ArrayPool<T> pool)
         {
-            m_Buffer = ArrayPool<T>.Shared.Rent(size);
+            this.pool = pool;
+            m_Buffer = pool.Rent(size);
             m_Written = 0;
         }
 
@@ -63,7 +65,7 @@ namespace PeroTools2.Serde
         {
             if (m_Buffer != null)
             {
-                ArrayPool<T>.Shared.Return(m_Buffer);
+                pool.Return(m_Buffer);
             }
             m_Buffer = null;
             m_Written = 0;
