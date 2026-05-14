@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
@@ -16,6 +17,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 {
     public sealed class JsonStyleTests
     {
+        public static readonly string s_LargeJsonTestFile = "Packages/com.prpr.serde/Tests/Json/very_large_test.json";
+
         public static IEnumerable<TestCaseData> HandlesVariousCharactersSerializeTestCases()
         {
             var testCases = new[]
@@ -362,6 +365,21 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(0, obj.b.Count);
             Assert.AreEqual(0, obj.c.Count);
         }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void VeryLargeJsonDeserializeTest(Encoding encoding)
+        {
+            var json = File.ReadAllText(s_LargeJsonTestFile);
+            var obj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<List<LargeJsonElement>>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<List<LargeJsonElement>>(json);
+            Assert.Greater(obj.Count, 0);
+            Assert.AreEqual(1, obj[0].id);
+            Assert.AreEqual("n1", obj[0].name);
+            Assert.AreEqual(1.5f, obj[0].value);
+            Assert.AreEqual(false, obj[0].active);
+        }
     }
 
     [SerdeJsonSerializable]
@@ -421,5 +439,14 @@ namespace PeroTools2.Serde.Json.Editor.Tests
     public partial class EscapeCharacterJsonObject
     {
         public string value;
+    }
+
+    [SerdeJsonSerializable]
+    public partial class LargeJsonElement
+    {
+        public int id;
+        public string name;
+        public float value;
+        public bool active;
     }
 }

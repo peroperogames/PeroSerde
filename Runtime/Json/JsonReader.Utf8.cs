@@ -5,6 +5,7 @@
  */
 
 using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -128,33 +129,42 @@ namespace PeroTools2.Serde.Json
             // 字符串
             var index = 0;
             advance = 0;
-            Span<byte> result = stackalloc byte[maxLength];
-            for (var i = 1; i < span.Length; i++)
+            var canAllocateOnStack = maxLength < 1024;
+            var array = canAllocateOnStack ? Array.Empty<byte>() : ArrayPool.UTF8.Rent(maxLength);
+            var result = canAllocateOnStack ? stackalloc byte[maxLength] : array;
+            try
             {
-                var character = span[i];
-                if (character == '\\')
+                for (var i = 1; i < span.Length; i++)
                 {
-                    result[index++] = (byte) ReadEscapedCharUtf8(src + i, out var length);
-                    i += length - 1; // -1 跳过当前字符
-                }
-                else if (character == '"')
-                {
-                    // 包括双引号
-                    advance = i + 1;
-
-                    // 如果达到最大长度，说明没有转义
-                    if (index + 2 == advance)
+                    var character = span[i];
+                    if (character == '\\')
                     {
-                        // 不用在堆上分配新字符串, 不包括双引号
-                        return span[1..(advance - 1)];
+                        result[index++] = (byte) ReadEscapedCharUtf8(src + i, out var length);
+                        i += length - 1; // -1 跳过当前字符
                     }
-                    // 分配一个新的字符串
-                    return result[..index].ToArray();
+                    else if (character == '"')
+                    {
+                        // 包括双引号
+                        advance = i + 1;
+
+                        // 如果达到最大长度，说明没有转义
+                        if (index + 2 == advance)
+                        {
+                            // 不用在堆上分配新字符串, 不包括双引号
+                            return span[1..(advance - 1)];
+                        }
+                        // 分配一个新的字符串
+                        return result[..index].ToArray();
+                    }
+                    else
+                    {
+                        result[index++] = character;
+                    }
                 }
-                else
-                {
-                    result[index++] = character;
-                }
+            }
+            finally
+            {
+                if (!canAllocateOnStack) ArrayPool.UTF8.Return(array);
             }
             throw SerdeException.ThrowInvalidAdvance();
         }
