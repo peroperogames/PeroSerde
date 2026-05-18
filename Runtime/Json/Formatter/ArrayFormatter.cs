@@ -66,6 +66,10 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
         {
+            if (reader.TryReadNull())
+            {
+                return null;
+            }
             var list = ListPool<T>.shared.Rent();
             try
             {
@@ -89,6 +93,10 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
         {
+            if (reader.TryReadNull())
+            {
+                return null;
+            }
             var list = ListPool<T>.shared.Rent();
             try
             {
