@@ -210,6 +210,7 @@ namespace PeroTools2.Serde.Json
             {
                 var keyStr = reader.ReadKey();
                 var value = reader.ReadValue<TValue>();
+                reader.ReadWhiteSpace();
                 return s_KeyType switch
                 {
                     TypeCode.Empty => throw SerdeException.ThrowNotSupportedType(typeof(TKey)),
@@ -281,6 +282,7 @@ namespace PeroTools2.Serde.Json
             {
                 var keyStr = reader.ReadKey();
                 var value = reader.ReadValue<TValue>();
+                reader.ReadWhiteSpace();
                 return s_KeyType switch
                 {
                     TypeCode.Empty => throw SerdeException.ThrowNotSupportedType(typeof(TKey)),
