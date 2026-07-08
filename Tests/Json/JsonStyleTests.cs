@@ -144,7 +144,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         }
 
         [TestCaseSource(nameof(EmptyDeserializeTestCases))]
-        public void EmptyDeserializeTest(System.Type type, Encoding encoding, string json)
+        public void EmptyDeserializeTest(Type type, Encoding encoding, string json)
         {
             var method = typeof(JsonStyleTests).GetMethod(nameof(GenericEmptyDeserializeTest), BindingFlags.NonPublic | BindingFlags.Instance);
             var genericMethod = method!.MakeGenericMethod(type);
@@ -188,7 +188,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         [TestCase(Encoding.UTF16)]
         public void RedundantMemberDeserializeTest(Encoding encoding)
         {
-            const string json = "{ \"d\":\"xxx\", \"a\":\"A1\", \"b\":\"B2\", \"c\":1.0}";
+            const string json = "{ \"z\":\"xxx\", \"a\":\"A1\", \"b\":\"B2\", \"c\":1.0}";
             var obj = encoding == Encoding.UTF8
                 ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<JsonObject>(json);
@@ -285,7 +285,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         [TestCase(Encoding.UTF16)]
         public void WriteSpaceStyleDeserializeObjectTest(Encoding encoding)
         {
-            const string json = " { \"a\" : \"A \" , \"b\" : \" B\" , \"c\" : 1.1 } ";
+            const string json = " { \"a\" : \"A \" , \"b\" : \" B\" , \"c\" : 1.1, \"d\" : [  \" 1 \" , \"2\" ] , \"e\" : { \"a\" : 1 , \"b\" : 2 } } ";
             var obj = encoding == Encoding.UTF8
                 ? JsonConverter.UTF8.Deserialize<JsonObject>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<JsonObject>(json);
@@ -293,6 +293,12 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual("A ", obj.a);
             Assert.AreEqual(" B", obj.b);
             Assert.AreEqual(1.1f, obj.c);
+            Assert.AreEqual(2, obj.d.Length);
+            Assert.AreEqual(" 1 ", obj.d[0]);
+            Assert.AreEqual("2", obj.d[1]);
+            Assert.AreEqual(2, obj.e.Count);
+            Assert.AreEqual(1, obj.e["a"]);
+            Assert.AreEqual(2, obj.e["b"]);
         }
 
         [TestCase(Encoding.UTF8)]
@@ -334,8 +340,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         [TestCase(Encoding.UTF16)]
         public void ComplexObjectDeserializeTest(Encoding encoding)
         {
-            const string json =
-                "{\"a\":  null,\"b\": [ null, null, null ] ,\"c\": {\"1\": {\"1\": \"a\",\"2\": null,\"3\": \"b\"},\"2\": null,\"3\": {\"1\": \"c\",\"2\": null,\"3\": \"d\"}}}";
+            const string json = "{\"a\":  null,\"b\": [ null, null, null ] ,\"c\": {\"1\": {\"1\": \"a\",\"2\": null,\"3\": \"b\"},\"2\": null,\"3\": {\"1\": \"c\",\"2\": null,\"3\": \"d\"}}}";
             var obj = encoding == Encoding.UTF8
                 ? JsonConverter.UTF8.Deserialize<Complex>(System.Text.Encoding.UTF8.GetBytes(json))
                 : JsonConverter.UTF16.Deserialize<Complex>(json);
@@ -415,6 +420,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public string a { get; private set; }
         public string b { get; private set; }
         public float c { get; private set; }
+        public string[] d;
+        public Dictionary<string, int> e;
     }
 
     [SerdeJsonSerializable]
