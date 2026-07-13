@@ -21,7 +21,9 @@ namespace PeroTools2.Serde.Json
     )]
     public sealed class SerdeJsonSerializableAttribute : Attribute
     {
-        public SerdeJsonSerializableAttribute(bool ignoreMissingMembers = true) { }
+        /// <param name="ignoreMissingMembers">若为 true，则在反序列化时忽略缺失的成员</param>
+        /// <param name="ignoreNullMembers">若为 true，则在序列化时忽略值为 null 的成员</param>
+        public SerdeJsonSerializableAttribute(bool ignoreMissingMembers = true, bool ignoreNullMembers = false) { }
     }
 
     /// <summary>

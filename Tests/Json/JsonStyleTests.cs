@@ -186,6 +186,17 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
+        public void IgnoreNullMemberSerializeTest(Encoding encoding)
+        {
+            var obj = new NullMemberJsonObject { x = null, y = null, z = 1, w = null };
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual("{\"z\":1}", json);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
         public void RedundantMemberDeserializeTest(Encoding encoding)
         {
             const string json = "{ \"z\":\"xxx\", \"a\":\"A1\", \"b\":\"B2\", \"c\":1.0}";
@@ -455,5 +466,14 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public string name;
         public float value;
         public bool active;
+    }
+
+    [SerdeJsonSerializable(ignoreNullMembers: true)]
+    internal sealed partial class NullMemberJsonObject
+    {
+        public int? x;
+        public string y;
+        public int z;
+        public Dictionary<string, int> w;
     }
 }
