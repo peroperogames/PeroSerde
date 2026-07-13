@@ -26,10 +26,30 @@ public struct TypeMeta
     /// </summary>
     public readonly MemberMeta[] members;
 
+    /// <summary>
+    /// 若为 true，则在序列化时忽略值为 null 的成员
+    /// </summary>
+    public readonly bool ignoreNullMembers;
+
     public TypeMeta(ITypeSymbol type, ReferenceSymbols referenceSymbols)
     {
         symbol = type;
         members = GetMemberMetas(type, referenceSymbols);
+        ignoreNullMembers = GetIgnoreNullMembers(type, referenceSymbols);
+    }
+
+    /// <summary>
+    /// 读取 <c>SerdeJsonSerializableAttribute</c> 上的 <c>ignoreNullMembers</c> 构造参数（第二个参数）
+    /// </summary>
+    private static bool GetIgnoreNullMembers(ITypeSymbol type, ReferenceSymbols referenceSymbols)
+    {
+        if (type.TryGetAttribute(referenceSymbols.serdeJsonSerializableAttribute, out var attr)
+            && attr!.ConstructorArguments.Length > 1
+            && attr.ConstructorArguments[1].Value is bool ignoreNull)
+        {
+            return ignoreNull;
+        }
+        return false;
     }
 
     /// <summary>
@@ -126,4 +146,9 @@ public struct MemberMeta
     public string formatName;
     public ITypeSymbol? formatter;
     public bool useFormatter => formatter != null || kind != BuiltinKind.Value;
+
+    /// <summary>
+    /// 该成员的值是否可能为 null（引用类型或 <c>Nullable&lt;T&gt;</c>）
+    /// </summary>
+    public bool canBeNull => type is { IsReferenceType: true } || kind == BuiltinKind.Nullable;
 }

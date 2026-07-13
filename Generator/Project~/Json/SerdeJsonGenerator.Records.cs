@@ -297,14 +297,44 @@ public partial class SerdeJsonGenerator
         {
             stringBuilder.AppendLine("writer.WriteBeginObject();");
         }
-        for (var index = 0; index < members.Length; index++)
+        if (typeMeta.ignoreNullMembers)
         {
-            var member = members[index];
-            var writeComma = (index != members.Length - 1).ToString().ToLower();
-            var args = member.useFormatter
-                ? $"\"{member.formatName}\", value.{member.name}, s_{member.name}Formatter, {writeComma}"
-                : $"\"{member.formatName}\", value.{member.name}, {writeComma}";
-            stringBuilder.AppendLine($"            writer.WriteNamedValue({args});");
+            // 忽略 null 成员时成员数量在运行时才能确定，故改用前置逗号模式：
+            // 写入每个成员前，若之前已写入过成员则先补一个逗号，从而避免尾随逗号。
+            stringBuilder.AppendLine("            var wroteMember = false;");
+            foreach (var member in members)
+            {
+                var args = member.useFormatter
+                    ? $"\"{member.formatName}\", value.{member.name}, s_{member.name}Formatter, false"
+                    : $"\"{member.formatName}\", value.{member.name}, false";
+                if (member.canBeNull)
+                {
+                    stringBuilder.AppendLine($"            if (value.{member.name} != null)");
+                    stringBuilder.AppendLine("            {");
+                    stringBuilder.AppendLine("                if (wroteMember) writer.WriteValueEnding();");
+                    stringBuilder.AppendLine($"                writer.WriteNamedValue({args});");
+                    stringBuilder.AppendLine("                wroteMember = true;");
+                    stringBuilder.AppendLine("            }");
+                }
+                else
+                {
+                    stringBuilder.AppendLine("            if (wroteMember) writer.WriteValueEnding();");
+                    stringBuilder.AppendLine($"            writer.WriteNamedValue({args});");
+                    stringBuilder.AppendLine("            wroteMember = true;");
+                }
+            }
+        }
+        else
+        {
+            for (var index = 0; index < members.Length; index++)
+            {
+                var member = members[index];
+                var writeComma = (index != members.Length - 1).ToString().ToLower();
+                var args = member.useFormatter
+                    ? $"\"{member.formatName}\", value.{member.name}, s_{member.name}Formatter, {writeComma}"
+                    : $"\"{member.formatName}\", value.{member.name}, {writeComma}";
+                stringBuilder.AppendLine($"            writer.WriteNamedValue({args});");
+            }
         }
         stringBuilder.Append("            writer.WriteEndObject();");
 
