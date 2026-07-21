@@ -7,7 +7,6 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 
 namespace PeroTools2.Serde
 {
@@ -47,16 +46,16 @@ namespace PeroTools2.Serde
 
         /// <summary>判断两个 utf-16 字符串是否相等。</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Equals(ReadOnlySpan<char> utf16, ReadOnlySpan<char> utf16Y)
+        public static bool Equals(ReadOnlySpan<char> utf16X, ReadOnlySpan<char> utf16Y)
         {
-            if (utf16.Length != utf16Y.Length) return false;
+            if (utf16X.Length != utf16Y.Length) return false;
 
-            fixed (char* fixedPtrX = utf16)
+            fixed (char* fixedPtrX = utf16X)
             fixed (char* fixedPtrY = utf16Y)
             {
                 var x = (ulong*) fixedPtrX;
                 var y = (ulong*) fixedPtrY;
-                var length = utf16.Length;
+                var length = utf16X.Length;
 
                 while (length >= 4)
                 {
@@ -69,8 +68,23 @@ namespace PeroTools2.Serde
                     ++x;
                     ++y;
                 }
+                // 处理剩余的字符
+                // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+                // return ((*x ^ *y) & ~(ulong.MaxValue << (length * 16))) == 0;
+                var charX = (char*) x;
+                var charY = (char*) y;
+                while (length > 0)
+                {
+                    if (*charX != *charY)
+                    {
+                        return false;
+                    }
 
-                return ((*x ^ *y) & ~(ulong.MaxValue << (length * 16))) == 0;
+                    length -= 1;
+                    ++charX;
+                    ++charY;
+                }
+                return true;
             }
         }
 
@@ -98,8 +112,23 @@ namespace PeroTools2.Serde
                     ++x;
                     ++y;
                 }
+                // 处理剩余的字符
+                // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+                // return ((*x ^ *y) & ~(ulong.MaxValue << (length * 8))) == 0;
+                var byteX = (byte*) x;
+                var byteY = (byte*) y;
+                while (length > 0)
+                {
+                    if (*byteX != *byteY)
+                    {
+                        return false;
+                    }
 
-                return ((*x ^ *y) & ~(ulong.MaxValue << (length * 8))) == 0;
+                    length -= 1;
+                    ++byteX;
+                    ++byteY;
+                }
+                return true;
             }
         }
 
@@ -124,84 +153,23 @@ namespace PeroTools2.Serde
                 x = ref Unsafe.Add(ref x, 1);
                 y = ref Unsafe.Add(ref y, 1);
             }
-
-            return ((x ^ y) & ~(ulong.MaxValue << (length * 16))) == 0;
-        }
-
-        #endregion
-
-        #region GetHashCode
-
-        /// <summary>获取一个 utf-16 字符串的 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCode(Span<char> utf16)
-        {
-            fixed (char* fixedPtr = utf16)
+            // 处理剩余的字符
+            // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+            // return ((x ^ y) & ~(ulong.MaxValue << (length * 16))) == 0;
+            ref var charX = ref Unsafe.As<ulong, char>(ref x);
+            ref var charY = ref Unsafe.As<ulong, char>(ref y);
+            while (length > 0)
             {
-                var ptr = (ulong*) fixedPtr;
-                var length = utf16.Length;
-
-                var hash = hash_seed;
-
-                while (length >= 4)
+                if (charX != charY)
                 {
-                    hash ^= *ptr * hash;
-
-                    length -= 4;
-                    ++ptr;
+                    return false;
                 }
 
-                hash ^= (*ptr & ~(ulong.MaxValue << (length * 16))) * hash;
-
-                return (int) (hash >> 32) ^ (int) hash;
+                length -= 1;
+                charX = ref Unsafe.Add(ref charX, 1);
+                charY = ref Unsafe.Add(ref charY, 1);
             }
-        }
-
-        /// <summary>获取一个 utf-8 字符串的 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCode(Span<byte> utf8)
-        {
-            fixed (byte* fixedPtr = utf8)
-            {
-                var ptr = (ulong*) fixedPtr;
-                var length = utf8.Length;
-
-                var hash = hash_seed;
-
-                while (length >= 8)
-                {
-                    hash ^= *ptr * hash;
-
-                    length -= 8;
-                    ++ptr;
-                }
-
-                hash ^= (*ptr & ~(ulong.MaxValue << (length * 8))) * hash;
-
-                return (int) (hash >> 32) ^ (int) hash;
-            }
-        }
-
-        /// <summary>获取字符串 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCode(string str)
-        {
-            ref var ptr = ref Unsafe.As<char, ulong>(ref GetRawStringData(str));
-            var length = str.Length;
-
-            var hash = hash_seed;
-
-            while (length >= 4)
-            {
-                hash ^= ptr * hash;
-
-                length -= 4;
-                ptr = ref Unsafe.Add(ref ptr, 1);
-            }
-
-            hash ^= (ptr & ~(ulong.MaxValue << (length * 16))) * hash;
-
-            return (int) (hash >> 32) ^ (int) hash;
+            return true;
         }
 
         #endregion
@@ -234,8 +202,23 @@ namespace PeroTools2.Serde
                     ++x;
                     ++y;
                 }
+                // 处理剩余的字符
+                // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+                // return (((*x | lower) ^ (*y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
+                var charX = (char*) x;
+                var charY = (char*) y;
+                while (length > 0)
+                {
+                    if ((*charX | 0x20) != (*charY | 0x20))
+                    {
+                        return false;
+                    }
 
-                return (((*x | lower) ^ (*y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
+                    length -= 1;
+                    ++charX;
+                    ++charY;
+                }
+                return true;
             }
         }
 
@@ -265,8 +248,23 @@ namespace PeroTools2.Serde
                     ++x;
                     ++y;
                 }
+                // 处理剩余的字符
+                // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+                // return (((*x | lower) ^ (*y | lower)) & (~(ulong.MaxValue << (length * 8)))) == 0;
+                var byteX = (byte*) x;
+                var byteY = (byte*) y;
+                while (length > 0)
+                {
+                    if ((*byteX | 0x20) != (*byteY | 0x20))
+                    {
+                        return false;
+                    }
 
-                return (((*x | lower) ^ (*y | lower)) & (~(ulong.MaxValue << (length * 8)))) == 0;
+                    length -= 1;
+                    ++byteX;
+                    ++byteY;
+                }
+                return true;
             }
         }
 
@@ -295,87 +293,23 @@ namespace PeroTools2.Serde
                     ++x;
                     y = ref Unsafe.Add(ref y, 1);
                 }
-
-                return (((*x | lower) ^ (y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
-            }
-        }
-
-        #endregion
-
-        #region GetHashCodeWithIgnoreCase
-
-        /// <summary>获取一个 utf-16 字符串的 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCodeWithIgnoreCase(Span<char> utf16)
-        {
-            const ulong lower = 0x2020202020202020;
-            fixed (char* fixedPtr = utf16)
-            {
-                var ptr = (ulong*) fixedPtr;
-                var length = utf16.Length;
-
-                var hash = hash_seed;
-
-                while (length >= 4)
+                // 处理剩余的字符
+                // 直接对 x 解引用在某些平台上可能会导致访问越界，因此改为逐个比较
+                // return (((*x | lower) ^ (y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
+                var charX = (char*) x;
+                while (length > 0)
                 {
-                    hash ^= (*ptr | lower) * hash;
+                    if ((*charX | 0x20) != (Unsafe.Add(ref Unsafe.As<ulong, char>(ref y), 0) | 0x20))
+                    {
+                        return false;
+                    }
 
-                    length -= 4;
-                    ++ptr;
+                    length -= 1;
+                    ++charX;
+                    y = ref Unsafe.Add(ref y, 1);
                 }
-
-                hash ^= ((*ptr & ~(ulong.MaxValue << (length * 16))) | lower) * hash;
-
-                return (int) (hash >> 32) ^ (int) hash;
+                return true;
             }
-        }
-
-        /// <summary>获取一个 utf-8 字符串的 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCodeWithIgnoreCase(Span<byte> utf8)
-        {
-            const ulong lower = 0x2020202020202020;
-            fixed (byte* fixedPtr = utf8)
-            {
-                var ptr = (ulong*) fixedPtr;
-                var length = utf8.Length;
-                var hash = hash_seed;
-
-                while (length >= 8)
-                {
-                    hash ^= (*ptr | lower) * hash;
-
-                    length -= 8;
-                    ++ptr;
-                }
-
-                hash ^= ((*ptr & ~(ulong.MaxValue << (length * 8))) | lower) * hash;
-                return (int) (hash >> 32) ^ (int) hash;
-            }
-        }
-
-        /// <summary>获取字符串 Hash 值。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetHashCodeWithIgnoreCase(string str)
-        {
-            const ulong lower = 0x2020202020202020;
-
-            ref var ptr = ref Unsafe.As<char, ulong>(ref GetRawStringData(str));
-            var length = str.Length;
-
-            var hash = hash_seed;
-
-            while (length >= 4)
-            {
-                hash ^= (ptr | lower) * hash;
-
-                length -= 4;
-                ptr = ref Unsafe.Add(ref ptr, 1);
-            }
-
-            hash ^= ((ptr & ~(ulong.MaxValue << (length * 16))) | lower) * hash;
-
-            return (int) (hash >> 32) ^ (int) hash;
         }
 
         #endregion
