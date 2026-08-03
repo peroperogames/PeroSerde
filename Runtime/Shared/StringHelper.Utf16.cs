@@ -59,7 +59,7 @@ namespace PeroTools2.Serde
 
                 while (length >= 4)
                 {
-                    if (*x != *y)
+                    if (Unsafe.ReadUnaligned<ulong>(x) != Unsafe.ReadUnaligned<ulong>(y))
                     {
                         return false;
                     }
@@ -103,7 +103,7 @@ namespace PeroTools2.Serde
 
                 while (length >= 8)
                 {
-                    if (*x != *y)
+                    if (Unsafe.ReadUnaligned<ulong>(x) != Unsafe.ReadUnaligned<ulong>(y))
                     {
                         return false;
                     }
@@ -144,7 +144,7 @@ namespace PeroTools2.Serde
 
             while (length >= 4)
             {
-                if (x != y)
+                if (Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<ulong, byte>(ref x)) != Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<ulong, byte>(ref y)))
                 {
                     return false;
                 }
@@ -193,7 +193,7 @@ namespace PeroTools2.Serde
 
                 while (length >= 4)
                 {
-                    if ((*x | lower) != (*y | lower))
+                    if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(y) | lower))
                     {
                         return false;
                     }
@@ -239,7 +239,7 @@ namespace PeroTools2.Serde
 
                 while (length >= 8)
                 {
-                    if ((*x | lower) != (*y | lower))
+                    if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(y) | lower))
                     {
                         return false;
                     }
@@ -284,7 +284,7 @@ namespace PeroTools2.Serde
 
                 while (length >= 4)
                 {
-                    if ((*x | lower) != (y | lower))
+                    if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<ulong, byte>(ref y)) | lower))
                     {
                         return false;
                     }
