@@ -1,1 +1,9 @@
-bmFtZTogUHVibGlzaCBvbiBUYWcKb246CiAgcHVzaDoKICAgIHRhZ3M6CiAgICAgIC0gJyonCmpvYnM6CiAgY2FsbC1wdWJsaXNoOgogICAgdXNlczogcGVyb3Blcm9nYW1lcy9Ub29sc1dvcmtmbG93Ly5naXRodWIvd29ya2Zsb3dzL3B1Ymxpc2gtbnBtLnltbEBtYWluCiAgICBzZWNyZXRzOiBpbmhlcml0Cg==
+name: Publish on Tag
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  call-publish:
+    uses: peroperogames/ToolsWorkflow/.github/workflows/publish-npm.yml@main
+    secrets: inherit
