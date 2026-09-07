@@ -8,8 +8,8 @@
     "name": "PeroPero",
     "email": "unity@peropero.net"
   },
-  "documentationUrl": "https://git.peropero.net/unity-packages/pero-serde/-/blob/master/README.md",
-  "changelogUrl": "https://git.peropero.net/unity-packages/pero-serde/-/releases",
+  "documentationUrl": "https://github.com/peroperogames/PeroSerde/blob/master/README.md",
+  "changelogUrl": "https://github.com/peroperogames/PeroSerde/releases",
   "dependencies": {
     "com.prpr.system.runtime.compilerservices.unsafe": "6.0.0"
   },
