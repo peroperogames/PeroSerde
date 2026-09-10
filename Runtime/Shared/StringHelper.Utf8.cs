@@ -237,24 +237,22 @@ namespace PeroTools2.Serde
                 length -= 8;
             }
 
-            // UTF8 每个元素是 1 字节, 因此使用 Vector<byte>:
-            // lane 宽度(1 字节) == 元素宽度(1 字节), 读取字节数 == 步进字节数 == 守卫单位, 三者自洽
-            if (length >= Vector<byte>.Count)
+            if (length >= Vector<ushort>.Count)
             {
-                var comparison = new Vector<byte>(c);
+                var comparison = new Vector<ushort>(c);
 
                 do
                 {
-                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<byte>>(offset), comparison);
+                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
 
-                    if (matches != Vector<byte>.Zero)
+                    if (matches != Vector<ushort>.Zero)
                     {
-                        return (int) (offset - bytes) + LocateFirstFoundByte(matches);
+                        return (int) (offset - bytes) + LocateFirstFoundChar(matches);
                     }
 
-                    length -= Vector<byte>.Count;
-                    offset += Vector<byte>.Count;
-                } while (length >= Vector<byte>.Count);
+                    length -= Vector<ushort>.Count;
+                    offset += Vector<ushort>.Count;
+                } while (length >= Vector<ushort>.Count);
             }
 
             while (length >= 2)
@@ -266,7 +264,7 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 1 && offset[0] == c) goto Found0;
+            if (length >= 0 && offset[0] == c) goto Found0;
 
             return -1;
 
@@ -295,28 +293,26 @@ namespace PeroTools2.Serde
                 length -= 8;
             }
 
-            // UTF8 每个元素是 1 字节, 使用 Vector<byte>: lane 宽度 == 元素宽度, 读取/步进/守卫单位自洽
-            if (length >= Vector<byte>.Count)
+            if (length >= Vector<ushort>.Count)
             {
-                var comparison1 = new Vector<byte>(c1);
-                var comparison2 = new Vector<byte>(c2);
+                var comparison1 = new Vector<ushort>(c1);
+                var comparison2 = new Vector<ushort>(c2);
 
                 do
                 {
-                    var data = Unsafe.ReadUnaligned<Vector<byte>>(offset);
                     var matches = Vector.BitwiseOr(
-                        Vector.Equals(data, comparison1),
-                        Vector.Equals(data, comparison2)
+                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison1),
+                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison2)
                     );
 
-                    if (matches != Vector<byte>.Zero)
+                    if (matches != Vector<ushort>.Zero)
                     {
-                        return (int) (offset - bytes) + LocateFirstFoundByte(matches);
+                        return (int) (offset - bytes) + LocateFirstFoundChar(matches);
                     }
 
-                    length -= Vector<byte>.Count;
-                    offset += Vector<byte>.Count;
-                } while (length >= Vector<byte>.Count);
+                    length -= Vector<ushort>.Count;
+                    offset += Vector<ushort>.Count;
+                } while (length >= Vector<ushort>.Count);
             }
 
             while (length >= 2)
@@ -328,7 +324,7 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 1 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
+            if (length >= 0 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
 
             return -1;
 
@@ -357,23 +353,22 @@ namespace PeroTools2.Serde
                 length -= 8;
             }
 
-            // UTF8 每个元素是 1 字节, 使用 Vector<byte>: lane 宽度 == 元素宽度, 读取/步进/守卫单位自洽
-            if (length >= Vector<byte>.Count)
+            if (length >= Vector<ushort>.Count)
             {
-                var comparison = new Vector<byte>(c);
+                var comparison = new Vector<ushort>(c);
 
                 do
                 {
-                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<byte>>(offset), comparison);
+                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
 
-                    if (matches != Vector<byte>.Zero)
+                    if (matches != Vector<ushort>.Zero)
                     {
                         return true;
                     }
 
-                    length -= Vector<byte>.Count;
-                    offset += Vector<byte>.Count;
-                } while (length >= Vector<byte>.Count);
+                    length -= Vector<ushort>.Count;
+                    offset += Vector<ushort>.Count;
+                } while (length >= Vector<ushort>.Count);
             }
 
             while (length >= 2)
@@ -385,43 +380,10 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 1 && offset[0] == c) return true;
+            if (length >= 0 && offset[0] == c) return true;
 
             return false;
         }
-
-        // 用于定位 Vector<byte> 比较结果中第一个命中(=0xFF)的 lane 下标.
-        // 与 LocateFirstFoundChar 同源, 但按 8-bit lane 调整; 假设小端序.
-        // 每个 ulong 装 8 个 byte lane, 用一个宽度无关的循环遍历,
-        // 因此在 128/256/512-bit 向量上都正确(不像 char 版硬编码了 4 个 ulong).
-        private const ulong xor_power_of_two_to_high_byte = (0x07ul |
-                                                             0x06ul << 8 |
-                                                             0x05ul << 16 |
-                                                             0x04ul << 24 |
-                                                             0x03ul << 32 |
-                                                             0x02ul << 40 |
-                                                             0x01ul << 48) + 1;
-
-        private static int LocateFirstFoundByte(Vector<byte> matches)
-        {
-            ulong match = 0;
-            var i = 0;
-            for (; i < Vector<ulong>.Count; i++)
-            {
-                match = Unsafe.As<Vector<byte>, Vector<ulong>>(ref matches)[i];
-                if (match != 0)
-                {
-                    break;
-                }
-            }
-
-            // i * 8 是当前 ulong 组的字节起始偏移, 再加上组内第一个命中字节的下标
-            return i * 8 + LocateFirstFoundByte(match);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int LocateFirstFoundByte(ulong match)
-            => unchecked((int) (((match ^ (match - 1)) * xor_power_of_two_to_high_byte) >> 57));
 
         #endregion
     }

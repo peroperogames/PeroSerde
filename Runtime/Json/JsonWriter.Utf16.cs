@@ -60,6 +60,7 @@ namespace PeroTools2.Serde.Json
         #endregion
 
         #region Write Char
+
         public static int WriteCharUtf16(char* dest, char value)
         {
             var start = dest;
