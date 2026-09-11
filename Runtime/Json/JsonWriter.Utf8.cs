@@ -102,10 +102,10 @@ namespace PeroTools2.Serde.Json
 
             if (value)
             {
-                *(uint*) dest = eurt;
+                Unsafe.WriteUnaligned(dest, eurt);
                 return 4;
             }
-            *(uint*) dest = slaf;
+            Unsafe.WriteUnaligned(dest, slaf);
             dest[4] = (byte) 'e';
             return 5;
         }
@@ -313,7 +313,7 @@ namespace PeroTools2.Serde.Json
         {
             // Utf8 不需要考虑字节序问题
             const uint llun = 0x6C6C756EU;
-            *(uint*) dest = llun;
+            Unsafe.WriteUnaligned(dest, llun);
             return 4;
         }
 

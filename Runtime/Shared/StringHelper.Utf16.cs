@@ -472,7 +472,7 @@ namespace PeroTools2.Serde
                 do
                 {
                     // 单个字符检查是否超出范围
-                    if (Vector.GreaterThan(Unsafe.As<char, Vector<ushort>>(ref first), comparison) != Vector<ushort>.Zero)
+                    if (Vector.GreaterThan(Unsafe.ReadUnaligned<Vector<ushort>>(ref Unsafe.As<char, byte>(ref first)), comparison) != Vector<ushort>.Zero)
                     {
                         return false;
                     }
@@ -488,7 +488,7 @@ namespace PeroTools2.Serde
             {
                 // & 操作 =0 表明在范围内
                 // 如果这四个字符中有任何一个设置了非 ASCII 位，我们就看到了非 ASCII 数据
-                if ((Unsafe.As<char, ulong>(ref first) & ascii4Max) != 0)
+                if ((Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<char, byte>(ref first)) & ascii4Max) != 0)
                 {
                     return false;
                 }
@@ -516,7 +516,7 @@ namespace PeroTools2.Serde
                 var first = fixedPtr;
                 while (length >= 4)
                 {
-                    if ((*(uint*) first & 0x80808080) != 0)
+                    if ((Unsafe.ReadUnaligned<uint>(first) & 0x80808080) != 0)
                     {
                         return false;
                     }
@@ -687,7 +687,7 @@ namespace PeroTools2.Serde
 
                 do
                 {
-                    var matches = Vector.Equals(*(Vector<ushort>*) offset, comparison);
+                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
 
                     if (matches != Vector<ushort>.Zero)
                     {
@@ -708,7 +708,7 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 0 && offset[0] == c) goto Found0;
+            if (length >= 1 && offset[0] == c) goto Found0;
 
             return -1;
 
@@ -745,8 +745,8 @@ namespace PeroTools2.Serde
                 do
                 {
                     var matches = Vector.BitwiseOr(
-                        Vector.Equals(*(Vector<ushort>*) offset, comparison1),
-                        Vector.Equals(*(Vector<ushort>*) offset, comparison2)
+                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison1),
+                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison2)
                     );
 
                     if (matches != Vector<ushort>.Zero)
@@ -768,7 +768,7 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 0 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
+            if (length >= 1 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
 
             return -1;
 
@@ -803,7 +803,7 @@ namespace PeroTools2.Serde
 
                 do
                 {
-                    var matches = Vector.Equals(*(Vector<ushort>*) offset, comparison);
+                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
 
                     if (matches != Vector<ushort>.Zero)
                     {
@@ -824,7 +824,7 @@ namespace PeroTools2.Serde
                 length -= 2;
             }
 
-            if (length >= 0 && offset[0] == c) return true;
+            if (length >= 1 && offset[0] == c) return true;
 
             return false;
         }

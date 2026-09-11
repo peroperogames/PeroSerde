@@ -25,10 +25,10 @@ namespace PeroTools2.Serde.Json
             const ulong be_slaf = 0x73006C0061006600;
             if (value)
             {
-                *(ulong*) dest = BitConverter.IsLittleEndian ? le_eurt : be_eurt;
+                Unsafe.WriteUnaligned(dest, BitConverter.IsLittleEndian ? le_eurt : be_eurt);
                 return 4;
             }
-            *(ulong*) dest = BitConverter.IsLittleEndian ? le_slaf : be_slaf;
+            Unsafe.WriteUnaligned(dest, BitConverter.IsLittleEndian ? le_slaf : be_slaf);
             dest[4] = 'e';
             return 5;
         }
@@ -279,7 +279,7 @@ namespace PeroTools2.Serde.Json
             const ulong le_llun = 0x006C006C0075006E;
             // 大端
             const ulong be_llun = 0x6C006C0075006E00;
-            *(ulong*) dest = BitConverter.IsLittleEndian ? le_llun : be_llun;
+            Unsafe.WriteUnaligned(dest, BitConverter.IsLittleEndian ? le_llun : be_llun);
             return 4;
         }
 
