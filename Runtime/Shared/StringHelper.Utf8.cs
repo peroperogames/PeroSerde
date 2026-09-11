@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -9,10 +8,9 @@ namespace PeroTools2.Serde
     /// <remarks>
     /// 能实现高性能主要靠以下几方面:<br/>
     /// 1. 减少循环次数，在每次循环中执行多次操作，从而减少内存寻址次数<br/>
-    /// 2. 如果硬件支持，使用SIMD并行化加速，也就是<see cref="System.Numerics.Vector{T}"/>类
-    /// 3. 尽量使用二分查找代替线性查找, 例如计算数字位数时
-    /// 4. 直接使用指针操作
-    /// 5. 能缓存尽量缓存
+    /// 2. 尽量使用二分查找代替线性查找, 例如计算数字位数时<br/>
+    /// 3. 直接使用指针操作<br/>
+    /// 4. 能缓存尽量缓存
     /// </remarks>
     [PublicAPI]
     public static unsafe partial class StringHelper
@@ -81,10 +79,7 @@ namespace PeroTools2.Serde
         /// <param name="length">字符串长度</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(byte* bytes, int length, byte c) =>
-            Vector.IsHardwareAccelerated
-                ? FastIndexOf(bytes, length, c)
-                : SlowIndexOf(bytes, length, c);
+        public static int IndexOf(byte* bytes, int length, byte c) => SlowIndexOf(bytes, length, c);
 
         /// <summary>
         /// 在字符串中找到指定两个字符中任意字符的索引，没找到则返回 -1。
@@ -96,9 +91,7 @@ namespace PeroTools2.Serde
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int IndexOfAny(byte* bytes, int length, byte c1, byte c2) =>
-            Vector.IsHardwareAccelerated
-                ? FastIndexOfAny(bytes, length, c1, c2)
-                : SlowIndexOfAny(bytes, length, c1, c2);
+            SlowIndexOfAny(bytes, length, c1, c2);
 
         /// <summary>
         /// 检索字符串中是否存在指定字符。
@@ -108,10 +101,7 @@ namespace PeroTools2.Serde
         /// <param name="c">指定字符</param>
         /// <returns>返回是否存在</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(byte* bytes, int length, byte c) =>
-            Vector.IsHardwareAccelerated
-                ? FastContains(bytes, length, c)
-                : SlowContains(bytes, length, c);
+        public static bool Contains(byte* bytes, int length, byte c) => SlowContains(bytes, length, c);
 
         #region Slow Methods
 
@@ -210,177 +200,6 @@ namespace PeroTools2.Serde
             if (index - length <= 3 && bytes[4] == c) return true;
             if (index - length <= 2 && bytes[5] == c) return true;
             if (index - length <= 1 && bytes[6] == c) return true;
-
-            return false;
-        }
-
-        #endregion
-
-        #region SIMD Accelerated Methods
-
-        private static int FastIndexOf(byte* bytes, int length, byte c)
-        {
-            var offset = bytes;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c) return 0;
-                if (offset[1] == c) return 1;
-                if (offset[2] == c) return 2;
-                if (offset[3] == c) return 3;
-                if (offset[4] == c) return 4;
-                if (offset[5] == c) return 5;
-                if (offset[6] == c) return 6;
-                if (offset[7] == c) return 7;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison = new Vector<ushort>(c);
-
-                do
-                {
-                    var matches = Vector.Equals(*(Vector<ushort>*) offset, comparison);
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return (int) (offset - bytes) + LocateFirstFoundChar(matches);
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c) goto Found0;
-                if (offset[1] == c) goto Found1;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 0 && offset[0] == c) goto Found0;
-
-            return -1;
-
-            Found1:
-            ++offset;
-            Found0:
-            return (int) (offset - bytes);
-        }
-
-        private static int FastIndexOfAny(byte* bytes, int length, byte c1, byte c2)
-        {
-            var offset = bytes;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c1 || offset[0] == c2) return 0;
-                if (offset[1] == c1 || offset[1] == c2) return 1;
-                if (offset[2] == c1 || offset[2] == c2) return 2;
-                if (offset[3] == c1 || offset[3] == c2) return 3;
-                if (offset[4] == c1 || offset[4] == c2) return 4;
-                if (offset[5] == c1 || offset[5] == c2) return 5;
-                if (offset[6] == c1 || offset[6] == c2) return 6;
-                if (offset[7] == c1 || offset[7] == c2) return 7;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison1 = new Vector<ushort>(c1);
-                var comparison2 = new Vector<ushort>(c2);
-
-                do
-                {
-                    var matches = Vector.BitwiseOr(
-                        Vector.Equals(*(Vector<ushort>*) offset, comparison1),
-                        Vector.Equals(*(Vector<ushort>*) offset, comparison2)
-                    );
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return (int) (offset - bytes) + LocateFirstFoundChar(matches);
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c1 || offset[0] == c2) goto Found0;
-                if (offset[1] == c1 || offset[1] == c2) goto Found1;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 0 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
-
-            return -1;
-
-            Found1:
-            ++offset;
-            Found0:
-            return (int) (offset - bytes);
-        }
-
-        private static bool FastContains(byte* bytes, int length, byte c)
-        {
-            var offset = bytes;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c) return true;
-                if (offset[1] == c) return true;
-                if (offset[2] == c) return true;
-                if (offset[3] == c) return true;
-                if (offset[4] == c) return true;
-                if (offset[5] == c) return true;
-                if (offset[6] == c) return true;
-                if (offset[7] == c) return true;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison = new Vector<ushort>(c);
-
-                do
-                {
-                    var matches = Vector.Equals(*(Vector<ushort>*) offset, comparison);
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return true;
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c) return true;
-                if (offset[1] == c) return true;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 0 && offset[0] == c) return true;
 
             return false;
         }
