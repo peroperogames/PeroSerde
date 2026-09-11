@@ -5,7 +5,6 @@
  */
 
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde
@@ -14,10 +13,9 @@ namespace PeroTools2.Serde
     /// <remarks>
     /// 能实现高性能主要靠以下几方面:<br/>
     /// 1. 减少循环次数，在每次循环中执行多次操作，从而减少内存寻址次数<br/>
-    /// 2. 如果硬件支持，使用SIMD并行化加速，也就是<see cref="System.Numerics.Vector{T}"/>类
-    /// 3. 尽量使用二分查找代替线性查找, 例如计算数字位数时
-    /// 4. 直接使用指针操作
-    /// 5. 能缓存尽量缓存
+    /// 2. 尽量使用二分查找代替线性查找, 例如计算数字位数时<br/>
+    /// 3. 直接使用指针操作<br/>
+    /// 4. 能缓存尽量缓存
     /// </remarks>
     public static unsafe partial class StringHelper
     {
@@ -406,10 +404,7 @@ namespace PeroTools2.Serde
         /// <param name="length">字符串长度</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(char* chars, int length, char c) =>
-            Vector.IsHardwareAccelerated
-                ? FastIndexOf(chars, length, c)
-                : SlowIndexOf(chars, length, c);
+        public static int IndexOf(char* chars, int length, char c) => SlowIndexOf(chars, length, c);
 
         /// <summary>
         /// 在字符串中找到指定两个字符中任意字符的索引，没找到则返回 -1。
@@ -421,9 +416,7 @@ namespace PeroTools2.Serde
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int IndexOfAny(char* chars, int length, char c1, char c2) =>
-            Vector.IsHardwareAccelerated
-                ? FastIndexOfAny(chars, length, c1, c2)
-                : SlowIndexOfAny(chars, length, c1, c2);
+            SlowIndexOfAny(chars, length, c1, c2);
 
         /// <summary>
         /// 检索字符串中是否存在指定字符。
@@ -433,10 +426,7 @@ namespace PeroTools2.Serde
         /// <param name="c">指定字符</param>
         /// <returns>返回是否存在</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(char* chars, int length, char c) =>
-            Vector.IsHardwareAccelerated
-                ? FastContains(chars, length, c)
-                : SlowContains(chars, length, c);
+        public static bool Contains(char* chars, int length, char c) => SlowContains(chars, length, c);
 
         /// <summary>获取字符串的元数据引用。</summary>
         /// <returns>返回第一个字符的引用</returns>
@@ -464,25 +454,7 @@ namespace PeroTools2.Serde
             const ulong ascii4Max = 0xff80ff80ff80ff80;
 
             ref var first = ref GetRawStringData(str);
-            // 使用 SIMD 加速（如果可以的话），且仅在当前字符串长度大于等于 SIMD 支持的位宽时使用，否则会 out of range
-            if (Vector.IsHardwareAccelerated && length >= Vector<ushort>.Count)
-            {
-                var comparison = new Vector<ushort>(asciiMax);
 
-                do
-                {
-                    // 单个字符检查是否超出范围
-                    if (Vector.GreaterThan(Unsafe.ReadUnaligned<Vector<ushort>>(ref Unsafe.As<char, byte>(ref first)), comparison) != Vector<ushort>.Zero)
-                    {
-                        return false;
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    first = ref Unsafe.Add(ref first, Vector<ushort>.Count);
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            // 如果 SIMD 未满，则处理剩下的字符。如果不使用 SIMD，则从头判断
             // 一次性判断 4 个字符
             while (length >= 4)
             {
@@ -633,198 +605,6 @@ namespace PeroTools2.Serde
             if (index - length <= 3 && chars[4] == c) return true;
             if (index - length <= 2 && chars[5] == c) return true;
             if (index - length <= 1 && chars[6] == c) return true;
-
-            return false;
-        }
-
-        #endregion
-
-        #region SIMD Accelerated Methods
-
-        private const ulong xor_power_of_two_to_high_char = (0x03ul | 0x02ul << 16 | 0x01ul << 32) + 1;
-
-        private static int LocateFirstFoundChar(Vector<ushort> matches)
-        {
-            var match = Unsafe.As<Vector<ushort>, Vector<ulong>>(ref matches)[0];
-            if (match != 0) return 0 + LocateFirstFoundChar(match);
-
-            match = Unsafe.As<Vector<ushort>, Vector<ulong>>(ref matches)[1];
-            if (match != 0) return 4 + LocateFirstFoundChar(match);
-
-            match = Unsafe.As<Vector<ushort>, Vector<ulong>>(ref matches)[2];
-            if (match != 0) return 8 + LocateFirstFoundChar(match);
-
-            match = Unsafe.As<Vector<ushort>, Vector<ulong>>(ref matches)[3];
-            return 12 + LocateFirstFoundChar(match);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int LocateFirstFoundChar(ulong match)
-            => unchecked((int) (((match ^ (match - 1)) * xor_power_of_two_to_high_char) >> 49));
-
-        private static int FastIndexOf(char* chars, int length, char c)
-        {
-            var offset = chars;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c) return 0;
-                if (offset[1] == c) return 1;
-                if (offset[2] == c) return 2;
-                if (offset[3] == c) return 3;
-                if (offset[4] == c) return 4;
-                if (offset[5] == c) return 5;
-                if (offset[6] == c) return 6;
-                if (offset[7] == c) return 7;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison = new Vector<ushort>(c);
-
-                do
-                {
-                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return (int) (offset - chars) + LocateFirstFoundChar(matches);
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c) goto Found0;
-                if (offset[1] == c) goto Found1;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 1 && offset[0] == c) goto Found0;
-
-            return -1;
-
-            Found1:
-            ++offset;
-            Found0:
-            return (int) (offset - chars);
-        }
-
-        private static int FastIndexOfAny(char* chars, int length, char c1, char c2)
-        {
-            var offset = chars;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c1 || offset[0] == c2) return 0;
-                if (offset[1] == c1 || offset[1] == c2) return 1;
-                if (offset[2] == c1 || offset[2] == c2) return 2;
-                if (offset[3] == c1 || offset[3] == c2) return 3;
-                if (offset[4] == c1 || offset[4] == c2) return 4;
-                if (offset[5] == c1 || offset[5] == c2) return 5;
-                if (offset[6] == c1 || offset[6] == c2) return 6;
-                if (offset[7] == c1 || offset[7] == c2) return 7;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison1 = new Vector<ushort>(c1);
-                var comparison2 = new Vector<ushort>(c2);
-
-                do
-                {
-                    var matches = Vector.BitwiseOr(
-                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison1),
-                        Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison2)
-                    );
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return (int) (offset - chars) + LocateFirstFoundChar(matches);
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c1 || offset[0] == c2) goto Found0;
-                if (offset[1] == c1 || offset[1] == c2) goto Found1;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 1 && (offset[0] == c1 || offset[0] == c2)) goto Found0;
-
-            return -1;
-
-            Found1:
-            ++offset;
-            Found0:
-            return (int) (offset - chars);
-        }
-
-        private static bool FastContains(char* chars, int length, char c)
-        {
-            var offset = chars;
-
-            if (length >= 8)
-            {
-                if (offset[0] == c) return true;
-                if (offset[1] == c) return true;
-                if (offset[2] == c) return true;
-                if (offset[3] == c) return true;
-                if (offset[4] == c) return true;
-                if (offset[5] == c) return true;
-                if (offset[6] == c) return true;
-                if (offset[7] == c) return true;
-
-                offset += 8;
-                length -= 8;
-            }
-
-            if (length >= Vector<ushort>.Count)
-            {
-                var comparison = new Vector<ushort>(c);
-
-                do
-                {
-                    var matches = Vector.Equals(Unsafe.ReadUnaligned<Vector<ushort>>(offset), comparison);
-
-                    if (matches != Vector<ushort>.Zero)
-                    {
-                        return true;
-                    }
-
-                    length -= Vector<ushort>.Count;
-                    offset += Vector<ushort>.Count;
-                } while (length >= Vector<ushort>.Count);
-            }
-
-            while (length >= 2)
-            {
-                if (offset[0] == c) return true;
-                if (offset[1] == c) return true;
-
-                offset += 2;
-                length -= 2;
-            }
-
-            if (length >= 1 && offset[0] == c) return true;
 
             return false;
         }
