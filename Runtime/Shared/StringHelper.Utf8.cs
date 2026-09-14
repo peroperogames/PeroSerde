@@ -13,7 +13,7 @@ namespace PeroTools2.Serde
     /// 4. 能缓存尽量缓存
     /// </remarks>
     [PublicAPI]
-    internal static unsafe partial class StringHelper
+    public static unsafe partial class StringHelper
     {
         #region Trim
 
