@@ -17,7 +17,7 @@ namespace PeroTools2.Serde
     /// 3. 直接使用指针操作<br/>
     /// 4. 能缓存尽量缓存
     /// </remarks>
-    public static unsafe partial class StringHelper
+    internal static unsafe partial class StringHelper
     {
         private const ulong hash_seed = 0x97121819UL;
 

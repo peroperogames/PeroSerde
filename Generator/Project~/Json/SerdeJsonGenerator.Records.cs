@@ -189,7 +189,7 @@ public partial class SerdeJsonGenerator
         var utf16Builder = new StringBuilder();
         var utf8Builder = new StringBuilder();
 
-        deserializerBuilder.AppendLine("if (reader.TryReadNull())");
+        deserializerBuilder.AppendLine("            if (reader.TryReadNull())");
         deserializerBuilder.AppendLine("            {");
         deserializerBuilder.AppendLine("                return default;");
         deserializerBuilder.AppendLine("            }");
@@ -247,14 +247,12 @@ public partial class SerdeJsonGenerator
                  {
                      public partial class JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
                      {
-                         [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> value, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
                              System.ReadOnlySpan<byte> key;
                  {{deserializerBuilder}}
                          }
 
-                         [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public {{typeName}} DeserializeUtf16(ref System.ReadOnlySpan<char> value, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
                          {
                              System.ReadOnlySpan<char> key;
@@ -286,7 +284,7 @@ public partial class SerdeJsonGenerator
         var stringBuilder = new StringBuilder();
         if (type.IsNullable())
         {
-            stringBuilder.AppendLine("if (value == null)");
+            stringBuilder.AppendLine("            if (value == null)");
             stringBuilder.AppendLine("            {");
             stringBuilder.AppendLine("                writer.WriteNull();");
             stringBuilder.AppendLine("                return;");
@@ -345,13 +343,11 @@ public partial class SerdeJsonGenerator
                  {
                      public partial class JsonFormatter : PeroTools2.Serde.Json.ISerdeJsonFormatter<{{type.ToDisplayString()}}>
                      {
-                         [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public void SerializeUtf16({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf16 writer)
                          {
                              {{stringBuilder}}
                          }
 
-                         [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          public void SerializeUtf8({{type.ToDisplayString()}} value, ref PeroTools2.Serde.Json.JsonWriterUtf8 writer)
                          {
                              {{stringBuilder}}
