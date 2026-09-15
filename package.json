@@ -11,7 +11,7 @@
   "documentationUrl": "https://github.com/peroperogames/PeroSerde/blob/master/README.md",
   "changelogUrl": "https://github.com/peroperogames/PeroSerde/releases",
   "dependencies": {
-    "com.prpr.system.runtime.compilerservices.unsafe": "6.0.0"
+    "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
   },
   "type": "tool"
 }
