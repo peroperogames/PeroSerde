@@ -72,8 +72,11 @@ namespace PeroTools2.Serde
                 }
                 dest += charsWritten;
             }
-            // 如果整数部分是 0，则先写入整数部分
-            else if (value < 1)
+            // 如果整数部分是 0，则先写入整数部分.
+            // 必须限定 exponent == 0: 用科学计数法时(0 < value < 1e-4)mantissa 的首位就是整数部分,
+            // 走这个分支 firstNumIndex 会算成负数, dest 回退会把刚写的小数点覆盖掉,
+            // 产出 "04940656458412466E-324" 这类非法 JSON 数字. 那种情况应交给下面的分支(首位后插小数点).
+            else if (value < 1 && exponent == 0)
             {
                 *dest = '0';
                 *(dest + 1) = dot_sign;
@@ -186,8 +189,11 @@ namespace PeroTools2.Serde
                 }
                 dest += bytesWritten;
             }
-            // 如果整数部分是 0，则先写入整数部分
-            else if (value < 1)
+            // 如果整数部分是 0，则先写入整数部分.
+            // 必须限定 exponent == 0: 用科学计数法时(0 < value < 1e-4)mantissa 的首位就是整数部分,
+            // 走这个分支 firstNumIndex 会算成负数, dest 回退会把刚写的小数点覆盖掉,
+            // 产出 "04940656458412466E-324" 这类非法 JSON 数字. 那种情况应交给下面的分支(首位后插小数点).
+            else if (value < 1 && exponent == 0)
             {
                 *dest = (byte) '0';
                 *(dest + 1) = (byte) dot_sign;
@@ -300,8 +306,11 @@ namespace PeroTools2.Serde
                 }
                 dest += charsWritten;
             }
-            // 如果整数部分是 0，则先写入整数部分
-            else if (value < 1)
+            // 如果整数部分是 0，则先写入整数部分.
+            // 必须限定 exponent == 0: 用科学计数法时(0 < value < 1e-4)mantissa 的首位就是整数部分,
+            // 走这个分支 firstNumIndex 会算成负数, dest 回退会把刚写的小数点覆盖掉,
+            // 产出 "04940656458412466E-324" 这类非法 JSON 数字. 那种情况应交给下面的分支(首位后插小数点).
+            else if (value < 1 && exponent == 0)
             {
                 *dest = '0';
                 *(dest + 1) = dot_sign;
@@ -414,8 +423,11 @@ namespace PeroTools2.Serde
                 }
                 dest += bytesWritten;
             }
-            // 如果整数部分是 0，则先写入整数部分
-            else if (value < 1)
+            // 如果整数部分是 0，则先写入整数部分.
+            // 必须限定 exponent == 0: 用科学计数法时(0 < value < 1e-4)mantissa 的首位就是整数部分,
+            // 走这个分支 firstNumIndex 会算成负数, dest 回退会把刚写的小数点覆盖掉,
+            // 产出 "04940656458412466E-324" 这类非法 JSON 数字. 那种情况应交给下面的分支(首位后插小数点).
+            else if (value < 1 && exponent == 0)
             {
                 *dest = (byte) '0';
                 *(dest + 1) = (byte) dot_sign;

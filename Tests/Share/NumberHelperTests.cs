@@ -118,5 +118,30 @@ namespace PeroTools2.Serde.Editor.Tests
                 Assert.Less(result, 0.05f);
             }
         }
+
+        [TestCase(Encoding.UTF8, 2.596443771167918E-18)]
+        [TestCase(Encoding.UTF16, 2.596443771167918E-18)]
+        [TestCase(Encoding.UTF8, 1E-300)]
+        [TestCase(Encoding.UTF16, 1E-300)]
+        [TestCase(Encoding.UTF8, double.Epsilon)]
+        [TestCase(Encoding.UTF16, double.Epsilon)]
+        public unsafe void DoubleToStringIsWellFormedJsonTests(Encoding encoding, double value)
+        {
+            string text;
+            if (encoding == Encoding.UTF8)
+            {
+                var dest = stackalloc byte[FloatFormatter.max_size];
+                var length = NumberHelper.ToUtf8StringUnsafe(value, dest);
+                text = System.Text.Encoding.UTF8.GetString(new ReadOnlySpan<byte>(dest, length));
+            }
+            else
+            {
+                var dest = stackalloc char[FloatFormatter.max_size];
+                var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
+                text = new String(new ReadOnlySpan<char>(dest, length));
+            }
+
+            Assert.That(text, Does.Match(@"^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$"));
+        }
     }
 }
