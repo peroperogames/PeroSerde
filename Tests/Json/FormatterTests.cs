@@ -64,6 +64,96 @@ namespace PeroTools2.Serde.Json.Editor.Tests
                 Assert.AreEqual(testValue, utf16Value.value);
             }
         }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void RoundTripNumberFormatterTests(Encoding encoding)
+        {
+            var obj = new RoundTripFormatterTestClass
+            {
+                doubleValue = 1.0000000000000002,
+                floatValue = 1f / 3f,
+                nullableDoubleValue = 123456789.123456789,
+                nullableFloatValue = 1.2345678f,
+            };
+
+            var result = RoundTrip(encoding, obj);
+
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(obj.doubleValue), BitConverter.DoubleToInt64Bits(result.doubleValue));
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(obj.floatValue), BitConverter.DoubleToInt64Bits(result.floatValue));
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(obj.nullableDoubleValue.Value), BitConverter.DoubleToInt64Bits(result.nullableDoubleValue.Value));
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(obj.nullableFloatValue.Value), BitConverter.DoubleToInt64Bits(result.nullableFloatValue.Value));
+        }
+
+        [TestCase(Encoding.UTF8, 0.0)]
+        [TestCase(Encoding.UTF16, 0.0)]
+        [TestCase(Encoding.UTF8, double.Epsilon)]
+        [TestCase(Encoding.UTF16, double.Epsilon)]
+        [TestCase(Encoding.UTF8, double.MaxValue)]
+        [TestCase(Encoding.UTF16, double.MaxValue)]
+        [TestCase(Encoding.UTF8, double.MinValue)]
+        [TestCase(Encoding.UTF16, double.MinValue)]
+        [TestCase(Encoding.UTF8, -1.0 / 3.0)]
+        [TestCase(Encoding.UTF16, -1.0 / 3.0)]
+        public void RoundTripDoubleValueTests(Encoding encoding, double value)
+        {
+            var result = RoundTrip(encoding, new RoundTripFormatterTestClass { doubleValue = value });
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(value), BitConverter.DoubleToInt64Bits(result.doubleValue));
+        }
+
+        [TestCase(Encoding.UTF8, 0f)]
+        [TestCase(Encoding.UTF16, 0f)]
+        [TestCase(Encoding.UTF8, float.Epsilon)]
+        [TestCase(Encoding.UTF16, float.Epsilon)]
+        [TestCase(Encoding.UTF8, float.MaxValue)]
+        [TestCase(Encoding.UTF16, float.MaxValue)]
+        [TestCase(Encoding.UTF8, float.MinValue)]
+        [TestCase(Encoding.UTF16, float.MinValue)]
+        public void RoundTripFloatValueTests(Encoding encoding, float value)
+        {
+            var result = RoundTrip(encoding, new RoundTripFormatterTestClass { floatValue = value });
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(value), BitConverter.DoubleToInt64Bits(result.floatValue));
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void RoundTripNullableNullTests(Encoding encoding)
+        {
+            var obj = new RoundTripFormatterTestClass { nullableDoubleValue = null, nullableFloatValue = null };
+
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+
+            StringAssert.Contains("\"nullableDoubleValue\":null", json);
+            StringAssert.Contains("\"nullableFloatValue\":null", json);
+
+            var result = RoundTrip(encoding, obj);
+
+            Assert.IsNull(result.nullableDoubleValue);
+            Assert.IsNull(result.nullableFloatValue);
+        }
+
+        [TestCase(double.NaN)]
+        [TestCase(double.PositiveInfinity)]
+        [TestCase(double.NegativeInfinity)]
+        public void SerializeNonFiniteDoubleThrowsTests(double value)
+        {
+            Assert.Throws<SerdeException>(() => JsonConverter.UTF16.Serialize(new RoundTripFormatterTestClass { doubleValue = value }));
+        }
+
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        [TestCase(float.NegativeInfinity)]
+        public void SerializeNonFiniteFloatThrowsTests(float value)
+        {
+            Assert.Throws<SerdeException>(() => JsonConverter.UTF16.Serialize(new RoundTripFormatterTestClass { floatValue = value }));
+        }
+
+        private static RoundTripFormatterTestClass RoundTrip(Encoding encoding, RoundTripFormatterTestClass obj) =>
+            encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<RoundTripFormatterTestClass>(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Deserialize<RoundTripFormatterTestClass>(JsonConverter.UTF16.Serialize(obj));
     }
 
     [SerdeJsonSerializable]
@@ -96,6 +186,22 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         public override ReadOnlySpan<char> SerializeUtf16(string value) => $"\"{value}\"".AsSpan();
 
         public override ReadOnlySpan<byte> SerializeUtf8(string value) => System.Text.Encoding.UTF8.GetBytes($"\"{value}\"");
+    }
+
+    [SerdeJsonSerializable]
+    internal sealed partial class RoundTripFormatterTestClass
+    {
+        [SerdeJsonFormatter(typeof(RoundTripDoubleFormatter))]
+        public double doubleValue;
+
+        [SerdeJsonFormatter(typeof(RoundTripFloatFormatter))]
+        public float floatValue;
+
+        [SerdeJsonFormatter(typeof(NullableRoundTripDoubleFormatter))]
+        public double? nullableDoubleValue;
+
+        [SerdeJsonFormatter(typeof(NullableRoundTripFloatFormatter))]
+        public float? nullableFloatValue;
     }
 
     [SerdeJsonSerializable]
