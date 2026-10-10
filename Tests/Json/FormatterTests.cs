@@ -134,6 +134,25 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.IsNull(result.nullableFloatValue);
         }
 
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void RoundTripNegativeZeroTests(Encoding encoding)
+        {
+            var obj = new RoundTripFormatterTestClass { doubleValue = -0.0, floatValue = -0.0f };
+
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+
+            StringAssert.Contains("\"doubleValue\":-0", json);
+            StringAssert.Contains("\"floatValue\":-0", json);
+
+            var result = RoundTrip(encoding, obj);
+
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(-0.0), BitConverter.DoubleToInt64Bits(result.doubleValue));
+            Assert.AreEqual(BitConverter.DoubleToInt64Bits(-0.0f), BitConverter.DoubleToInt64Bits(result.floatValue));
+        }
+
         [TestCase(double.NaN)]
         [TestCase(double.PositiveInfinity)]
         [TestCase(double.NegativeInfinity)]

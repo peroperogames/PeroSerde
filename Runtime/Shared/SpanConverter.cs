@@ -74,10 +74,26 @@ namespace PeroTools2.Serde
         public static decimal ToDecimal(in ReadOnlySpan<char> span) => decimal.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<decimal>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ToDouble(in ReadOnlySpan<char> span) => double.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<double>();
+        public static double ToDouble(in ReadOnlySpan<char> span)
+        {
+            if (!double.TryParse(span, out var result))
+            {
+                throw SerdeException.ThrowInvalidParsing<double>();
+            }
+            // Unity 的 Mono 上 double.TryParse("-0") 会丢掉负零的符号位, 这里补回来(与 CoreCLR 一致)
+            return result == 0.0 && span.Length > 0 && span[0] == '-' ? -0.0 : result;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ToFloat(in ReadOnlySpan<char> span) => float.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<float>();
+        public static float ToFloat(in ReadOnlySpan<char> span)
+        {
+            if (!float.TryParse(span, out var result))
+            {
+                throw SerdeException.ThrowInvalidParsing<float>();
+            }
+            // Unity 的 Mono 上 float.TryParse("-0") 会丢掉负零的符号位, 这里补回来(与 CoreCLR 一致)
+            return result == 0f && span.Length > 0 && span[0] == '-' ? -0.0f : result;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ToBool(in ReadOnlySpan<char> span) => bool.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<bool>();
@@ -166,7 +182,8 @@ namespace PeroTools2.Serde
             {
                 throw SerdeException.ThrowInvalidParsing<bool>();
             }
-            return value;
+            // Utf8Parser 在 Mono 上同样会丢掉 "-0" 的符号位, 这里补回来
+            return value == 0.0 && span.Length > 0 && span[0] == (byte) '-' ? -0.0 : value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -176,7 +193,8 @@ namespace PeroTools2.Serde
             {
                 throw SerdeException.ThrowInvalidParsing<float>();
             }
-            return value;
+            // Utf8Parser 在 Mono 上同样会丢掉 "-0" 的符号位, 这里补回来
+            return value == 0f && span.Length > 0 && span[0] == (byte) '-' ? -0.0f : value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
