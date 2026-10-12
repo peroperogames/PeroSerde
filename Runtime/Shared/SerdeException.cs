@@ -26,7 +26,7 @@ namespace PeroTools2.Serde
         internal static SerdeException ThrowInvalidAdvance() => new("Cannot advance past the end of the buffer.");
 
         [DoesNotReturn]
-        internal static SerdeException ThrowInvalidFloatPoint() => new("Nan or infinity float point value is invalid in json.");
+        internal static SerdeException ThrowInvalidFloatPoint() => new("Float point value is invalid in json.");
 
         [DoesNotReturn]
         internal static SerdeException ThrowInvalidEscapedChar(char ch) => new($"Invalid Escaped Char: {ch}");
