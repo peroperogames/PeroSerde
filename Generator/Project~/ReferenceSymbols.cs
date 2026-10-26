@@ -84,5 +84,47 @@ public sealed class ReferenceSymbols
     }
 
     public INamedTypeSymbol GetTypeByMetaDataName(string metaDataName)
-        => m_Compilation.GetTypeByMetadataName(metaDataName) ?? throw new InvalidOperationException($"Type {metaDataName} is not found in compilation.");
+        => Resolve(metaDataName) ?? throw new InvalidOperationException($"Type {metaDataName} is not found in compilation.");
+
+    /// <summary>
+    /// 解析框架类型符号。
+    /// <para>
+    /// 引用集中可能存在多份同名定义，此时 <see cref="Compilation.GetTypeByMetadataName(string)"/>
+    /// 会因歧义返回 null（该方法不考虑可见性）。例如 Unity 2021.3 下 NUnit 3.5 的 net35 版本自带一份
+    /// internal 的 System.Lazy`1，与 mscorlib 冲突，会导致整个生成器中断。
+    /// 这里逐个程序集回退查找，并优先选择公开定义。
+    /// </para>
+    /// </summary>
+    private INamedTypeSymbol? Resolve(string metaDataName)
+    {
+        var resolved = m_Compilation.GetTypeByMetadataName(metaDataName);
+        if (resolved != null)
+        {
+            return resolved;
+        }
+
+        INamedTypeSymbol? nonPublicCandidate = null;
+        foreach (var reference in m_Compilation.References)
+        {
+            if (m_Compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
+            {
+                continue;
+            }
+
+            resolved = assembly.GetTypeByMetadataName(metaDataName);
+            if (resolved == null)
+            {
+                continue;
+            }
+
+            if (resolved.DeclaredAccessibility == Accessibility.Public)
+            {
+                return resolved;
+            }
+
+            nonPublicCandidate ??= resolved;
+        }
+
+        return nonPublicCandidate;
+    }
 }
