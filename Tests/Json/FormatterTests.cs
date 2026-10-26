@@ -65,11 +65,24 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             }
         }
 
+        // 覆盖栈分配与缓冲池的切换点: 上限按 1024 字节计.
+        // 序列化侧按 GetMaxByteCount ≈ (length + 3) * 3 判断, 边界约在 338/339 字符;
+        // 反序列化侧按 GetMaxCharCount * 2 判断, 边界约在 509/510 字符.
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(256)]
+        [TestCase(338)]
+        [TestCase(339)]
+        [TestCase(509)]
+        [TestCase(510)]
+        [TestCase(512)]
+        [TestCase(1024)]
+        [TestCase(4096)]
         [TestCase(8 * 1024)]
         [TestCase(1024 * 1024)]
         public void PrimitiveFormatterLargeValueTests(int length)
         {
-            // 超过栈分配阈值时改为从缓冲池借出，需保证往返正确且不会栈溢出
+            // 栈路径与缓冲池路径都必须往返正确, 且不触发栈溢出
             var testValue = new string('x', length);
             var obj = new PrimitiveFormatterTestClass { value = testValue };
 

@@ -136,9 +136,10 @@ namespace PeroTools2.Serde.Json
         }
 
         /// <summary>
-        /// 栈分配的长度上限，超过该长度时改为从缓冲池借出，避免栈溢出。
+        /// 栈分配的字节数上限，超过该上限时改为从缓冲池借出，避免栈溢出。
+        /// 两个方向都按实际占用的栈字节数比较，保证栈使用量一致.
         /// </summary>
-        private const int max_stack_alloc_size = 1024;
+        private const int max_stack_alloc_bytes = 1024;
 
         protected abstract T Deserialize(ReadOnlySpan<char> value);
         protected abstract ReadOnlySpan<char> Serialize(T value);
@@ -150,7 +151,8 @@ namespace PeroTools2.Serde.Json
         {
             var utf16 = Serialize(value);
             var maxByteCount = Encoding.UTF8.GetMaxByteCount(utf16.Length);
-            var canAllocateOnStack = maxByteCount < max_stack_alloc_size;
+            // 栈上是 byte, 直接按字节数比较
+            var canAllocateOnStack = maxByteCount < max_stack_alloc_bytes;
             var array = canAllocateOnStack ? Array.Empty<byte>() : ArrayPool.UTF8.Rent(maxByteCount);
             var utf8 = canAllocateOnStack ? stackalloc byte[maxByteCount] : array;
             try
@@ -171,7 +173,8 @@ namespace PeroTools2.Serde.Json
         {
             var value = reader.ReadValue();
             var maxCharCount = Encoding.UTF8.GetMaxCharCount(value.Length);
-            var canAllocateOnStack = maxCharCount < max_stack_alloc_size;
+            // 栈上是 char, 需要换算成字节数与上限比较
+            var canAllocateOnStack = maxCharCount * sizeof(char) < max_stack_alloc_bytes;
             var array = canAllocateOnStack ? Array.Empty<char>() : ArrayPool.UTF16.Rent(maxCharCount);
             var utf16 = canAllocateOnStack ? stackalloc char[maxCharCount] : array;
             try
