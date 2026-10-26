@@ -83,10 +83,22 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WriteStringValueNoEscapeUtf8(ReadOnlySpan<char> str, byte* dest)
         {
-            var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
-            var destSpan = new Span<byte>(dest, maxByteCount);
-            // .Net5开始可以使用Utf8.FromUtf16()来加速
-            return Encoding.UTF8.GetBytes(str, destSpan);
+            // ASCII 快路径: JSON 的键名和大部分字符串都是 ASCII, 直接按字节复制即可.
+            // Mono 下 Encoding.UTF8.GetBytes 每次调用约 150ns, 而逐字节复制 10 个字符约 20ns.
+            var start = dest;
+            for (var i = 0; i < str.Length; i++)
+            {
+                var c = str[i];
+                if (c >= 0x80)
+                {
+                    // 含非 ASCII 字符, 回退到编码器并从起始位置重新写入
+                    var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+                    return Encoding.UTF8.GetBytes(str, new Span<byte>(start, maxByteCount));
+                }
+                *dest = (byte) c;
+                dest++;
+            }
+            return (int) (dest - start);
         }
 
         #endregion
