@@ -135,6 +135,11 @@ namespace PeroTools2.Serde.Json
             }
         }
 
+        /// <summary>
+        /// 栈分配的长度上限，超过该长度时改为从缓冲池借出，避免栈溢出。
+        /// </summary>
+        private const int max_stack_alloc_size = 1024;
+
         protected abstract T Deserialize(ReadOnlySpan<char> value);
         protected abstract ReadOnlySpan<char> Serialize(T value);
 
@@ -144,20 +149,40 @@ namespace PeroTools2.Serde.Json
         unsafe void ISerdeJsonFormatter<T>.SerializeUtf8(T value, ref JsonWriterUtf8 writer)
         {
             var utf16 = Serialize(value);
-            Span<byte> utf8 = stackalloc byte[Encoding.UTF8.GetMaxByteCount(utf16.Length)];
-            var charCount = Encoding.UTF8.GetBytes(utf16, utf8);
-            fixed (byte* utf8Ptr = utf8)
+            var maxByteCount = Encoding.UTF8.GetMaxByteCount(utf16.Length);
+            var canAllocateOnStack = maxByteCount < max_stack_alloc_size;
+            var array = canAllocateOnStack ? Array.Empty<byte>() : ArrayPool.UTF8.Rent(maxByteCount);
+            var utf8 = canAllocateOnStack ? stackalloc byte[maxByteCount] : array;
+            try
             {
-                writer.WriteValue(new ReadOnlySpan<byte>(utf8Ptr, charCount));
+                var charCount = Encoding.UTF8.GetBytes(utf16, utf8);
+                fixed (byte* utf8Ptr = utf8)
+                {
+                    writer.WriteValue(new ReadOnlySpan<byte>(utf8Ptr, charCount));
+                }
+            }
+            finally
+            {
+                if (!canAllocateOnStack) ArrayPool.UTF8.Return(array);
             }
         }
 
         T ISerdeJsonFormatter<T>.DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
         {
             var value = reader.ReadValue();
-            Span<char> utf16 = stackalloc char[Encoding.UTF8.GetMaxCharCount(value.Length)];
-            var charCount = Encoding.UTF8.GetChars(value, utf16);
-            return Deserialize(utf16.Slice(0, charCount));
+            var maxCharCount = Encoding.UTF8.GetMaxCharCount(value.Length);
+            var canAllocateOnStack = maxCharCount < max_stack_alloc_size;
+            var array = canAllocateOnStack ? Array.Empty<char>() : ArrayPool.UTF16.Rent(maxCharCount);
+            var utf16 = canAllocateOnStack ? stackalloc char[maxCharCount] : array;
+            try
+            {
+                var charCount = Encoding.UTF8.GetChars(value, utf16);
+                return Deserialize(utf16.Slice(0, charCount));
+            }
+            finally
+            {
+                if (!canAllocateOnStack) ArrayPool.UTF16.Return(array);
+            }
         }
     }
 }

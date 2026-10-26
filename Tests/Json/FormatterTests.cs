@@ -65,6 +65,21 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             }
         }
 
+        [TestCase(8 * 1024)]
+        [TestCase(1024 * 1024)]
+        public void PrimitiveFormatterLargeValueTests(int length)
+        {
+            // 超过栈分配阈值时改为从缓冲池借出，需保证往返正确且不会栈溢出
+            var testValue = new string('x', length);
+            var obj = new PrimitiveFormatterTestClass { value = testValue };
+
+            var utf8 = JsonConverter.UTF8.Serialize(obj);
+            Assert.AreEqual(testValue, JsonConverter.UTF8.Deserialize<PrimitiveFormatterTestClass>(utf8).value);
+
+            var utf16 = JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(testValue, JsonConverter.UTF16.Deserialize<PrimitiveFormatterTestClass>(utf16).value);
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void RoundTripNumberFormatterTests(Encoding encoding)
