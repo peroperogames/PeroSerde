@@ -6,6 +6,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace PeroTools2.Serde.Generator;
@@ -48,6 +49,7 @@ public sealed class ReferenceSymbols
     internal const string dictionary_type_fullname = $"{system_collection_generic_namespace}.{dictionary_type_name}";
 
     private readonly Compilation m_Compilation;
+    private readonly Dictionary<string, INamedTypeSymbol?> m_ResolvedCache = new();
 
     // Attributes
     public INamedTypeSymbol flagsAttribute { get; }
@@ -97,6 +99,19 @@ public sealed class ReferenceSymbols
     /// </summary>
     private INamedTypeSymbol? Resolve(string metaDataName)
     {
+        // 解析结果只依赖编译引用集, 缓存后避免同一类型被反复全量遍历(构造时会解析 12 个类型).
+        if (m_ResolvedCache.TryGetValue(metaDataName, out var cached))
+        {
+            return cached;
+        }
+
+        var resolved = ResolveCore(metaDataName);
+        m_ResolvedCache[metaDataName] = resolved;
+        return resolved;
+    }
+
+    private INamedTypeSymbol? ResolveCore(string metaDataName)
+    {
         var resolved = m_Compilation.GetTypeByMetadataName(metaDataName);
         if (resolved != null)
         {
@@ -104,6 +119,7 @@ public sealed class ReferenceSymbols
         }
 
         INamedTypeSymbol? nonPublicCandidate = null;
+        INamedTypeSymbol? publicCandidate = null;
         foreach (var reference in m_Compilation.References)
         {
             if (m_Compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
@@ -117,14 +133,21 @@ public sealed class ReferenceSymbols
                 continue;
             }
 
-            if (resolved.DeclaredAccessibility == Accessibility.Public)
+            if (resolved.DeclaredAccessibility != Accessibility.Public)
             {
-                return resolved;
+                // 解析结果只用于类型识别, 保留 internal 候选可避免引用集里只有 internal 定义时整个生成器中断.
+                nonPublicCandidate ??= resolved;
+                continue;
             }
 
-            nonPublicCandidate ??= resolved;
+            // 多个 public 候选时按程序集名取序最小者, 保证引用顺序变化时选型仍然确定.
+            if (publicCandidate == null
+                || string.CompareOrdinal(assembly.Name, publicCandidate.ContainingAssembly.Name) < 0)
+            {
+                publicCandidate = resolved;
+            }
         }
 
-        return nonPublicCandidate;
+        return publicCandidate ?? nonPublicCandidate;
     }
 }
