@@ -59,7 +59,7 @@ namespace PeroTools2.Serde.Json
                 {
                     if (i - from > 0)
                     {
-                        dest += WriteStringValueNoEscapeUtf8(str[from..(i - from)], dest);
+                        dest += WriteStringValueNoEscapeUtf8(str.Slice(from, i - from), dest);
                     }
                     dest += WriteEscapedCharUtf8(c, dest);
                     from = i + 1;

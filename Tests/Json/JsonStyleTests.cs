@@ -103,6 +103,25 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(json, result);
         }
 
+        [TestCase(Encoding.UTF8, "ab\ncd", "{\"value\":\"ab\\ncd\"}")]
+        [TestCase(Encoding.UTF16, "ab\ncd", "{\"value\":\"ab\\ncd\"}")]
+        [TestCase(Encoding.UTF8, "a\nb\nc", "{\"value\":\"a\\nb\\nc\"}")]
+        [TestCase(Encoding.UTF16, "a\nb\nc", "{\"value\":\"a\\nb\\nc\"}")]
+        [TestCase(Encoding.UTF8, "line1\nline2\r\nline3\tend", "{\"value\":\"line1\\nline2\\r\\nline3\\tend\"}")]
+        [TestCase(Encoding.UTF8, "\"a\"b\"c\"", "{\"value\":\"\\\"a\\\"b\\\"c\\\"\"}")]
+        [TestCase(Encoding.UTF8, "aaaaaaaaaa\nbbbbbbbbbb\ncc", "{\"value\":\"aaaaaaaaaa\\nbbbbbbbbbb\\ncc\"}")]
+        [TestCase(Encoding.UTF8, "\\path\\to\\file", "{\"value\":\"\\\\path\\\\to\\\\file\"}")]
+        [TestCase(Encoding.UTF8, "abc\n", "{\"value\":\"abc\\n\"}")]
+        [TestCase(Encoding.UTF8, "\nabc", "{\"value\":\"\\nabc\"}")]
+        public void EscapeCharacterMultipleSerializeTest(Encoding encoding, string value, string expected)
+        {
+            var obj = new EscapeCharacterJsonObject { value = value };
+            var result = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(expected, result);
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EscapeCharacterDeserializeTest(Encoding encoding)
