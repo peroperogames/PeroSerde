@@ -6,6 +6,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace PeroTools2.Serde.Generator;
@@ -48,6 +49,7 @@ public sealed class ReferenceSymbols
     internal const string dictionary_type_fullname = $"{system_collection_generic_namespace}.{dictionary_type_name}";
 
     private readonly Compilation m_Compilation;
+    private readonly Dictionary<string, INamedTypeSymbol?> m_ResolvedCache = new();
 
     // Attributes
     public INamedTypeSymbol flagsAttribute { get; }
@@ -84,5 +86,68 @@ public sealed class ReferenceSymbols
     }
 
     public INamedTypeSymbol GetTypeByMetaDataName(string metaDataName)
-        => m_Compilation.GetTypeByMetadataName(metaDataName) ?? throw new InvalidOperationException($"Type {metaDataName} is not found in compilation.");
+        => Resolve(metaDataName) ?? throw new InvalidOperationException($"Type {metaDataName} is not found in compilation.");
+
+    /// <summary>
+    /// 解析框架类型符号。
+    /// <para>
+    /// 引用集中可能存在多份同名定义，此时 <see cref="Compilation.GetTypeByMetadataName(string)"/>
+    /// 会因歧义返回 null（该方法不考虑可见性）。例如 Unity 2021.3 下 NUnit 3.5 的 net35 版本自带一份
+    /// internal 的 System.Lazy`1，与 mscorlib 冲突，会导致整个生成器中断。
+    /// 这里逐个程序集回退查找，并优先选择公开定义。
+    /// </para>
+    /// </summary>
+    private INamedTypeSymbol? Resolve(string metaDataName)
+    {
+        // 解析结果只依赖编译引用集, 缓存后避免同一类型被反复全量遍历(构造时会解析 12 个类型).
+        if (m_ResolvedCache.TryGetValue(metaDataName, out var cached))
+        {
+            return cached;
+        }
+
+        var resolved = ResolveCore(metaDataName);
+        m_ResolvedCache[metaDataName] = resolved;
+        return resolved;
+    }
+
+    private INamedTypeSymbol? ResolveCore(string metaDataName)
+    {
+        var resolved = m_Compilation.GetTypeByMetadataName(metaDataName);
+        if (resolved != null)
+        {
+            return resolved;
+        }
+
+        INamedTypeSymbol? nonPublicCandidate = null;
+        INamedTypeSymbol? publicCandidate = null;
+        foreach (var reference in m_Compilation.References)
+        {
+            if (m_Compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
+            {
+                continue;
+            }
+
+            resolved = assembly.GetTypeByMetadataName(metaDataName);
+            if (resolved == null)
+            {
+                continue;
+            }
+
+            if (resolved.DeclaredAccessibility != Accessibility.Public)
+            {
+                // 解析结果只用于类型识别, 保留 internal 候选可避免引用集里只有 internal 定义时整个生成器中断.
+                nonPublicCandidate ??= resolved;
+                continue;
+            }
+
+            // 多个 public 候选时按程序集名取序最小者, 保证引用顺序变化时选型仍然确定.
+            if (publicCandidate == null
+                || string.CompareOrdinal(assembly.Name, publicCandidate.ContainingAssembly.Name) < 0)
+            {
+                publicCandidate = resolved;
+            }
+        }
+
+        return publicCandidate ?? nonPublicCandidate;
+    }
 }
