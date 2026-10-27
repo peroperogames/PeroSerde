@@ -242,7 +242,7 @@ public partial class SerdeJsonGenerator
 
         // P1 原型: 成员全为内置基础类型时, 走游标 + 静态直调的新形态读取器
         var utf8Body = deserializerBuilder.ToString();
-        if (members.Length > 0 && members.All(member => !member.useFormatter && TryGetCursorReader(member.type, out _)))
+        if (members.Length > 0 && members.All(member => TryGetCursorMemberAccess(member, out _)))
         {
             var cursorBody = BuildCursorDeserializeBody(type, members);
             if (cursorBody != null)
@@ -315,6 +315,72 @@ public partial class SerdeJsonGenerator
             or SpecialType.System_Decimal;
     }
 
+    // 元素/标量 -> struct 读取器（集合用）
+    private static bool TryGetCursorElementReader(ITypeSymbol element, out string readerStruct)
+    {
+        readerStruct = element.SpecialType switch
+        {
+            SpecialType.System_String => "global::PeroTools2.Serde.Json.StringCursorReader",
+            SpecialType.System_Char => "global::PeroTools2.Serde.Json.CharCursorReader",
+            SpecialType.System_Boolean => "global::PeroTools2.Serde.Json.BooleanCursorReader",
+            SpecialType.System_Byte => "global::PeroTools2.Serde.Json.ByteCursorReader",
+            SpecialType.System_SByte => "global::PeroTools2.Serde.Json.SByteCursorReader",
+            SpecialType.System_Int16 => "global::PeroTools2.Serde.Json.Int16CursorReader",
+            SpecialType.System_UInt16 => "global::PeroTools2.Serde.Json.UInt16CursorReader",
+            SpecialType.System_Int32 => "global::PeroTools2.Serde.Json.Int32CursorReader",
+            SpecialType.System_UInt32 => "global::PeroTools2.Serde.Json.UInt32CursorReader",
+            SpecialType.System_Int64 => "global::PeroTools2.Serde.Json.Int64CursorReader",
+            SpecialType.System_UInt64 => "global::PeroTools2.Serde.Json.UInt64CursorReader",
+            SpecialType.System_Single => "global::PeroTools2.Serde.Json.SingleCursorReader",
+            SpecialType.System_Double => "global::PeroTools2.Serde.Json.DoubleCursorReader",
+            SpecialType.System_Decimal => "global::PeroTools2.Serde.Json.DecimalCursorReader",
+            _ => null,
+        };
+        return readerStruct != null;
+    }
+
+    // 成员的游标读取表达式（含 ref cursor）；不支持时返回 false
+    private static bool TryGetCursorMemberAccess(MemberMeta member, out string expression)
+    {
+        expression = null;
+
+        // 显式 [SerdeJsonFormatter] 的成员必须走原路径
+        if (member.formatter != null)
+        {
+            return false;
+        }
+
+        var type = member.type;
+        const string ns = "global::PeroTools2.Serde.Json";
+
+        if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReader(arrayType.ElementType, out var arrayReader))
+        {
+            expression = $"{ns}.JsonCollections.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
+            return true;
+        }
+
+        if (type is INamedTypeSymbol named && named.TypeArguments.Length == 1
+            && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
+            && TryGetCursorElementReader(named.TypeArguments[0], out var listReader))
+        {
+            expression = $"{ns}.JsonCollections.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
+            return true;
+        }
+
+        if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
+        {
+            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            return true;
+        }
+
+        if (TryGetCursorReader(type, out var readerName))
+        {
+            expression = $"{ns}.JsonPrimitives.{readerName}(ref cursor)";
+            return true;
+        }
+
+        return false;
+    }
     // 游标路径支持的成员类型（基础类型 + string + char），返回对应的读取器名
     private static bool TryGetCursorReader(ITypeSymbol type, out string readerName)
     {
@@ -366,7 +432,7 @@ public partial class SerdeJsonGenerator
         {
             var prefix = GetKeyPrefix(member.formatName);
             var length = member.formatName.Length;
-            if (!TryGetCursorReader(member.type, out _))
+            if (!TryGetCursorMemberAccess(member, out _))
             {
                 return null;
             }
@@ -397,11 +463,11 @@ public partial class SerdeJsonGenerator
         body.AppendLine("                        {");
         foreach (var member in members)
         {
-            TryGetCursorReader(member.type, out var readerName);
+            TryGetCursorMemberAccess(member, out var memberAccess);
             body.AppendLine($"                            case 0x{GetKeyPrefix(member.formatName):X16}UL:");
             body.AppendLine($"                                if (keyLength == {member.formatName.Length})");
             body.AppendLine("                                {");
-            body.AppendLine($"                                    obj.{member.name} = global::PeroTools2.Serde.Json.JsonPrimitives.{readerName}(ref cursor);");
+            body.AppendLine($"                                    obj.{member.name} = {memberAccess};");
             body.AppendLine("                                }");
             body.AppendLine("                                else");
             body.AppendLine("                                {");

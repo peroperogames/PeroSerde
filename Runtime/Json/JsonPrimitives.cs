@@ -16,6 +16,17 @@ namespace PeroTools2.Serde.Json
     /// </summary>
     public static unsafe class JsonPrimitives
     {
+        /// <summary>读取嵌套的 [SerdeJsonSerializable] 对象：借道 reader，把消费量同步回游标。</summary>
+        public static T ReadNested<T>(ref JsonCursor cursor)
+        {
+            var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf8(span);
+            // 交给 reader 处理 fixed / unfixed 两种 formatter 形态
+            var value = reader.ReadValue<T>(false);
+            cursor.p = (byte*) (cursor.end - reader.remains.Length);
+            return value;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ReadInt32(ref JsonCursor cursor)
         {
