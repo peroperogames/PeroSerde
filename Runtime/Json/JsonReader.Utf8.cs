@@ -169,8 +169,128 @@ namespace PeroTools2.Serde.Json
             throw SerdeException.ThrowInvalidAdvance();
         }
 
-        #region Read Nullable
+        /// <summary>
+        /// 读取一个纯 ASCII 的 JSON 字符串值（允许 ASCII 转义），只做一次堆分配.
+        /// </summary>
+        /// <remarks>
+        /// 通用路径需要先把反转义结果写进 byte[] 再转成 string（两次分配）；
+        /// ASCII 场景下可以先算出输出长度，直接一次分配成 string。
+        /// 遇到非 ASCII 字节或非 ASCII 转义时返回 false，由调用方走通用路径。
+        /// </remarks>
+        internal static bool TryReadAsciiStringUtf8(byte* src, int maxLength, out string result, out int advance)
+        {
+            result = null;
+            advance = 0;
+            var span = new ReadOnlySpan<byte>(src, maxLength);
 
+            // 第一遍：定位结束引号，同时确认整个 token 都是 ASCII 且转义序列完整
+            var hasEscape = false;
+            var end = -1;
+            for (var i = 1; i < span.Length; i++)
+            {
+                var b = span[i];
+                if (b == (byte) '"')
+                {
+                    end = i;
+                    break;
+                }
+                if (b >= 0x80)
+                {
+                    return false;
+                }
+                if (b != (byte) '\\')
+                {
+                    continue;
+                }
+                hasEscape = true;
+                if (i + 1 >= span.Length)
+                {
+                    return false;
+                }
+                i += span[i + 1] == (byte) 'u' ? 5 : 1;
+                if (i >= span.Length)
+                {
+                    return false;
+                }
+            }
+
+            if (end < 0)
+            {
+                return false;
+            }
+
+            var token = span.Slice(1, end - 1);
+            advance = end + 1;
+            if (!hasEscape)
+            {
+                result = SpanConverter.ToString(token);
+                return true;
+            }
+
+            // 第二遍：算出输出字符数
+            var length = 0;
+            for (var i = 0; i < token.Length; i++)
+            {
+                if (token[i] == (byte) '\\')
+                {
+                    if (token[i + 1] == (byte) 'u')
+                    {
+                        var h1 = Hex(token[i + 2]);
+                        var h2 = Hex(token[i + 3]);
+                        var h3 = Hex(token[i + 4]);
+                        var h4 = Hex(token[i + 5]);
+                        if (h1 < 0 || h2 < 0 || h3 < 0 || h4 < 0)
+                        {
+                            return false;
+                        }
+                        var code = (h1 << 12) | (h2 << 8) | (h3 << 4) | h4;
+                        if (code > 0x7F)
+                        {
+                            // 非 ASCII 转义交给通用路径（那里是按字节写回的）
+                            return false;
+                        }
+                        i += 5;
+                    }
+                    else
+                    {
+                        i += 1;
+                    }
+                }
+                length++;
+            }
+
+            // 第三遍：一次性写进字符串
+            var chars = new string('\0', length);
+            var index = 0;
+            fixed (char* dest = chars)
+            {
+                for (var i = 0; i < token.Length; i++)
+                {
+                    if (token[i] != (byte) '\\')
+                    {
+                        dest[index++] = (char) token[i];
+                        continue;
+                    }
+                    // 复用现有解码逻辑，保证与通用路径行为一致（第一遍已保证范围内不会抛异常）
+                    dest[index++] = ReadEscapedCharUtf8(src + 1 + i, out var escapedLength);
+                    i += escapedLength - 1;
+                }
+            }
+
+            result = chars;
+            return true;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static int Hex(byte c)
+            {
+                if (c is >= (byte) '0' and <= (byte) '9') return c - '0';
+                if (c is >= (byte) 'a' and <= (byte) 'f') return c - 'a' + 10;
+                if (c is >= (byte) 'A' and <= (byte) 'F') return c - 'A' + 10;
+                return -1;
+            }
+        }
+
+        #region Read Nullable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte? ReadNullableSbyteUtf8(byte* src, out int advance)
         {

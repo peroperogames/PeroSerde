@@ -122,6 +122,31 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(expected, result);
         }
 
+        [TestCase("\"abc\"", "abc")]
+        [TestCase("\"a\\nb\"", "a\nb")]
+        [TestCase("\"\"", "")]
+        public void RootLevelStringDeserializeTest(string json, string expected)
+        {
+            // 根级字符串正好结束在缓冲区末尾时也必须能正确解析
+            var utf8 = JsonConverter.UTF8.Deserialize<string>(System.Text.Encoding.UTF8.GetBytes(json));
+            var utf16 = JsonConverter.UTF16.Deserialize<string>(json);
+            Assert.AreEqual(expected, utf8);
+            Assert.AreEqual(expected, utf16);
+        }
+
+        [Test]
+        public void EscapeCharacterDeserializeAllocationTest()
+        {
+            var json = "{\"value\":\"a\\nb\\tc\"}";
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            // 先跑一次，避开首次调用时的静态初始化分配
+            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(bytes);
+
+            var action = new TestDelegate(() => { JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(bytes); });
+            // 含转义时也只需 2 次分配（对象 + string），不应再额外分配中间 byte[]
+            Assert.That(action, Is.Not.AllocatingGCMemory(2));
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EscapeCharacterDeserializeTest(Encoding encoding)

@@ -269,6 +269,109 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
+        /// <summary>
+        /// 读取一个 JSON 字符串值（允许转义），只做一次堆分配.
+        /// </summary>
+        /// <remarks>
+        /// 直接按 <paramref name="maxLength"/> 扫描完整缓冲区，因此字符串结束在缓冲区末尾也能正确解析；
+        /// 遇到非法转义时返回 false，由调用方走通用路径抛出原有异常.
+        /// </remarks>
+        internal static bool TryReadStringUtf16(char* src, int maxLength, out string result, out int advance)
+        {
+            result = null;
+            advance = 0;
+            var span = new ReadOnlySpan<char>(src, maxLength);
+
+            var hasEscape = false;
+            var end = -1;
+            for (var i = 1; i < span.Length; i++)
+            {
+                var c = span[i];
+                if (c == '"')
+                {
+                    end = i;
+                    break;
+                }
+                if (c != '\\')
+                {
+                    continue;
+                }
+                hasEscape = true;
+                if (i + 1 >= span.Length)
+                {
+                    return false;
+                }
+                i += span[i + 1] == 'u' ? 5 : 1;
+                if (i >= span.Length)
+                {
+                    return false;
+                }
+            }
+
+            if (end < 0)
+            {
+                return false;
+            }
+
+            var token = span.Slice(1, end - 1);
+            advance = end + 1;
+            if (!hasEscape)
+            {
+                result = new string(token);
+                return true;
+            }
+
+            // 先算输出字符数
+            var length = 0;
+            for (var i = 0; i < token.Length; i++)
+            {
+                if (token[i] == '\\')
+                {
+                    if (token[i + 1] == 'u')
+                    {
+                        if (Hex(token[i + 2]) < 0 || Hex(token[i + 3]) < 0 || Hex(token[i + 4]) < 0 || Hex(token[i + 5]) < 0)
+                        {
+                            return false;
+                        }
+                        i += 5;
+                    }
+                    else
+                    {
+                        i += 1;
+                    }
+                }
+                length++;
+            }
+
+            // 再一次性写进字符串
+            var chars = new string('\0', length);
+            var index = 0;
+            fixed (char* dest = chars)
+            {
+                for (var i = 0; i < token.Length; i++)
+                {
+                    if (token[i] != '\\')
+                    {
+                        dest[index++] = token[i];
+                        continue;
+                    }
+                    dest[index++] = ReadEscapedCharUtf16(src + 1 + i, out var escapedLength);
+                    i += escapedLength - 1;
+                }
+            }
+
+            result = chars;
+            return true;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static int Hex(char c)
+            {
+                if (c is >= '0' and <= '9') return c - '0';
+                if (c is >= 'a' and <= 'f') return c - 'a' + 10;
+                if (c is >= 'A' and <= 'F') return c - 'A' + 10;
+                return -1;
+            }
+        }
         #region Read Primitive
 
         /// <summary>读转义字符, 支持UTF8和UTF16</summary>

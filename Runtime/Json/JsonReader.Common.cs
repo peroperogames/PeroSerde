@@ -29,7 +29,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Advance(int count) => m_Advanced += count;
+        internal void Advance(int count) => m_Advanced += count;
 
         #region Read Value
 
@@ -354,7 +354,7 @@ namespace PeroTools2.Serde.Json
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Advance(int count) => m_Advanced += count;
+        internal void Advance(int count) => m_Advanced += count;
 
         #region Read Value
 
