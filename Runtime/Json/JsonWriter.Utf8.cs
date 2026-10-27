@@ -49,6 +49,12 @@ namespace PeroTools2.Serde.Json
 
         public static int WriteStringValueUtf8(ReadOnlySpan<char> str, byte* dest)
         {
+            // 快速路径: 没有需要转义的字符时整串直接写出（扫描已向量化）
+            if (!StringHelper.ContainsEscapeChar(str))
+            {
+                return WriteStringValueNoEscapeUtf8(str, dest);
+            }
+
             // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
             var from = 0;
             var start = dest;

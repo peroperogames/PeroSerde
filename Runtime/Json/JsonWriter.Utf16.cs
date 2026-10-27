@@ -177,6 +177,12 @@ namespace PeroTools2.Serde.Json
         /// <remarks>会考虑到转义字符.</remarks>
         public static int WriteStringValueUtf16(ReadOnlySpan<char> str, char* dest)
         {
+            // 快速路径: 没有需要转义的字符时整串直接写出（扫描已向量化）
+            if (!StringHelper.ContainsEscapeChar(str))
+            {
+                return WriteRawUtf16(dest, str);
+            }
+
             // 需要考虑到转义字符, 所以必须遍历来找到转义字符，并且单独写入.
             var originalPtr = dest;
             var from = 0;

@@ -542,6 +542,63 @@ namespace PeroTools2.Serde
 #endif
         }
 
+        /// <summary>判断是否含有需要 JSON 转义的字符（&lt; 0x20、双引号或反斜杠），向量化扫描。</summary>
+        public static bool ContainsEscapeChar(ReadOnlySpan<char> chars)
+        {
+            fixed (char* p = chars)
+            {
+                return ContainsEscapeChar(p, chars.Length);
+            }
+        }
+
+        /// <summary>判断一段 UTF16 字符序列是否含有需要转义的字符（&lt; 0x20、双引号或反斜杠）。</summary>
+        public static bool ContainsEscapeChar(char* chars, int length)
+        {
+            // 8 个字符一跳（4×uint，每 uint 装 2 个 char）
+            var pos = 0;
+            var vectorLimit = length - 8;
+            if (vectorLimit >= 0)
+            {
+                var quote = (uint) '"' * 0x0001_0001u;
+                var slash = (uint) '\\' * 0x0001_0001u;
+                while (pos <= vectorLimit)
+                {
+                    var p = chars + pos;
+                    var v0 = Unsafe.ReadUnaligned<uint>(p);
+                    var v1 = Unsafe.ReadUnaligned<uint>(p + 2);
+                    var v2 = Unsafe.ReadUnaligned<uint>(p + 4);
+                    var v3 = Unsafe.ReadUnaligned<uint>(p + 6);
+                    var hit = ControlCharMask(v0) | ControlCharMask(v1) | ControlCharMask(v2) | ControlCharMask(v3)
+                              | ZeroCharMask(v0 ^ quote) | ZeroCharMask(v1 ^ quote) | ZeroCharMask(v2 ^ quote) | ZeroCharMask(v3 ^ quote)
+                              | ZeroCharMask(v0 ^ slash) | ZeroCharMask(v1 ^ slash) | ZeroCharMask(v2 ^ slash) | ZeroCharMask(v3 ^ slash);
+                    if (hit != 0)
+                    {
+                        // 跨通道借位可能误报，块内用标量确认
+                        return SlowContainsEscapeChar(p, 8);
+                    }
+
+                    pos += 8;
+                }
+            }
+
+            return pos < length && SlowContainsEscapeChar(chars + pos, length - pos);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ControlCharMask(uint v) => (v - 0x0020_0020u) & ~v & 0x8000_8000u;
+
+        private static bool SlowContainsEscapeChar(char* chars, int length)
+        {
+            for (var i = 0; i < length; i++)
+            {
+                var c = chars[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         /// <summary>判断一个UTF16字符串是否所有的字符都为 ASCII 字符。</summary>
         public static bool IsAsciiString(string str)
         {
