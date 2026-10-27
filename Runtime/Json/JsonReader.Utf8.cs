@@ -13,7 +13,7 @@ namespace PeroTools2.Serde.Json
 {
     public static unsafe partial class JsonReader
     {
-        private static ReadOnlySpan<byte> ReadPrimitiveUntilEndUtf8(byte* src, int maxLength, out int advance)
+        internal static ReadOnlySpan<byte> ReadPrimitiveUntilEndUtf8(byte* src, int maxLength, out int advance)
         {
             maxLength += 1;
             advance = 0;

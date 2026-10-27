@@ -66,6 +66,22 @@ namespace PeroTools2.Serde
 
         #endregion
 
+        /// <summary>取指针处前 8 字节（小端、不足补 0）作为 key 前缀，供 switch 分发。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong GetKeyPrefix(byte* start, int length)
+        {
+            if (length >= 8)
+            {
+                return Unsafe.ReadUnaligned<ulong>(start);
+            }
+
+            ulong value = 0;
+            for (var i = 0; i < length; i++)
+            {
+                value |= (ulong) start[i] << (i * 8);
+            }
+            return value;
+        }
         /// <summary>判断一个字符是否为空白字符</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWhiteSpace(byte c) =>

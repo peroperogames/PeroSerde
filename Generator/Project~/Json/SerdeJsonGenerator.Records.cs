@@ -240,6 +240,17 @@ public partial class SerdeJsonGenerator
             utf16Builder.AppendLine("                reader.ReadUntilEnd();");
         }
 
+        // P1 原型: 成员全为内置基础类型时, 走游标 + 静态直调的新形态读取器
+        var utf8Body = deserializerBuilder.ToString();
+        if (members.Length > 0 && members.All(member => !member.useFormatter && IsFixedPrimitive(member.type, out _)))
+        {
+            var cursorBody = BuildCursorDeserializeBody(type, members);
+            if (cursorBody != null)
+            {
+                utf8Body = cursorBody;
+            }
+        }
+
         // 生成分部序列化器
         return $$"""
                  // Deserializer
@@ -250,7 +261,7 @@ public partial class SerdeJsonGenerator
                          public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> value, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
                              System.ReadOnlySpan<byte> key;
-                 {{deserializerBuilder}}
+                 {{utf8Body}}
                          }
 
                          public {{typeName}} DeserializeUtf16(ref System.ReadOnlySpan<char> value, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
@@ -275,6 +286,125 @@ public partial class SerdeJsonGenerator
                  """;
     }
 
+    // 是否为本包内置的固定 formatter 类型（SerdeJsonFormatterProvider 的 FixedCache 已注册）
+    // 与运行时 StringHelper.GetKeyPrefix 对应的生成期前缀（ASCII 假设，与既有等值比较一致）
+    private static ulong GetKeyPrefix(string name)
+    {
+        ulong value = 0;
+        var limit = name.Length < 8 ? name.Length : 8;
+        for (var i = 0; i < limit; i++)
+        {
+            value |= (ulong) (byte) name[i] << (i * 8);
+        }
+        return value;
+    }
+    private static bool IsFixedPrimitive(ITypeSymbol type, out string typeName)
+    {
+        typeName = type.ToDisplayString();
+        return type.SpecialType is SpecialType.System_Boolean
+            or SpecialType.System_Byte
+            or SpecialType.System_SByte
+            or SpecialType.System_UInt16
+            or SpecialType.System_Int16
+            or SpecialType.System_UInt32
+            or SpecialType.System_Int32
+            or SpecialType.System_UInt64
+            or SpecialType.System_Int64
+            or SpecialType.System_Single
+            or SpecialType.System_Double
+            or SpecialType.System_Decimal;
+    }
+
+    private static bool GetPrimitiveReaderName(SpecialType specialType, out string readerName)
+    {
+        readerName = specialType switch
+        {
+            SpecialType.System_Boolean => "ReadBoolean",
+            SpecialType.System_Byte => "ReadByte",
+            SpecialType.System_SByte => "ReadSByte",
+            SpecialType.System_Int16 => "ReadInt16",
+            SpecialType.System_UInt16 => "ReadUInt16",
+            SpecialType.System_Int32 => "ReadInt32",
+            SpecialType.System_UInt32 => "ReadUInt32",
+            SpecialType.System_Int64 => "ReadInt64",
+            SpecialType.System_UInt64 => "ReadUInt64",
+            SpecialType.System_Single => "ReadSingle",
+            SpecialType.System_Double => "ReadDouble",
+            SpecialType.System_Decimal => "ReadDecimal",
+            SpecialType.System_Char => "ReadChar",
+            _ => null,
+        };
+        return readerName != null;
+    }
+
+    // 游标形态的反序列化体（P1 原型）：仅在「前缀+长度」唯一时生成
+    private static string BuildCursorDeserializeBody(ITypeSymbol type, MemberMeta[] members)
+    {
+        var seen = new System.Collections.Generic.HashSet<(ulong, int)>();
+        foreach (var member in members)
+        {
+            var prefix = GetKeyPrefix(member.formatName);
+            var length = member.formatName.Length;
+            if (!IsFixedPrimitive(member.type, out _) || !GetPrimitiveReaderName(member.type.SpecialType, out _))
+            {
+                return null;
+            }
+
+            if (!seen.Add((prefix, length)))
+            {
+                return null;
+            }
+        }
+
+        var body = new StringBuilder();
+        body.AppendLine("            if (reader.TryReadNull())");
+        body.AppendLine("            {");
+        body.AppendLine("                return default;");
+        body.AppendLine("            }");
+        body.AppendLine();
+        body.AppendLine($"            var obj = new {type.ToDisplayString()}();");
+        body.AppendLine("            var consumed = 0;");
+        body.AppendLine("            unsafe");
+        body.AppendLine("            {");
+        body.AppendLine("                fixed (byte* pStart = reader.remains)");
+        body.AppendLine("                {");
+        body.AppendLine("                    var cursor = new global::PeroTools2.Serde.Json.JsonCursor(pStart, pStart + reader.remains.Length);");
+        body.AppendLine("                    cursor.Expect((byte) '{');");
+        body.AppendLine("                    while (cursor.TryReadKey(out _, out var keyLength, out var prefix))");
+        body.AppendLine("                    {");
+        body.AppendLine("                        switch (prefix)");
+        body.AppendLine("                        {");
+        foreach (var member in members)
+        {
+            GetPrimitiveReaderName(member.type.SpecialType, out var readerName);
+            body.AppendLine($"                            case 0x{GetKeyPrefix(member.formatName):X16}UL:");
+            body.AppendLine($"                                if (keyLength == {member.formatName.Length})");
+            body.AppendLine("                                {");
+            body.AppendLine($"                                    obj.{member.name} = global::PeroTools2.Serde.Json.JsonPrimitives.{readerName}(ref cursor);");
+            body.AppendLine("                                }");
+            body.AppendLine("                                else");
+            body.AppendLine("                                {");
+            body.AppendLine("                                    cursor.SkipValue();");
+            body.AppendLine("                                }");
+            body.AppendLine("                                break;");
+        }
+        body.AppendLine("                            default:");
+        body.AppendLine("                                cursor.SkipValue();");
+        body.AppendLine("                                break;");
+        body.AppendLine("                        }");
+        body.AppendLine();
+        body.AppendLine("                        cursor.TryConsume((byte) ',');");
+        body.AppendLine("                    }");
+        body.AppendLine();
+        body.AppendLine("                    cursor.Expect((byte) '}');");
+        body.AppendLine("                    consumed = (int) (cursor.p - pStart);");
+        body.AppendLine("                }");
+        body.AppendLine("            }");
+        body.AppendLine();
+        body.AppendLine("            reader.SkipConsumed(consumed);");
+        body.AppendLine("            return obj;");
+        return body.ToString();
+    }
     private static string GenerateRecordsSerialization(ITypeSymbol type, TypeMeta typeMeta)
     {
         var typeName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);

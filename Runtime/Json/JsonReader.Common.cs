@@ -31,6 +31,10 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Advance(int count) => m_Advanced += count;
 
+        /// <summary>把生成代码用游标消费掉的长度同步回 reader。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SkipConsumed(int count) => m_Advanced += count;
+
         #region Read Value
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -355,6 +359,10 @@ namespace PeroTools2.Serde.Json
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Advance(int count) => m_Advanced += count;
+
+        /// <summary>把生成代码用游标消费掉的长度同步回 reader。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SkipConsumed(int count) => m_Advanced += count;
 
         #region Read Value
 
