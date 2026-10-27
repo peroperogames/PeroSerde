@@ -127,8 +127,19 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char ReadChar(ref JsonCursor cursor)
         {
+            // char 在 JSON 里是带引号的单字符串（如 "a"），需要先按字符串读取再取第一个字符
             cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            if (cursor.p < cursor.end && *cursor.p == (byte) '"')
+            {
+                var remaining = (int) (cursor.end - cursor.p);
+                if (JsonReader.TryReadAsciiStringUtf8(cursor.p, remaining, out var ascii, out var asciiAdvance))
+                {
+                    cursor.p += asciiAdvance;
+                    return ascii.Length > 0 ? ascii[0] : '\0';
+                }
+            }
+
+            var span = JsonReader.ReadValueUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
             cursor.p += advance;
             return SpanConverter.ToChar(span);
         }

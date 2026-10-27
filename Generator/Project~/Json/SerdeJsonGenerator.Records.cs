@@ -242,7 +242,7 @@ public partial class SerdeJsonGenerator
 
         // P1 原型: 成员全为内置基础类型时, 走游标 + 静态直调的新形态读取器
         var utf8Body = deserializerBuilder.ToString();
-        if (members.Length > 0 && members.All(member => !member.useFormatter && IsFixedPrimitive(member.type, out _)))
+        if (members.Length > 0 && members.All(member => !member.useFormatter && TryGetCursorReader(member.type, out _)))
         {
             var cursorBody = BuildCursorDeserializeBody(type, members);
             if (cursorBody != null)
@@ -315,6 +315,27 @@ public partial class SerdeJsonGenerator
             or SpecialType.System_Decimal;
     }
 
+    // 游标路径支持的成员类型（基础类型 + string + char），返回对应的读取器名
+    private static bool TryGetCursorReader(ITypeSymbol type, out string readerName)
+    {
+        switch (type.SpecialType)
+        {
+            case SpecialType.System_String:
+                readerName = "ReadString";
+                return true;
+            case SpecialType.System_Char:
+                readerName = "ReadChar";
+                return true;
+        }
+
+        if (IsFixedPrimitive(type, out _) && GetPrimitiveReaderName(type.SpecialType, out readerName))
+        {
+            return true;
+        }
+
+        readerName = null;
+        return false;
+    }
     private static bool GetPrimitiveReaderName(SpecialType specialType, out string readerName)
     {
         readerName = specialType switch
@@ -345,7 +366,7 @@ public partial class SerdeJsonGenerator
         {
             var prefix = GetKeyPrefix(member.formatName);
             var length = member.formatName.Length;
-            if (!IsFixedPrimitive(member.type, out _) || !GetPrimitiveReaderName(member.type.SpecialType, out _))
+            if (!TryGetCursorReader(member.type, out _))
             {
                 return null;
             }
@@ -376,7 +397,7 @@ public partial class SerdeJsonGenerator
         body.AppendLine("                        {");
         foreach (var member in members)
         {
-            GetPrimitiveReaderName(member.type.SpecialType, out var readerName);
+            TryGetCursorReader(member.type, out var readerName);
             body.AppendLine($"                            case 0x{GetKeyPrefix(member.formatName):X16}UL:");
             body.AppendLine($"                                if (keyLength == {member.formatName.Length})");
             body.AppendLine("                                {");
