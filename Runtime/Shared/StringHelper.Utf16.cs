@@ -404,7 +404,42 @@ namespace PeroTools2.Serde
         /// <param name="length">字符串长度</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(char* chars, int length, char c) => SlowIndexOf(chars, length, c);
+        public static int IndexOf(char* chars, int length, char c)
+        {
+            // 一次比较 8 个字符（4 个 uint，每 uint 装 2 个 char）; 误报用标量在块内确认
+            if (length < 8)
+            {
+                return SlowIndexOf(chars, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6) ^ broadcast;
+                if ((ZeroCharMask(v0) | ZeroCharMask(v1) | ZeroCharMask(v2) | ZeroCharMask(v3)) != 0)
+                {
+                    var found = SlowIndexOf(offset, 8, c);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - chars) + found;
+                    }
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            var tail = SlowIndexOf(offset, remaining, c);
+            return tail >= 0 ? (int) (offset - chars) + tail : -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ZeroCharMask(uint v) => (v - 0x0001_0001u) & ~v & 0x8000_8000u;
 
         /// <summary>
         /// 在字符串中找到指定两个字符中任意字符的索引，没找到则返回 -1。
@@ -415,8 +450,45 @@ namespace PeroTools2.Serde
         /// <param name="c2">字符2</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOfAny(char* chars, int length, char c1, char c2) =>
-            SlowIndexOfAny(chars, length, c1, c2);
+        public static int IndexOfAny(char* chars, int length, char c1, char c2)
+        {
+            if (length < 8)
+            {
+                return SlowIndexOfAny(chars, length, c1, c2);
+            }
+
+            var broadcast1 = (uint) c1 * 0x0001_0001u;
+            var broadcast2 = (uint) c2 * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset);
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2);
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4);
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6);
+
+                var m0 = ZeroCharMask(v0 ^ broadcast1) | ZeroCharMask(v0 ^ broadcast2);
+                var m1 = ZeroCharMask(v1 ^ broadcast1) | ZeroCharMask(v1 ^ broadcast2);
+                var m2 = ZeroCharMask(v2 ^ broadcast1) | ZeroCharMask(v2 ^ broadcast2);
+                var m3 = ZeroCharMask(v3 ^ broadcast1) | ZeroCharMask(v3 ^ broadcast2);
+
+                if ((m0 | m1 | m2 | m3) != 0)
+                {
+                    var found = SlowIndexOfAny(offset, 8, c1, c2);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - chars) + found;
+                    }
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            var tail = SlowIndexOfAny(offset, remaining, c1, c2);
+            return tail >= 0 ? (int) (offset - chars) + tail : -1;
+        }
 
         /// <summary>
         /// 检索字符串中是否存在指定字符。
@@ -426,7 +498,33 @@ namespace PeroTools2.Serde
         /// <param name="c">指定字符</param>
         /// <returns>返回是否存在</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(char* chars, int length, char c) => SlowContains(chars, length, c);
+        public static bool Contains(char* chars, int length, char c)
+        {
+            if (length < 8)
+            {
+                return SlowContains(chars, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6) ^ broadcast;
+                if ((ZeroCharMask(v0) | ZeroCharMask(v1) | ZeroCharMask(v2) | ZeroCharMask(v3)) != 0 && SlowContains(offset, 8, c))
+                {
+                    return true;
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            return remaining > 0 && SlowContains(offset, remaining, c);
+        }
 
         /// <summary>获取字符串的元数据引用。</summary>
         /// <returns>返回第一个字符的引用</returns>

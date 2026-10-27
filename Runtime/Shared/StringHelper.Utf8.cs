@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -79,7 +79,42 @@ namespace PeroTools2.Serde
         /// <param name="length">字符串长度</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(byte* bytes, int length, byte c) => SlowIndexOf(bytes, length, c);
+        public static int IndexOf(byte* bytes, int length, byte c)
+        {
+            // 一次比较 16 字节（4 个 uint）; 命中块内可能有跨字节借位误报, 用标量在块内确认
+            if (length < 16)
+            {
+                return SlowIndexOf(bytes, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0101_0101u;
+            var offset = bytes;
+            var remaining = length;
+            while (remaining >= 16)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 8) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 12) ^ broadcast;
+                if ((ZeroByteMask(v0) | ZeroByteMask(v1) | ZeroByteMask(v2) | ZeroByteMask(v3)) != 0)
+                {
+                    var found = SlowIndexOf(offset, 16, c);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - bytes) + found;
+                    }
+                }
+
+                offset += 16;
+                remaining -= 16;
+            }
+
+            var tail = SlowIndexOf(offset, remaining, c);
+            return tail >= 0 ? (int) (offset - bytes) + tail : -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ZeroByteMask(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
         /// <summary>
         /// 在字符串中找到指定两个字符中任意字符的索引，没找到则返回 -1。
@@ -90,8 +125,45 @@ namespace PeroTools2.Serde
         /// <param name="c2">字符2</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOfAny(byte* bytes, int length, byte c1, byte c2) =>
-            SlowIndexOfAny(bytes, length, c1, c2);
+        public static int IndexOfAny(byte* bytes, int length, byte c1, byte c2)
+        {
+            if (length < 16)
+            {
+                return SlowIndexOfAny(bytes, length, c1, c2);
+            }
+
+            var broadcast1 = (uint) c1 * 0x0101_0101u;
+            var broadcast2 = (uint) c2 * 0x0101_0101u;
+            var offset = bytes;
+            var remaining = length;
+            while (remaining >= 16)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset);
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 4);
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 8);
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 12);
+
+                var m0 = ZeroByteMask(v0 ^ broadcast1) | ZeroByteMask(v0 ^ broadcast2);
+                var m1 = ZeroByteMask(v1 ^ broadcast1) | ZeroByteMask(v1 ^ broadcast2);
+                var m2 = ZeroByteMask(v2 ^ broadcast1) | ZeroByteMask(v2 ^ broadcast2);
+                var m3 = ZeroByteMask(v3 ^ broadcast1) | ZeroByteMask(v3 ^ broadcast2);
+
+                if ((m0 | m1 | m2 | m3) != 0)
+                {
+                    var found = SlowIndexOfAny(offset, 16, c1, c2);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - bytes) + found;
+                    }
+                }
+
+                offset += 16;
+                remaining -= 16;
+            }
+
+            var tail = SlowIndexOfAny(offset, remaining, c1, c2);
+            return tail >= 0 ? (int) (offset - bytes) + tail : -1;
+        }
 
         /// <summary>
         /// 检索字符串中是否存在指定字符。
@@ -101,7 +173,33 @@ namespace PeroTools2.Serde
         /// <param name="c">指定字符</param>
         /// <returns>返回是否存在</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(byte* bytes, int length, byte c) => SlowContains(bytes, length, c);
+        public static bool Contains(byte* bytes, int length, byte c)
+        {
+            if (length < 16)
+            {
+                return SlowContains(bytes, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0101_0101u;
+            var offset = bytes;
+            var remaining = length;
+            while (remaining >= 16)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 8) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 12) ^ broadcast;
+                if ((ZeroByteMask(v0) | ZeroByteMask(v1) | ZeroByteMask(v2) | ZeroByteMask(v3)) != 0 && SlowContains(offset, 16, c))
+                {
+                    return true;
+                }
+
+                offset += 16;
+                remaining -= 16;
+            }
+
+            return remaining > 0 && SlowContains(offset, remaining, c);
+        }
 
         #region Slow Methods
 

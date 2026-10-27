@@ -183,15 +183,40 @@ namespace PeroTools2.Serde.Json
             advance = 0;
             var span = new ReadOnlySpan<byte>(src, maxLength);
 
-            // 第一遍：定位结束引号，同时确认整个 token 都是 ASCII 且转义序列完整
+            // 第一遍：定位结束引号，同时确认整个 token 都是 ASCII 且转义序列完整。
+            // 纯 ASCII 且无转义是最常见的情况，先用 4×uint 一次跳过 16 字节。
             var hasEscape = false;
             var end = -1;
-            for (var i = 1; i < span.Length; i++)
+            var pos = 1;
             {
-                var b = span[i];
+                var quote = (uint) '"' * 0x0101_0101u;
+                var slash = (uint) '\\' * 0x0101_0101u;
+                var vectorLimit = span.Length - 16;
+                while (pos <= vectorLimit)
+                {
+                    var p = src + pos;
+                    var v0 = Unsafe.ReadUnaligned<uint>(p);
+                    var v1 = Unsafe.ReadUnaligned<uint>(p + 4);
+                    var v2 = Unsafe.ReadUnaligned<uint>(p + 8);
+                    var v3 = Unsafe.ReadUnaligned<uint>(p + 12);
+                    if (((v0 | v1 | v2 | v3) & 0x8080_8080u) != 0
+                        || (ZeroByte(v0 ^ quote) | ZeroByte(v1 ^ quote) | ZeroByte(v2 ^ quote) | ZeroByte(v3 ^ quote)) != 0
+                        || (ZeroByte(v0 ^ slash) | ZeroByte(v1 ^ slash) | ZeroByte(v2 ^ slash) | ZeroByte(v3 ^ slash)) != 0)
+                    {
+                        // 这一块含特殊字节，交给下面的标量循环逐字节处理（它负责转义跳过）
+                        break;
+                    }
+
+                    pos += 16;
+                }
+            }
+
+            for (; pos < span.Length; pos++)
+            {
+                var b = span[pos];
                 if (b == (byte) '"')
                 {
-                    end = i;
+                    end = pos;
                     break;
                 }
                 if (b >= 0x80)
@@ -203,12 +228,12 @@ namespace PeroTools2.Serde.Json
                     continue;
                 }
                 hasEscape = true;
-                if (i + 1 >= span.Length)
+                if (pos + 1 >= span.Length)
                 {
                     return false;
                 }
-                i += span[i + 1] == (byte) 'u' ? 5 : 1;
-                if (i >= span.Length)
+                pos += span[pos + 1] == (byte) 'u' ? 5 : 1;
+                if (pos >= span.Length)
                 {
                     return false;
                 }
@@ -279,6 +304,9 @@ namespace PeroTools2.Serde.Json
 
             result = chars;
             return true;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)
@@ -433,6 +461,9 @@ namespace PeroTools2.Serde.Json
                 default:
                     throw SerdeException.ThrowInvalidEscapedChar(esc);
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)
