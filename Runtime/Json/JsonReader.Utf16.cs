@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2024/12/20
@@ -15,7 +15,7 @@ namespace PeroTools2.Serde.Json
     [PublicAPI]
     public static unsafe partial class JsonReader
     {
-        private static ReadOnlySpan<char> ReadPrimitiveUntilEndUtf16(char* src, int maxLength, out int advance)
+        internal static ReadOnlySpan<char> ReadPrimitiveUntilEndUtf16(char* src, int maxLength, out int advance)
         {
             advance = 0;
             maxLength += 1;
@@ -43,6 +43,16 @@ namespace PeroTools2.Serde.Json
                 return span.Slice(0, i);
             }
             throw SerdeException.ThrowInvalidAdvance();
+        }
+
+        /// <summary>跳过一个完整的值，返回消费的字符数（供游标使用）。</summary>
+        internal static int SkipValueUtf16(ReadOnlySpan<char> src)
+        {
+            fixed (char* p = src)
+            {
+                ReadValueUntilEndUtf16(p, src.Length, out var advance);
+                return advance;
+            }
         }
 
         private static ReadOnlySpan<char> ReadArrayOrObjectUntilEndUtf16(char* src, int maxLength, out int advance)

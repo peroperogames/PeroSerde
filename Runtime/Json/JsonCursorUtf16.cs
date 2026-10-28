@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Description: 生成代码使用的 UTF-16 JSON 游标（P1 原型）
+ */
+
+using System;
+using System.Runtime.CompilerServices;
+
+namespace PeroTools2.Serde.Json
+{
+    /// <summary>
+    /// 供源生成的序列化器使用的 UTF-16 只读游标，与 <see cref="JsonCursor"/> 一一对应。
+    /// key 前缀用两个 ulong 表示（前 4 个字符 + 后 4 个字符），保证与 UTF-8 版同等的区分度。
+    /// </summary>
+    public unsafe struct JsonCursorUtf16
+    {
+        /// <summary>当前读取位置。</summary>
+        public char* p;
+
+        /// <summary>可读区间的结束位置（不含）。</summary>
+        public readonly char* end;
+
+        /// <summary>可读区间的起始位置。</summary>
+        public readonly char* start;
+
+        public JsonCursorUtf16(char* start, char* end)
+        {
+            p = start;
+            this.start = start;
+            this.end = end;
+        }
+
+        /// <summary>已被消费的字符数。</summary>
+        public int Consumed
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return (int) (p - start); }
+        }
+
+        /// <summary>跳过一个或多个空白字符。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SkipWhiteSpace()
+        {
+            while (p < end)
+            {
+                if (StringHelper.IsWhiteSpace(*p))
+                {
+                    p++;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        /// <summary>跳过空白后尝试消费一个字符。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryConsume(char c)
+        {
+            SkipWhiteSpace();
+            if (p < end && *p == c)
+            {
+                p++;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>跳过空白后消费一个字符，否则抛错。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Expect(char c)
+        {
+            SkipWhiteSpace();
+            if (p >= end || *p != c)
+            {
+                throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            }
+
+            p++;
+        }
+
+        /// <summary>
+        /// 读取一个对象成员名。返回 false 表示已到对象结束（当前字符不是引号）。
+        /// 输出成员名长度与其前 8 个字符（两个 ulong）前缀，供 switch 分发。
+        /// </summary>
+        public bool TryReadKey(out int keyLength, out ulong prefixLow, out ulong prefixHigh)
+        {
+            SkipWhiteSpace();
+            keyLength = 0;
+            prefixLow = 0;
+            prefixHigh = 0;
+
+            if (p >= end || *p != '"')
+            {
+                return false;
+            }
+
+            p++;
+            var start = p;
+            while (p < end && !(*p == '"' && *(p - 1) != '\\'))
+            {
+                p++;
+            }
+
+            if (p >= end)
+            {
+                throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            }
+
+            keyLength = (int) (p - start);
+            StringHelper.GetKeyPrefix(new ReadOnlySpan<char>(start, keyLength), out prefixLow, out prefixHigh);
+            p++; // 闭引号
+
+            SkipWhiteSpace();
+            if (p >= end || *p != ':')
+            {
+                throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            }
+
+            p++;
+            SkipWhiteSpace();
+            return true;
+        }
+
+        /// <summary>跳过一个完整的值（未知成员时使用）。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SkipValue()
+        {
+            p += JsonReader.SkipValueUtf16(new ReadOnlySpan<char>(p, (int) (end - p)));
+        }
+    }
+}

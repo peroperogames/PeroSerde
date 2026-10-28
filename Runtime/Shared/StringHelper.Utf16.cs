@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: AidenMX
  * Created On: 2024/01/20
@@ -393,6 +393,30 @@ namespace PeroTools2.Serde
 
         /// <summary>判断一个字符是否为空白字符</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <summary>取 span 前 8 个字符（每 4 个字符打包成一个 ulong）作为 key 前缀，供 switch 分发。</summary>
+        public static void GetKeyPrefix(ReadOnlySpan<char> key, out ulong low, out ulong high)
+        {
+            low = 0;
+            high = 0;
+            var length = key.Length;
+            var first = length < 4 ? length : 4;
+            for (var i = 0; i < first; i++)
+            {
+                low |= (ulong) key[i] << (i * 16);
+            }
+
+            var second = length - 4;
+            if (second > 4)
+            {
+                second = 4;
+            }
+
+            for (var i = 0; i < second; i++)
+            {
+                high |= (ulong) key[i + 4] << (i * 16);
+            }
+        }
+
         public static bool IsWhiteSpace(char c) =>
             c == 0x20 || (c >= 0x9 && c <= 0xd) || c == 0x85 || c == 0xa0;
 

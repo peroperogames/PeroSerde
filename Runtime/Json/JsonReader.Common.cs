@@ -374,10 +374,15 @@ namespace PeroTools2.Serde.Json
         }
         #endregion
     }
-    public ref struct JsonReaderUtf16
+    public unsafe ref struct JsonReaderUtf16
     {
         private int m_Advanced;
         private readonly ReadOnlySpan<char> m_Json;
+
+        /// <summary>入口 pin 住缓冲区后的基址；为 null 表示没有 pin，此时不能创建游标。</summary>
+        private readonly char* m_Base;
+
+        private readonly bool m_HasBase;
         public readonly ReadOnlySpan<char> json => m_Json;
 
         public readonly ReadOnlySpan<char> remains
@@ -390,6 +395,36 @@ namespace PeroTools2.Serde.Json
         {
             m_Advanced = 0;
             m_Json = json;
+            m_Base = null;
+            m_HasBase = false;
+        }
+
+        /// <summary>由入口创建：<paramref name="basePtr"/> 指向 <paramref name="json"/> 的起点，且已 pin。</summary>
+        internal JsonReaderUtf16(ReadOnlySpan<char> json, char* basePtr)
+        {
+            m_Advanced = 0;
+            m_Json = json;
+            m_Base = basePtr;
+            m_HasBase = true;
+        }
+
+        /// <summary>创建一个从当前读取位置开始的游标（缓冲区必须已由入口 pin 住）。</summary>
+        public JsonCursorUtf16 CreateCursor()
+        {
+            if (!m_HasBase)
+            {
+                throw new NotSupportedException(
+                    "JsonCursorUtf16 requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
+            }
+
+            return new JsonCursorUtf16(m_Base + m_Advanced, m_Base + m_Json.Length);
+        }
+
+        /// <summary>把游标消费到的位置同步回 reader。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SyncCursor(in JsonCursorUtf16 cursor)
+        {
+            m_Advanced = (int) (cursor.p - m_Base);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

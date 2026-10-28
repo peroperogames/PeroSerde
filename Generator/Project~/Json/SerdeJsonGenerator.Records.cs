@@ -241,13 +241,29 @@ public partial class SerdeJsonGenerator
         }
 
         // P1 原型: 成员全为内置基础类型时, 走游标 + 静态直调的新形态读取器
-        var utf8Body = deserializerBuilder.ToString();
+        var utf8OldBody = new StringBuilder();
+        utf8OldBody.AppendLine("            System.ReadOnlySpan<byte> key;");
+        utf8OldBody.Append(deserializerBuilder);
+        var utf8Body = utf8OldBody.ToString();
         if (members.Length > 0 && members.All(member => TryGetCursorMemberAccess(member, out _)))
         {
             var cursorBody = BuildCursorDeserializeBody(type, members);
             if (cursorBody != null)
             {
                 utf8Body = cursorBody;
+            }
+        }
+
+        var utf16OldBody = new StringBuilder();
+        utf16OldBody.AppendLine("            System.ReadOnlySpan<char> key;");
+        utf16OldBody.Append(deserializerBuilder);
+        var utf16Body = utf16OldBody.ToString();
+        if (members.Length > 0 && members.All(member => TryGetCursorMemberAccessUtf16(member, out _)))
+        {
+            var cursorBody = BuildCursorDeserializeBodyUtf16(type, members);
+            if (cursorBody != null)
+            {
+                utf16Body = cursorBody;
             }
         }
 
@@ -260,14 +276,12 @@ public partial class SerdeJsonGenerator
                      {
                          public {{type.ToDisplayString()}} DeserializeUtf8(ref System.ReadOnlySpan<byte> value, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
-                             System.ReadOnlySpan<byte> key;
                  {{utf8Body}}
                          }
 
                          public {{typeName}} DeserializeUtf16(ref System.ReadOnlySpan<char> value, ref PeroTools2.Serde.Json.JsonReaderUtf16 reader)
                          {
-                             System.ReadOnlySpan<char> key;
-                 {{deserializerBuilder}}
+                 {{utf16Body}}
                          }
 
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -434,6 +448,156 @@ public partial class SerdeJsonGenerator
     }
 
     // 游标形态的反序列化体（P1 原型）：仅在「前缀+长度」唯一时生成
+    // UTF-16 版的成员读取表达式
+    private static bool TryGetCursorMemberAccessUtf16(MemberMeta member, out string expression)
+    {
+        expression = null;
+
+        var type = member.type;
+        const string ns = "global::PeroTools2.Serde.Json";
+
+        if (member.formatter != null)
+        {
+            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
+            return true;
+        }
+
+        if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReaderUtf16(arrayType.ElementType, out var arrayReader))
+        {
+            expression = $"{ns}.JsonCollectionsUtf16.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
+            return true;
+        }
+
+        if (type is INamedTypeSymbol named && named.TypeArguments.Length == 1
+            && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
+            && TryGetCursorElementReaderUtf16(named.TypeArguments[0], out var listReader))
+        {
+            expression = $"{ns}.JsonCollectionsUtf16.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
+            return true;
+        }
+
+        if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
+        {
+            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            return true;
+        }
+
+        if (member.useFormatter && member.formatter == null)
+        {
+            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            return true;
+        }
+
+        if (TryGetCursorReader(type, out var readerName))
+        {
+            expression = $"{ns}.JsonPrimitivesUtf16.{readerName}(ref cursor)";
+            return true;
+        }
+
+        return false;
+    }
+
+    // UTF-16 元素/标量 -> struct 读取器（集合用）
+    private static bool TryGetCursorElementReaderUtf16(ITypeSymbol element, out string readerStruct)
+    {
+        readerStruct = element.SpecialType switch
+        {
+            SpecialType.System_String => "global::PeroTools2.Serde.Json.StringCursorReaderUtf16",
+            SpecialType.System_Char => "global::PeroTools2.Serde.Json.CharCursorReaderUtf16",
+            SpecialType.System_Boolean => "global::PeroTools2.Serde.Json.BooleanCursorReaderUtf16",
+            SpecialType.System_Byte => "global::PeroTools2.Serde.Json.ByteCursorReaderUtf16",
+            SpecialType.System_SByte => "global::PeroTools2.Serde.Json.SByteCursorReaderUtf16",
+            SpecialType.System_Int16 => "global::PeroTools2.Serde.Json.Int16CursorReaderUtf16",
+            SpecialType.System_UInt16 => "global::PeroTools2.Serde.Json.UInt16CursorReaderUtf16",
+            SpecialType.System_Int32 => "global::PeroTools2.Serde.Json.Int32CursorReaderUtf16",
+            SpecialType.System_UInt32 => "global::PeroTools2.Serde.Json.UInt32CursorReaderUtf16",
+            SpecialType.System_Int64 => "global::PeroTools2.Serde.Json.Int64CursorReaderUtf16",
+            SpecialType.System_UInt64 => "global::PeroTools2.Serde.Json.UInt64CursorReaderUtf16",
+            SpecialType.System_Single => "global::PeroTools2.Serde.Json.SingleCursorReaderUtf16",
+            SpecialType.System_Double => "global::PeroTools2.Serde.Json.DoubleCursorReaderUtf16",
+            SpecialType.System_Decimal => "global::PeroTools2.Serde.Json.DecimalCursorReaderUtf16",
+            _ => null,
+        };
+        return readerStruct != null;
+    }
+
+    // key 前 8 个字符打包成两个 ulong（每 4 字符一个）
+    private static void GetKeyPrefixUtf16(string key, out ulong low, out ulong high)
+    {
+        low = 0;
+        high = 0;
+        var first = key.Length < 4 ? key.Length : 4;
+        for (var i = 0; i < first; i++)
+        {
+            low |= (ulong) key[i] << (i * 16);
+        }
+
+        var second = key.Length - 4;
+        if (second > 4) second = 4;
+        for (var i = 0; i < second; i++)
+        {
+            high |= (ulong) key[i + 4] << (i * 16);
+        }
+    }
+
+    private static string BuildCursorDeserializeBodyUtf16(ITypeSymbol type, MemberMeta[] members)
+    {
+        var seen = new System.Collections.Generic.HashSet<(ulong, ulong)>();
+        foreach (var member in members)
+        {
+            GetKeyPrefixUtf16(member.formatName, out var low, out var high);
+            if (!TryGetCursorMemberAccessUtf16(member, out _))
+            {
+                return null;
+            }
+
+            if (!seen.Add((low, high)))
+            {
+                return null;
+            }
+        }
+
+        var body = new StringBuilder();
+        body.AppendLine("            if (reader.TryReadNull())");
+        body.AppendLine("            {");
+        body.AppendLine("                return default;");
+        body.AppendLine("            }");
+        body.AppendLine();
+        body.AppendLine($"            var obj = new {type.ToDisplayString()}();");
+        body.AppendLine("            var cursor = reader.CreateCursor();");
+        body.AppendLine("            cursor.Expect('{');");
+        body.AppendLine("            while (cursor.TryReadKey(out var keyLength, out var prefixLow, out var prefixHigh))");
+        body.AppendLine("            {");
+        body.AppendLine("                switch (prefixLow, prefixHigh)");
+        body.AppendLine("                {");
+        foreach (var member in members)
+        {
+            TryGetCursorMemberAccessUtf16(member, out var memberAccess);
+            GetKeyPrefixUtf16(member.formatName, out var low, out var high);
+            body.AppendLine($"                    case (0x{low:X16}UL, 0x{high:X16}UL):");
+            body.AppendLine($"                        if (keyLength == {member.formatName.Length})");
+            body.AppendLine("                        {");
+            body.AppendLine($"                            obj.{member.name} = {memberAccess};");
+            body.AppendLine("                        }");
+            body.AppendLine("                        else");
+            body.AppendLine("                        {");
+            body.AppendLine("                            cursor.SkipValue();");
+            body.AppendLine("                        }");
+            body.AppendLine("                        break;");
+        }
+        body.AppendLine("                    default:");
+        body.AppendLine("                        cursor.SkipValue();");
+        body.AppendLine("                        break;");
+        body.AppendLine("                }");
+        body.AppendLine();
+        body.AppendLine("                cursor.TryConsume(',');");
+        body.AppendLine("            }");
+        body.AppendLine();
+        body.AppendLine("            cursor.Expect('}');");
+        body.AppendLine("            reader.SyncCursor(in cursor);");
+        body.AppendLine("            return obj;");
+        return body.ToString();
+    }
     private static string BuildCursorDeserializeBody(ITypeSymbol type, MemberMeta[] members)
     {
         // switch 的标签只有前缀: 两个 key 前 8 字节相同就必须整体放弃, 否则生成重复 case
