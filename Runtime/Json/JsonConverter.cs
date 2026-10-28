@@ -289,7 +289,7 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             /// <exception cref="SerdeException">当该类型的格式化器从未注册时抛出</exception>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -307,7 +307,10 @@ namespace PeroTools2.Serde
                         throw SerdeException.ThrowFormatterNotFound(typeof(T));
                     }
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
+                }
             }
 
             /// <summary>
@@ -317,13 +320,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>
@@ -333,13 +339,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>

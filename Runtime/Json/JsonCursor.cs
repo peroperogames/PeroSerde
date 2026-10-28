@@ -73,12 +73,11 @@ namespace PeroTools2.Serde.Json
 
         /// <summary>
         /// 读取一个对象成员名。返回 false 表示已到对象结束（当前字符不是引号）。
-        /// 输出成员名区间与其前 8 字节（小端）前缀，供 switch 分发。
+        /// 输出成员名长度与其前 8 字节（小端）前缀，供 switch 分发。
         /// </summary>
-        public bool TryReadKey(out byte* keyStart, out int keyLength, out ulong prefix)
+        public bool TryReadKey(out int keyLength, out ulong prefix)
         {
             SkipWhiteSpace();
-            keyStart = p;
             keyLength = 0;
             prefix = 0;
 
@@ -100,7 +99,6 @@ namespace PeroTools2.Serde.Json
             }
 
             keyLength = (int) (p - start);
-            keyStart = start;
             prefix = StringHelper.GetKeyPrefix(start, keyLength);
             p++; // 闭引号
 

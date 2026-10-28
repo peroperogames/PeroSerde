@@ -20,9 +20,32 @@ namespace PeroTools2.Serde.Json
         public static T ReadNested<T>(ref JsonCursor cursor)
         {
             var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
-            var reader = new JsonReaderUtf8(span);
+            var reader = new JsonReaderUtf8(span, cursor.p);
             // 交给 reader 处理 fixed / unfixed 两种 formatter 形态
             var value = reader.ReadValue<T>(false);
+            cursor.p = (byte*) (cursor.end - reader.remains.Length);
+            return value;
+        }
+
+        /// <summary>用成员指定的 formatter 读取（显式 [SerdeJsonFormatter] 的类型不在 provider 注册表里）。</summary>
+        public static T ReadNested<T>(ref JsonCursor cursor, object formatter)
+        {
+            var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf8(span, cursor.p);
+            T value;
+            if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+            {
+                value = reader.ReadValue(fixedFormatter, false);
+            }
+            else if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+            {
+                value = reader.ReadValue(unfixedFormatter, false);
+            }
+            else
+            {
+                throw SerdeException.ThrowFormatterNotFound(typeof(T));
+            }
+
             cursor.p = (byte*) (cursor.end - reader.remains.Length);
             return value;
         }
@@ -172,8 +195,14 @@ namespace PeroTools2.Serde.Json
                     cursor.p += asciiAdvance;
                     return ascii;
                 }
+
+                // 非 ASCII 或非 ASCII 转义: 走通用路径解码
+                var quoted = JsonReader.ReadValueUntilEndUtf8(cursor.p, remaining, out var quotedAdvance);
+                cursor.p += quotedAdvance;
+                return Encoding.UTF8.GetString(quoted);
             }
 
+            // 非字符串 token: 只允许 null, 其余与旧路径一致直接报错
             var span = JsonReader.ReadValueUntilEndUtf8(cursor.p, remaining, out var advance);
             cursor.p += advance;
             if (SpanConverter.IsNull(span))
@@ -181,7 +210,7 @@ namespace PeroTools2.Serde.Json
                 return null;
             }
 
-            return Encoding.UTF8.GetString(span);
+            throw SerdeException.ThrowInvalidJson("Invalid json format.");
         }
     }
 }

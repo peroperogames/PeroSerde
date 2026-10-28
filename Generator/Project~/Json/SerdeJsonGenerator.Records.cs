@@ -344,14 +344,15 @@ public partial class SerdeJsonGenerator
     {
         expression = null;
 
-        // 显式 [SerdeJsonFormatter] 的成员必须走原路径
-        if (member.formatter != null)
-        {
-            return false;
-        }
-
         var type = member.type;
         const string ns = "global::PeroTools2.Serde.Json";
+
+        // 显式 [SerdeJsonFormatter] 的成员: formatter 不在 provider 注册表里, 用成员自己的实例读取
+        if (member.formatter != null)
+        {
+            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
+            return true;
+        }
 
         if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReader(arrayType.ElementType, out var arrayReader))
         {
@@ -368,6 +369,14 @@ public partial class SerdeJsonGenerator
         }
 
         if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
+        {
+            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            return true;
+        }
+
+        // enum / Nullable / 集合 / 内置结构体等: formatter 已在注册表里, 借道 reader 读取
+        // 显式 [SerdeJsonFormatter] 的成员没进注册表, 必须走原路径
+        if (member.useFormatter && member.formatter == null)
         {
             expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor)";
             return true;
@@ -427,17 +436,17 @@ public partial class SerdeJsonGenerator
     // 游标形态的反序列化体（P1 原型）：仅在「前缀+长度」唯一时生成
     private static string BuildCursorDeserializeBody(ITypeSymbol type, MemberMeta[] members)
     {
-        var seen = new System.Collections.Generic.HashSet<(ulong, int)>();
+        // switch 的标签只有前缀: 两个 key 前 8 字节相同就必须整体放弃, 否则生成重复 case
+        var seen = new System.Collections.Generic.HashSet<ulong>();
         foreach (var member in members)
         {
             var prefix = GetKeyPrefix(member.formatName);
-            var length = member.formatName.Length;
             if (!TryGetCursorMemberAccess(member, out _))
             {
                 return null;
             }
 
-            if (!seen.Add((prefix, length)))
+            if (!seen.Add(prefix))
             {
                 return null;
             }
@@ -450,45 +459,36 @@ public partial class SerdeJsonGenerator
         body.AppendLine("            }");
         body.AppendLine();
         body.AppendLine($"            var obj = new {type.ToDisplayString()}();");
-        body.AppendLine("            var consumed = 0;");
-        body.AppendLine("            unsafe");
+        body.AppendLine("            var cursor = reader.CreateCursor();");
+        body.AppendLine("            cursor.Expect((byte) '{');");
+        body.AppendLine("            while (cursor.TryReadKey(out var keyLength, out var prefix))");
         body.AppendLine("            {");
-        body.AppendLine("                fixed (byte* pStart = reader.remains)");
+        body.AppendLine("                switch (prefix)");
         body.AppendLine("                {");
-        body.AppendLine("                    var cursor = new global::PeroTools2.Serde.Json.JsonCursor(pStart, pStart + reader.remains.Length);");
-        body.AppendLine("                    cursor.Expect((byte) '{');");
-        body.AppendLine("                    while (cursor.TryReadKey(out _, out var keyLength, out var prefix))");
-        body.AppendLine("                    {");
-        body.AppendLine("                        switch (prefix)");
-        body.AppendLine("                        {");
         foreach (var member in members)
         {
             TryGetCursorMemberAccess(member, out var memberAccess);
-            body.AppendLine($"                            case 0x{GetKeyPrefix(member.formatName):X16}UL:");
-            body.AppendLine($"                                if (keyLength == {member.formatName.Length})");
-            body.AppendLine("                                {");
-            body.AppendLine($"                                    obj.{member.name} = {memberAccess};");
-            body.AppendLine("                                }");
-            body.AppendLine("                                else");
-            body.AppendLine("                                {");
-            body.AppendLine("                                    cursor.SkipValue();");
-            body.AppendLine("                                }");
-            body.AppendLine("                                break;");
+            body.AppendLine($"                    case 0x{GetKeyPrefix(member.formatName):X16}UL:");
+            body.AppendLine($"                        if (keyLength == {member.formatName.Length})");
+            body.AppendLine("                        {");
+            body.AppendLine($"                            obj.{member.name} = {memberAccess};");
+            body.AppendLine("                        }");
+            body.AppendLine("                        else");
+            body.AppendLine("                        {");
+            body.AppendLine("                            cursor.SkipValue();");
+            body.AppendLine("                        }");
+            body.AppendLine("                        break;");
         }
-        body.AppendLine("                            default:");
-        body.AppendLine("                                cursor.SkipValue();");
-        body.AppendLine("                                break;");
-        body.AppendLine("                        }");
-        body.AppendLine();
-        body.AppendLine("                        cursor.TryConsume((byte) ',');");
-        body.AppendLine("                    }");
-        body.AppendLine();
-        body.AppendLine("                    cursor.Expect((byte) '}');");
-        body.AppendLine("                    consumed = (int) (cursor.p - pStart);");
+        body.AppendLine("                    default:");
+        body.AppendLine("                        cursor.SkipValue();");
+        body.AppendLine("                        break;");
         body.AppendLine("                }");
+        body.AppendLine();
+        body.AppendLine("                cursor.TryConsume((byte) ',');");
         body.AppendLine("            }");
         body.AppendLine();
-        body.AppendLine("            reader.SkipConsumed(consumed);");
+        body.AppendLine("            cursor.Expect((byte) '}');");
+        body.AppendLine("            reader.SyncCursor(in cursor);");
         body.AppendLine("            return obj;");
         return body.ToString();
     }
