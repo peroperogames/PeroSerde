@@ -21,21 +21,10 @@ namespace PeroTools2.Serde.Json
         /// <summary>可读区间的结束位置（不含）。</summary>
         public readonly char* end;
 
-        /// <summary>可读区间的起始位置。</summary>
-        public readonly char* start;
-
         public JsonCursorUtf16(char* start, char* end)
         {
             p = start;
-            this.start = start;
             this.end = end;
-        }
-
-        /// <summary>已被消费的字符数。</summary>
-        public int Consumed
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return (int) (p - start); }
         }
 
         /// <summary>跳过一个或多个空白字符。</summary>

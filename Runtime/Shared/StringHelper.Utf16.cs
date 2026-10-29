@@ -391,8 +391,6 @@ namespace PeroTools2.Serde
                 ? (byte) (c | 0x20)
                 : c;
 
-        /// <summary>判断一个字符是否为空白字符</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         /// <summary>取 span 前 8 个字符（每 4 个字符打包成一个 ulong）作为 key 前缀，供 switch 分发。</summary>
         public static void GetKeyPrefix(ReadOnlySpan<char> key, out ulong low, out ulong high)
         {
@@ -417,6 +415,8 @@ namespace PeroTools2.Serde
             }
         }
 
+        /// <summary>判断一个字符是否为空白字符</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWhiteSpace(char c) =>
             c == 0x20 || (c >= 0x9 && c <= 0xd) || c == 0x85 || c == 0xa0;
 

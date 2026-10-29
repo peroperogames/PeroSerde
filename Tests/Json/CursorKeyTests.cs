@@ -64,6 +64,30 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         }
 
         [Test]
+        public void NonAsciiUnicodeEscapeTest()
+        {
+            // \u00E9 必须按 UTF-8 编码成 2 字节，不能被截成单字节
+            var json = Encoding.UTF8.GetBytes("\"\\u00E9\"");
+            Assert.AreEqual("é", JsonConverter.UTF8.Deserialize<string>(json));
+        }
+
+        [Test]
+        public void SurrogatePairUnicodeEscapeTest()
+        {
+            // 代理对必须合并成一个 4 字节 UTF-8 码元
+            var json = Encoding.UTF8.GetBytes("\"\\uD83D\\uDE00\"");
+            Assert.AreEqual("😀", JsonConverter.UTF8.Deserialize<string>(json));
+        }
+
+        [Test]
+        public void EscapedBackslashAtEndTest()
+        {
+            // 值内容以转义反斜杠结尾
+            var json = Encoding.UTF8.GetBytes("{\"value\":\"a\\\\\"}");
+            var value = JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(json);
+            Assert.AreEqual("a\\", value.value);
+        }
+        [Test]
         public void EightByteMemberNameTest()
         {
             var json = Encoding.UTF8.GetBytes("{\"nameabcd\":123456789}");
