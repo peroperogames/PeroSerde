@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2025/01/03-14:32:04
@@ -389,13 +389,13 @@ public partial class SerdeJsonGenerator
         // 显式 [SerdeJsonFormatter] 的成员: formatter 不在 provider 注册表里, 用成员自己的实例读取
         if (member.formatter != null)
         {
-            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
             return true;
         }
 
         if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReader(arrayType.ElementType, out var arrayReader))
         {
-            expression = $"{ns}.JsonCollections.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
             return true;
         }
 
@@ -403,13 +403,13 @@ public partial class SerdeJsonGenerator
             && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
             && TryGetCursorElementReader(named.TypeArguments[0], out var listReader))
         {
-            expression = $"{ns}.JsonCollections.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
             return true;
         }
 
         if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
         {
-            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
             return true;
         }
 
@@ -417,13 +417,13 @@ public partial class SerdeJsonGenerator
         // 显式 [SerdeJsonFormatter] 的成员没进注册表, 必须走原路径
         if (member.useFormatter && member.formatter == null)
         {
-            expression = $"{ns}.JsonPrimitives.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
             return true;
         }
 
         if (TryGetCursorReader(type, out var readerName))
         {
-            expression = $"{ns}.JsonPrimitives.{readerName}(ref cursor)";
+            expression = $"{ns}.JsonReader.{readerName}(ref cursor)";
             return true;
         }
 
@@ -489,13 +489,13 @@ public partial class SerdeJsonGenerator
 
         if (member.formatter != null)
         {
-            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
             return true;
         }
 
         if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReaderUtf16(arrayType.ElementType, out var arrayReader))
         {
-            expression = $"{ns}.JsonCollectionsUtf16.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
             return true;
         }
 
@@ -503,25 +503,25 @@ public partial class SerdeJsonGenerator
             && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
             && TryGetCursorElementReaderUtf16(named.TypeArguments[0], out var listReader))
         {
-            expression = $"{ns}.JsonCollectionsUtf16.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
             return true;
         }
 
         if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
         {
-            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
             return true;
         }
 
         if (member.useFormatter && member.formatter == null)
         {
-            expression = $"{ns}.JsonPrimitivesUtf16.ReadNested<{type.ToDisplayString()}>(ref cursor)";
+            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
             return true;
         }
 
         if (TryGetCursorReader(type, out var readerName))
         {
-            expression = $"{ns}.JsonPrimitivesUtf16.{readerName}(ref cursor)";
+            expression = $"{ns}.JsonReader.{readerName}(ref cursor)";
             return true;
         }
 

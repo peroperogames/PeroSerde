@@ -1,6 +1,7 @@
 /*
  * Copyright (c) PeroPeroGames Co., Ltd.
- * Description: 生成代码使用的 UTF-8 JSON 游标（P1 原型）
+ * Author: Gatongone
+ * Created On: 2026/10/28
  */
 
 using System;
@@ -13,7 +14,7 @@ namespace PeroTools2.Serde.Json
     /// 与 <see cref="JsonReaderUtf8"/> 的区别：游标由调用方持有为局部变量，
     /// 每字段扫描都是对局部指针的直线操作，不需要反复回写 reader 状态。
     /// </summary>
-    public unsafe struct JsonCursor
+    public unsafe struct JsonCursorUtf8
     {
         /// <summary>当前读取位置。</summary>
         public byte* p;
@@ -21,7 +22,7 @@ namespace PeroTools2.Serde.Json
         /// <summary>可读区间的结束位置（不含）。</summary>
         public readonly byte* end;
 
-        public JsonCursor(byte* start, byte* end)
+        public JsonCursorUtf8(byte* start, byte* end)
         {
             p = start;
             this.end = end;
@@ -139,8 +140,7 @@ namespace PeroTools2.Serde.Json
         /// <summary>跳过一个完整的值（未知成员时使用）。</summary>
         public void SkipValue()
         {
-            JsonReader.ReadValueUntilEndUtf8(p, (int) (end - p), out var advance);
-            p += advance;
+            p += JsonReader.SkipValueUtf8(new ReadOnlySpan<byte>(p, (int) (end - p)));
         }
     }
 }

@@ -44,21 +44,21 @@ namespace PeroTools2.Serde.Json
             m_HasBase = true;
         }
 
-        /// <summary>创建一个从当前读取位置开始的游标（缓冲区必须已由入口 pin 住）。</summary>
-        public JsonCursor CreateCursor()
+        /// <summary>创建一个从当前读取位置开始的游标</summary>
+        public JsonCursorUtf8 CreateCursor()
         {
             if (!m_HasBase)
             {
                 throw new NotSupportedException(
-                    "JsonCursor requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
+                    "JsonCursorUtf8 requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
             }
 
-            return new JsonCursor(m_Base + m_Advanced, m_Base + m_Json.Length);
+            return new JsonCursorUtf8(m_Base + m_Advanced, m_Base + m_Json.Length);
         }
 
         /// <summary>把游标消费到的位置同步回 reader。</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SyncCursor(in JsonCursor cursor)
+        public void SyncCursor(in JsonCursorUtf8 cursor)
         {
             m_Advanced = (int) (cursor.p - m_Base);
         }
@@ -149,7 +149,7 @@ namespace PeroTools2.Serde.Json
         {
             ReadBeginArray();
             ReadWhiteSpace();
-            if(m_Json[m_Advanced] == (byte) ']')
+            if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
                 return;
@@ -176,7 +176,7 @@ namespace PeroTools2.Serde.Json
         {
             ReadBeginArray();
             ReadWhiteSpace();
-            if(m_Json[m_Advanced] == (byte) ']')
+            if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
                 return;
@@ -372,8 +372,10 @@ namespace PeroTools2.Serde.Json
             }
             return index != -1;
         }
+
         #endregion
     }
+
     public unsafe ref struct JsonReaderUtf16
     {
         private int m_Advanced;
@@ -513,7 +515,7 @@ namespace PeroTools2.Serde.Json
         {
             ReadBeginArray();
             ReadWhiteSpace();
-            if(m_Json[m_Advanced] == ']')
+            if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
                 return;
@@ -540,7 +542,7 @@ namespace PeroTools2.Serde.Json
         {
             ReadBeginArray();
             ReadWhiteSpace();
-            if(m_Json[m_Advanced] == ']')
+            if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
                 return;
@@ -736,6 +738,7 @@ namespace PeroTools2.Serde.Json
             }
             return index != -1;
         }
+
         #endregion
     }
 }

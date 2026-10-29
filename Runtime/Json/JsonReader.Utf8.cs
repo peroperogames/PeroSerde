@@ -142,6 +142,15 @@ namespace PeroTools2.Serde.Json
             return Encoding.UTF8.GetString(result);
         }
 
+        /// <summary>跳过一个完整的值，返回消费的字节数（供游标使用）。</summary>
+        internal static int SkipValueUtf8(ReadOnlySpan<byte> src)
+        {
+            fixed (byte* p = src)
+            {
+                ReadValueUntilEndUtf8(p, src.Length, out var advance);
+                return advance;
+            }
+        }
         public static ReadOnlySpan<byte> ReadValueUntilEndUtf8(byte* src, int maxLength, out int advance)
         {
             var span = new Span<byte>(src, maxLength);
@@ -218,8 +227,8 @@ namespace PeroTools2.Serde.Json
             var end = -1;
             var pos = 1;
             {
-                var quote = (uint) '"' * 0x0101_0101u;
-                var slash = (uint) '\\' * 0x0101_0101u;
+                var quote = '"' * 0x0101_0101u;
+                var slash = '\\' * 0x0101_0101u;
                 var vectorLimit = span.Length - 16;
                 while (pos <= vectorLimit)
                 {
@@ -345,7 +354,6 @@ namespace PeroTools2.Serde.Json
             result = chars;
             return true;
 
-
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)
             {
@@ -357,6 +365,7 @@ namespace PeroTools2.Serde.Json
         }
 
         #region Read Nullable
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte? ReadNullableSbyteUtf8(byte* src, out int advance)
         {
@@ -455,6 +464,177 @@ namespace PeroTools2.Serde.Json
 
         #region Read Primitive
 
+        /// <summary>读取嵌套的 [SerdeJsonSerializable] 对象：借道 reader，把消费量同步回游标。</summary>
+        public static T ReadNested<T>(ref JsonCursorUtf8 cursor)
+        {
+            var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf8(span, cursor.p);
+            // 交给 reader 处理 fixed / unfixed 两种 formatter 形态
+            var value = reader.ReadValue<T>();
+            cursor.p = cursor.end - reader.remains.Length;
+            return value;
+        }
+
+        /// <summary>用成员指定的 formatter 读取（显式 [SerdeJsonFormatter] 的类型不在 provider 注册表里）。</summary>
+        public static T ReadNested<T>(ref JsonCursorUtf8 cursor, object formatter)
+        {
+            var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf8(span, cursor.p);
+            T value;
+            if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+            {
+                value = reader.ReadValue(fixedFormatter);
+            }
+            else if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+            {
+                value = reader.ReadValue(unfixedFormatter);
+            }
+            else
+            {
+                throw SerdeException.ThrowFormatterNotFound(typeof(T));
+            }
+
+            cursor.p = cursor.end - reader.remains.Length;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ReadInt32(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadIntUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ReadInt64(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadLongUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ReadUInt32(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUintUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ReadUInt64(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUlongUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ReadInt16(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadShortUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ReadUInt16(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUshortUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte ReadByte(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadByteUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static sbyte ReadSByte(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadSbyteUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ReadSingle(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadFloatUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double ReadDouble(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadDoubleUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static decimal ReadDecimal(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadDecimalUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ReadBoolean(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadBoolUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static char ReadChar(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadCharUtf8(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ReadString(ref JsonCursorUtf8 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadStringValueUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        /// <summary>跳过空白并确认还有内容可读。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void BeginPrimitive(ref JsonCursorUtf8 cursor)
+        {
+            cursor.SkipWhiteSpace();
+            if (cursor.p >= cursor.end)
+            {
+                throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            }
+        }
+
         /// <summary>读转义字符, 支持UTF8和UTF16</summary>
         // ReSharper disable once CognitiveComplexity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -467,21 +647,29 @@ namespace PeroTools2.Serde.Json
             switch (esc)
             {
                 case '"':
-                    advance = 2; return '"';
+                    advance = 2;
+                    return '"';
                 case '\\':
-                    advance = 2; return '\\';
+                    advance = 2;
+                    return '\\';
                 case '/':
-                    advance = 2; return '/';
+                    advance = 2;
+                    return '/';
                 case 'b':
-                    advance = 2; return '\b';
+                    advance = 2;
+                    return '\b';
                 case 't':
-                    advance = 2; return '\t';
+                    advance = 2;
+                    return '\t';
                 case 'n':
-                    advance = 2; return '\n';
+                    advance = 2;
+                    return '\n';
                 case 'f':
-                    advance = 2; return '\f';
+                    advance = 2;
+                    return '\f';
                 case 'r':
-                    advance = 2; return '\r';
+                    advance = 2;
+                    return '\r';
                 case 'u':
                 {
                     // Expect \uXXXX (4 hex digits)
@@ -499,7 +687,6 @@ namespace PeroTools2.Serde.Json
                 default:
                     throw SerdeException.ThrowInvalidEscapedChar(esc);
             }
-
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)

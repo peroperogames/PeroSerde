@@ -400,7 +400,7 @@ namespace PeroTools2.Serde
             {
                 if (typeof(T).IsArray)
                 {
-                    var type = typeof(Json.ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
+                    var type = typeof(ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
@@ -419,13 +419,13 @@ namespace PeroTools2.Serde
                 if (IsKeyValuePair(typeof(T)))
                 {
                     var args = typeof(T).GenericTypeArguments;
-                    var type = typeof(Json.KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
+                    var type = typeof(KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
                 if (IsNullable(typeof(T)))
                 {
-                    var type = typeof(Json.NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
+                    var type = typeof(NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }

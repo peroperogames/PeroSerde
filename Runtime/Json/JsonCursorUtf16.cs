@@ -1,6 +1,7 @@
 /*
  * Copyright (c) PeroPeroGames Co., Ltd.
- * Description: 生成代码使用的 UTF-16 JSON 游标（P1 原型）
+ * Author: Gatongone
+ * Created On: 2026/10/28
  */
 
 using System;
@@ -9,7 +10,7 @@ using System.Runtime.CompilerServices;
 namespace PeroTools2.Serde.Json
 {
     /// <summary>
-    /// 供源生成的序列化器使用的 UTF-16 只读游标，与 <see cref="JsonCursor"/> 一一对应。
+    /// 供源生成的序列化器使用的 UTF-16 只读游标，与 <see cref="JsonCursorUtf8"/> 一一对应。
     /// key 前缀用两个 ulong 表示（前 4 个字符 + 后 4 个字符），保证与 UTF-8 版同等的区分度。
     /// </summary>
     public unsafe struct JsonCursorUtf16
