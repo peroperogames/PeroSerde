@@ -20,13 +20,6 @@ namespace PeroTools2.Serde.Json
 
         private readonly bool m_HasBase;
 
-        /// <summary>reader 是否在入口处 pin 住了缓冲区；只有 pin 过才能创建游标。</summary>
-        public bool HasPinnedBuffer
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return m_HasBase; }
-        }
-
         public readonly ReadOnlySpan<byte> json => m_Json;
 
         public readonly ReadOnlySpan<byte> remains
@@ -393,13 +386,6 @@ namespace PeroTools2.Serde.Json
         private readonly char* m_Base;
 
         private readonly bool m_HasBase;
-
-        /// <summary>reader 是否在入口处 pin 住了缓冲区；只有 pin 过才能创建游标。</summary>
-        public bool HasPinnedBuffer
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return m_HasBase; }
-        }
 
         public readonly ReadOnlySpan<char> json => m_Json;
 

@@ -251,7 +251,7 @@ public partial class SerdeJsonGenerator
             if (cursorBody != null)
             {
                 // 未 pin 的 reader（调用方自己 new 一个再调 formatter）回退旧形态
-                utf8Body = WrapOnPinned("reader.HasPinnedBuffer", utf8OldBody.ToString(), cursorBody);
+                utf8Body = cursorBody;
             }
         }
 
@@ -264,7 +264,7 @@ public partial class SerdeJsonGenerator
             var cursorBody = BuildCursorDeserializeBodyUtf16(type, members);
             if (cursorBody != null)
             {
-                utf16Body = WrapOnPinned("reader.HasPinnedBuffer", utf16OldBody.ToString(), cursorBody);
+                utf16Body = cursorBody;
             }
         }
 
@@ -331,20 +331,6 @@ public partial class SerdeJsonGenerator
     }
 
     // 只有纯 ASCII 且不含 " 和 \ 的成员名, 生成期常量才与运行期的前缀/长度语义一致
-    // pin 过缓冲区才走游标形态；否则回退旧形态，保证公开入口的行为不随类型形态变化
-    private static string WrapOnPinned(string readerExpr, string oldBody, string cursorBody)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("            if (!" + readerExpr + ")");
-        builder.AppendLine("            {");
-        builder.Append(IndentBody(oldBody, "    "));
-        builder.AppendLine("            }");
-        builder.AppendLine("            else");
-        builder.AppendLine("            {");
-        builder.Append(IndentBody(cursorBody, "    "));
-        builder.AppendLine("            }");
-        return builder.ToString();
-    }
 
     private static string IndentBody(string body, string indent)
     {
