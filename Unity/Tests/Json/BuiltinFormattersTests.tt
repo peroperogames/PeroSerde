@@ -1,0 +1,118 @@
+<#@ template language="C#" #>
+<#
+// Serialization always allocates a string, so exactly one allocation is expected.
+(string type, string ctor, int serializeAllocateTimes, int deserializeAllocateTimes)[] builtinTypes =
+[
+    ("Vector2Type", "new Vector2Type(new Vector2(0.5f, 0.5f))", 1, 0),
+    ("Vector3Type", "new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f))", 1, 0),
+    ("Vector4Type", "new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
+    ("Vector2IntType", "new Vector2IntType(new Vector2Int(12, 34))", 1, 0),
+    ("Vector3IntType", "new Vector3IntType(new Vector3Int(12, 34, 56))", 1, 0),
+    ("QuaternionType", "new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
+    ("ColorType", "new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
+    ("HexColorType", "new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f))", 1 ,0),
+];
+#>
+/*
+ * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2024/12/25
+ */
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using NUnit.Framework;
+using PeroTools2.Serde.Editor.Tests;
+
+namespace PeroTools2.Serde.Json.Editor.Tests
+{
+    public sealed class BuiltinFormattersTests
+    {
+    <#
+    for (var i = 0; i < builtinTypes.Length; i++)
+    {
+        var type = builtinTypes[i].type;
+        var ctor = builtinTypes[i].ctor;
+        var serializeAllocateTimes = builtinTypes[i].serializeAllocateTimes;
+        var deserializeAllocateTimes = builtinTypes[i].deserializeAllocateTimes;
+        var typeName = type.Replace("<", "").Replace(">","").Replace("[","").Replace("]", "Array").Replace(",", "");
+    #>
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void <#= typeName #>SerializeTest(Encoding encoding)
+        {
+            var obj = <#= ctor #>;
+            var json = encoding == Encoding.UTF8
+                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+                : JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<<#= type #>>(json));
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void <#= typeName #>DeserializeTest(Encoding encoding)
+        {
+            var obj = <#= ctor #>;
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var newObj = encoding == Encoding.UTF8
+                ? JsonConverter.UTF8.Deserialize<<#= type #>>(System.Text.Encoding.UTF8.GetBytes(json))
+                : JsonConverter.UTF16.Deserialize<<#= type #>>(json);
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void <#= typeName #>SerializeNoGCTest(Encoding encoding)
+        {
+            var obj = <#= ctor #>;
+            // Warm up once so pooled buffers are already rented.
+            Serialize(encoding, obj);
+
+            var action = new TestDelegate(() => { Serialize(encoding, obj); });
+            // Serializing produces a string, so an allocation is expected.
+            Assert.That(action, Is.Not.AllocatingGCMemory(<#= serializeAllocateTimes #>));
+
+            static void Serialize(Encoding encodingType, <#= type #> serializeObj)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Serialize(serializeObj);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Serialize(serializeObj);
+                }
+            }
+        }
+
+        [TestCase(Encoding.UTF8)]
+        [TestCase(Encoding.UTF16)]
+        public void <#= typeName #>DeserializeNoGCTest(Encoding encoding)
+        {
+            var obj = <#= ctor #>;
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
+            // Warm up once to cover pool allocation.
+            Deserialize(encoding, json, utf8Bytes);
+
+            var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
+            Assert.That(action, Is.Not.AllocatingGCMemory(<#= deserializeAllocateTimes #>));
+
+            static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
+            {
+                if (encodingType == Encoding.UTF8)
+                {
+                    JsonConverter.UTF8.Deserialize<<#= type #>>(utf8);
+                }
+                else
+                {
+                    JsonConverter.UTF16.Deserialize<<#= type #>>(jsonText);
+                }
+            }
+        }
+    <#
+    }
+    #>
+    }
+}

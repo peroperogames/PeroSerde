@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>PeroTools2.Serde.Core</RootNamespace>
+    <AssemblyName>PeroTools2.Serde.Core</AssemblyName>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+  </ItemGroup>
+
+    <Target Name="PostBuild" BeforeTargets="PostBuildEvent">
+        <PropertyGroup>
+            <UnitySupportVer>'netstandard2.1'</UnitySupportVer>
+            <DotNetVer>'$([System.IO.Path]::GetFileName('$(OutDir.TrimEnd('\'))'))'</DotNetVer>
+            <UnityOutDir>$(ProjectDir)..\Unity\Plugins</UnityOutDir>
+        </PropertyGroup>
+        <ItemGroup>
+            <UnityOutFiles Include="$(UnityOutDir)\*.*"/>
+            <ProjDlls Include="$(OutputPath)$(ProjectName).dll"/>
+            <ProjDlls Include="$(OutputPath)$(ProjectName).mdb" Condition="Exists('$(OutputPath)$(ProjectName).mdb')"/>
+            <ProjDlls Include="$(OutputPath)$(ProjectName).pdb" Condition="Exists('$(OutputPath)$(ProjectName).pdb')"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(ProjDlls)" DestinationFolder="$(UnityOutDir)" SkipUnchangedFiles="true" Condition=" $(DotNetVer) == $(UnitySupportVer) "/>
+    </Target>
+
+</Project>
