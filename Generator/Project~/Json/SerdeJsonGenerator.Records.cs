@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2025/01/03-14:32:04
@@ -353,10 +353,35 @@ public partial class SerdeJsonGenerator
         return readerStruct != null;
     }
 
+    // 只有纯 ASCII 且不含 " 和 \ 的成员名, 生成期常量才与运行期的前缀/长度语义一致
+    private static bool IsSimpleKey(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return false;
+        }
+
+        foreach (var c in name)
+        {
+            if (c < 0x20 || c > 0x7e || c == '"' || c == '\\')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     // 成员的游标读取表达式（含 ref cursor）；不支持时返回 false
     private static bool TryGetCursorMemberAccess(MemberMeta member, out string expression)
     {
         expression = null;
+
+        // 非 ASCII 或含需要转义的字符时, 生成期常量与运行期的前缀/长度不一致, 回退老路径
+        if (!IsSimpleKey(member.formatName))
+        {
+            return false;
+        }
 
         var type = member.type;
         const string ns = "global::PeroTools2.Serde.Json";
@@ -452,6 +477,12 @@ public partial class SerdeJsonGenerator
     private static bool TryGetCursorMemberAccessUtf16(MemberMeta member, out string expression)
     {
         expression = null;
+
+        // 非 ASCII 或含需要转义的字符时, 生成期常量与运行期的前缀/长度不一致, 回退老路径
+        if (!IsSimpleKey(member.formatName))
+        {
+            return false;
+        }
 
         var type = member.type;
         const string ns = "global::PeroTools2.Serde.Json";

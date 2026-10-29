@@ -113,6 +113,9 @@ namespace PeroTools2.Serde.Json
             throw SerdeException.ThrowInvalidAdvance();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
+
         /// <summary>字符串类型的唯一解析入口：ASCII 快路径 + 通用解码，null 返回 null。</summary>
         internal static string ReadStringValueUtf8(byte* src, int length, out int advance)
         {
@@ -284,8 +287,19 @@ namespace PeroTools2.Serde.Json
             {
                 if (token[i] == (byte) '\\')
                 {
+                    // 转义序列不完整（恰好在缓冲区末尾被截断）: 交给通用路径处理
+                    if (i + 1 >= token.Length)
+                    {
+                        return false;
+                    }
+
                     if (token[i + 1] == (byte) 'u')
                     {
+                        if (i + 5 >= token.Length)
+                        {
+                            return false;
+                        }
+
                         var h1 = Hex(token[i + 2]);
                         var h2 = Hex(token[i + 3]);
                         var h3 = Hex(token[i + 4]);
@@ -331,8 +345,6 @@ namespace PeroTools2.Serde.Json
             result = chars;
             return true;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)
@@ -488,8 +500,6 @@ namespace PeroTools2.Serde.Json
                     throw SerdeException.ThrowInvalidEscapedChar(esc);
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int Hex(byte c)

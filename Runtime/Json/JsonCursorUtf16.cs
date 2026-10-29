@@ -98,8 +98,31 @@ namespace PeroTools2.Serde.Json
 
             p++;
             var start = p;
-            while (p < end && !(*p == '"' && *(p - 1) != '\\'))
+
+            // 转义状态机: 不能用「看前一个字符是不是反斜杠」, 否则 key 以 \\ 结尾时会吞掉闭引号
+            var escaped = false;
+            while (p < end)
             {
+                var c = *p;
+                if (escaped)
+                {
+                    escaped = false;
+                    p++;
+                    continue;
+                }
+
+                if (c == '\\')
+                {
+                    escaped = true;
+                    p++;
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    break;
+                }
+
                 p++;
             }
 
