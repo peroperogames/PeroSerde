@@ -10,6 +10,7 @@ namespace PeroTools2.Serde.Json
 {
     /// <summary>
     /// UTF-16 版的基础类型直读入口，与 <see cref="JsonPrimitives"/> 一一对应。
+    /// 解析逻辑同样只有一份实现：全部转发给 <see cref="JsonReader"/> 的 <c>ReadXxxUtf16</c>。
     /// </summary>
     public static unsafe class JsonPrimitivesUtf16
     {
@@ -49,156 +50,138 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ReadInt32(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadIntUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToInt(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ReadInt64(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadLongUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToLong(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadUInt32(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUintUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUint(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ReadUInt64(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUlongUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUlong(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short ReadInt16(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadShortUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToShort(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ReadUInt16(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUshortUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUshort(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ReadByte(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadByteUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToByte(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte ReadSByte(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadSbyteUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToSbyte(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ReadSingle(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadFloatUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToFloat(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ReadDouble(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadDoubleUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToDouble(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static decimal ReadDecimal(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadDecimalUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToDecimal(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ReadBoolean(ref JsonCursorUtf16 cursor)
         {
-            var span = ReadPrimitive(ref cursor, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadBoolUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToBool(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char ReadChar(ref JsonCursorUtf16 cursor)
         {
-            var remaining = BeginPrimitive(ref cursor);
-            if (remaining[0] == '"')
-            {
-                var quoted = JsonReader.ReadValueUntilEndUtf16(cursor.p, remaining.Length, out var quotedAdvance);
-                cursor.p += quotedAdvance;
-                return quoted.Length > 0 ? SpanConverter.ToChar(quoted) : '\0';
-            }
-
-            var span = JsonReader.ReadValueUntilEndUtf16(cursor.p, remaining.Length, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadCharUtf16(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToChar(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ReadString(ref JsonCursorUtf16 cursor)
         {
-            var remaining = BeginPrimitive(ref cursor);
-            if (remaining[0] == '"')
-            {
-                var quoted = JsonReader.ReadValueUntilEndUtf16(cursor.p, remaining.Length, out var quotedAdvance);
-                cursor.p += quotedAdvance;
-                return SpanConverter.ToString(quoted);
-            }
-
-            // 非字符串 token: 只允许 null, 其余与旧路径一致直接报错
-            var span = JsonReader.ReadValueUntilEndUtf16(cursor.p, remaining.Length, out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadStringValueUtf16(cursor.p, (int) (cursor.end - cursor.p), out var advance);
             cursor.p += advance;
-            if (SpanConverter.IsNull(span))
-            {
-                return null;
-            }
-
-            throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            return value;
         }
 
-        /// <summary>读出当前数值 token 的原始区间。</summary>
+        /// <summary>跳过空白并确认还有内容可读。</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlySpan<char> ReadPrimitive(ref JsonCursorUtf16 cursor, out int advance)
-        {
-            var remaining = BeginPrimitive(ref cursor);
-            return JsonReader.ReadPrimitiveUntilEndUtf16(cursor.p, remaining.Length, out advance);
-        }
-
-        /// <summary>跳过空白并返回剩余区间；空输入直接抛错。</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlySpan<char> BeginPrimitive(ref JsonCursorUtf16 cursor)
+        private static void BeginPrimitive(ref JsonCursorUtf16 cursor)
         {
             cursor.SkipWhiteSpace();
             if (cursor.p >= cursor.end)
             {
                 throw SerdeException.ThrowInvalidJson("Invalid json format.");
             }
-
-            return new ReadOnlySpan<char>(cursor.p, (int) (cursor.end - cursor.p));
         }
     }
 }

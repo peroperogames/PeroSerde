@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2024/12/23
@@ -27,52 +27,32 @@ namespace PeroTools2.Serde.Json
         public string DeserializeUtf8(ref ReadOnlySpan<byte> span, ref JsonReaderUtf8 reader)
         {
             var remains = reader.remains;
-            // 纯 ASCII 时直接一次分配成 string（含转义），避免中间 byte[] 分配
-            if (remains.Length > 0 && remains[0] == (byte) '"')
+            unsafe
             {
-                unsafe
+                fixed (byte* src = remains)
                 {
-                    fixed (byte* src = remains)
-                    {
-                        if (JsonReader.TryReadAsciiStringUtf8(src, remains.Length, out var asciiValue, out var advance))
-                        {
-                            reader.Advance(advance);
-                            return asciiValue;
-                        }
-                    }
+                    // 与游标路径共用同一个字符串解析入口
+                    var value = JsonReader.ReadStringValueUtf8(src, remains.Length, out var advance);
+                    reader.Advance(advance);
+                    return value;
                 }
             }
-
-            var result = reader.ReadUntilEnd();
-            if (SpanConverter.IsNull(result)) return null;
-            if(remains[0] != (byte) '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
-            return SpanConverter.IsNull(result) ? null : Encoding.UTF8.GetString(result);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string DeserializeUtf16(ref ReadOnlySpan<char> span, ref JsonReaderUtf16 reader)
         {
             var remains = reader.remains;
-            // 直接一次分配成 string，同时支持字符串结束在缓冲区末尾的情况
-            if (remains.Length > 0 && remains[0] == '"')
+            unsafe
             {
-                unsafe
+                fixed (char* src = remains)
                 {
-                    fixed (char* src = remains)
-                    {
-                        if (JsonReader.TryReadStringUtf16(src, remains.Length, out var value, out var advance))
-                        {
-                            reader.Advance(advance);
-                            return value;
-                        }
-                    }
+                    // 与游标路径共用同一个字符串解析入口
+                    var value = JsonReader.ReadStringValueUtf16(src, remains.Length, out var advance);
+                    reader.Advance(advance);
+                    return value;
                 }
             }
-
-            var result = reader.ReadUntilEnd();
-            if (SpanConverter.IsNull(result)) return null;
-            if(remains[0] != '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
-            return result.ToString();
         }
     }
 }

@@ -5,7 +5,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace PeroTools2.Serde.Json
 {
@@ -14,6 +13,11 @@ namespace PeroTools2.Serde.Json
     /// 生成代码直接调用这些静态方法，跳过 <see cref="SerdeJsonFormatterProvider"/>
     /// 的每值查找与 <c>ISerdeJsonFormatter</c> 的接口分发。
     /// </summary>
+    /// <remarks>
+    /// 每种类型的解析逻辑只有一份实现：这里全部转发给 <see cref="JsonReader"/> 的
+    /// <c>ReadXxxUtf8</c>，内置 formatter 走的是同一批入口，保证两条路径行为一致。
+    /// 本类只负责「跳过空白 + 推进游标」。
+    /// </remarks>
     public static unsafe class JsonPrimitives
     {
         /// <summary>读取嵌套的 [SerdeJsonSerializable] 对象：借道 reader，把消费量同步回游标。</summary>
@@ -53,164 +57,138 @@ namespace PeroTools2.Serde.Json
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ReadInt32(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadIntUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToInt(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ReadInt64(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadLongUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToLong(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadUInt32(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUintUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUint(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ReadUInt64(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUlongUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUlong(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short ReadInt16(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadShortUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToShort(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ushort ReadUInt16(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadUshortUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToUshort(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ReadByte(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadByteUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToByte(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte ReadSByte(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadSbyteUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToSbyte(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ReadSingle(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadFloatUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToFloat(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ReadDouble(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadDoubleUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToDouble(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static decimal ReadDecimal(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadDecimalUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToDecimal(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ReadBoolean(ref JsonCursor cursor)
         {
-            cursor.SkipWhiteSpace();
-            var span = JsonReader.ReadPrimitiveUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadBoolUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToBool(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char ReadChar(ref JsonCursor cursor)
         {
-            // char 在 JSON 里是带引号的单字符串（如 "a"），需要先按字符串读取再取第一个字符
-            cursor.SkipWhiteSpace();
-            if (cursor.p < cursor.end && *cursor.p == (byte) '"')
-            {
-                var remaining = (int) (cursor.end - cursor.p);
-                if (JsonReader.TryReadAsciiStringUtf8(cursor.p, remaining, out var ascii, out var asciiAdvance))
-                {
-                    cursor.p += asciiAdvance;
-                    return ascii.Length > 0 ? ascii[0] : '\0';
-                }
-            }
-
-            var span = JsonReader.ReadValueUntilEndUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadCharUtf8(cursor.p, out var advance);
             cursor.p += advance;
-            return SpanConverter.ToChar(span);
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ReadString(ref JsonCursor cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = JsonReader.ReadStringValueUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        /// <summary>跳过空白并确认还有内容可读。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void BeginPrimitive(ref JsonCursor cursor)
         {
             cursor.SkipWhiteSpace();
             if (cursor.p >= cursor.end)
             {
                 throw SerdeException.ThrowInvalidJson("Invalid json format.");
             }
-
-            var remaining = (int) (cursor.end - cursor.p);
-            if (*cursor.p == (byte) '"')
-            {
-                if (JsonReader.TryReadAsciiStringUtf8(cursor.p, remaining, out var ascii, out var asciiAdvance))
-                {
-                    cursor.p += asciiAdvance;
-                    return ascii;
-                }
-
-                // 非 ASCII 或非 ASCII 转义: 走通用路径解码
-                var quoted = JsonReader.ReadValueUntilEndUtf8(cursor.p, remaining, out var quotedAdvance);
-                cursor.p += quotedAdvance;
-                return Encoding.UTF8.GetString(quoted);
-            }
-
-            // 非字符串 token: 只允许 null, 其余与旧路径一致直接报错
-            var span = JsonReader.ReadValueUntilEndUtf8(cursor.p, remaining, out var advance);
-            cursor.p += advance;
-            if (SpanConverter.IsNull(span))
-            {
-                return null;
-            }
-
-            throw SerdeException.ThrowInvalidJson("Invalid json format.");
         }
     }
 }

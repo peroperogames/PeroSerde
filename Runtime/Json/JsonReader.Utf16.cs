@@ -124,6 +124,32 @@ namespace PeroTools2.Serde.Json
             throw SerdeException.ThrowInvalidAdvance();
         }
 
+        /// <summary>UTF-16 字符串类型的唯一解析入口：null 返回 null。</summary>
+        internal static string ReadStringValueUtf16(char* src, int length, out int advance)
+        {
+            advance = 0;
+            if (length > 0 && src[0] == '"')
+            {
+                if (TryReadStringUtf16(src, length, out var value, out advance))
+                {
+                    return value;
+                }
+            }
+
+            var result = ReadValueUntilEndUtf16(src, length, out advance);
+            if (SpanConverter.IsNull(result))
+            {
+                return null;
+            }
+
+            if (length == 0 || src[0] != '"')
+            {
+                throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
+            }
+
+            return SpanConverter.ToString(result);
+        }
+
         public static ReadOnlySpan<char> ReadValueUntilEndUtf16(char* src, int maxLength, out int advance)
         {
             var span = new Span<char>(src, maxLength);

@@ -113,6 +113,32 @@ namespace PeroTools2.Serde.Json
             throw SerdeException.ThrowInvalidAdvance();
         }
 
+        /// <summary>字符串类型的唯一解析入口：ASCII 快路径 + 通用解码，null 返回 null。</summary>
+        internal static string ReadStringValueUtf8(byte* src, int length, out int advance)
+        {
+            advance = 0;
+            if (length > 0 && src[0] == (byte) '"')
+            {
+                if (TryReadAsciiStringUtf8(src, length, out var asciiValue, out advance))
+                {
+                    return asciiValue;
+                }
+            }
+
+            var result = ReadValueUntilEndUtf8(src, length, out advance);
+            if (SpanConverter.IsNull(result))
+            {
+                return null;
+            }
+
+            if (length == 0 || src[0] != (byte) '"')
+            {
+                throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
+            }
+
+            return Encoding.UTF8.GetString(result);
+        }
+
         public static ReadOnlySpan<byte> ReadValueUntilEndUtf8(byte* src, int maxLength, out int advance)
         {
             var span = new Span<byte>(src, maxLength);
