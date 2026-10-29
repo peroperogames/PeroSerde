@@ -177,8 +177,48 @@ namespace PeroTools2.Serde.Json
                     var character = span[i];
                     if (character == '\\')
                     {
-                        result[index++] = (byte) ReadEscapedCharUtf8(src + i, out var length);
+                        var escapedChar = ReadEscapedCharUtf8(src + i, out var length);
                         i += length - 1; // -1 跳过当前字符
+                        if (escapedChar < 0x80)
+                        {
+                            result[index++] = (byte) escapedChar;
+                        }
+                        else if (escapedChar < 0x800)
+                        {
+                            result[index++] = (byte) (0xC0 | (escapedChar >> 6));
+                            result[index++] = (byte) (0x80 | (escapedChar & 0x3F));
+                        }
+                        else if (char.IsHighSurrogate(escapedChar)
+                                 && i + 6 < span.Length
+                                 && span[i + 1] == '\\'
+                                 && span[i + 2] == 'u')
+                        {
+                            // 代理对必须合并成一个 4 字节码元, 否则会写出非法 UTF-8
+                            var low = ReadEscapedCharUtf8(src + i + 1, out var lowLength);
+                            if (char.IsLowSurrogate(low))
+                            {
+                                i += lowLength;
+                                var codePoint = char.ConvertToUtf32(escapedChar, low);
+                                result[index++] = (byte) (0xF0 | (codePoint >> 18));
+                                result[index++] = (byte) (0x80 | ((codePoint >> 12) & 0x3F));
+                                result[index++] = (byte) (0x80 | ((codePoint >> 6) & 0x3F));
+                                result[index++] = (byte) (0x80 | (codePoint & 0x3F));
+                            }
+                            else
+                            {
+                                result[index++] = (byte) '?';
+                            }
+                        }
+                        else if (char.IsSurrogate(escapedChar))
+                        {
+                            result[index++] = (byte) '?';
+                        }
+                        else
+                        {
+                            result[index++] = (byte) (0xE0 | (escapedChar >> 12));
+                            result[index++] = (byte) (0x80 | ((escapedChar >> 6) & 0x3F));
+                            result[index++] = (byte) (0x80 | (escapedChar & 0x3F));
+                        }
                     }
                     else if (character == '"')
                     {

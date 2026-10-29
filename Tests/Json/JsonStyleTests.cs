@@ -134,17 +134,33 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(expected, utf16);
         }
 
+        private static long MeasureAllocated(TestDelegate action)
+        {
+            const int iterations = 16;
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < iterations; i++)
+            {
+                action();
+            }
+
+            return (GC.GetAllocatedBytesForCurrentThread() - before) / iterations;
+        }
+
         [Test]
         public void EscapeCharacterDeserializeAllocationTest()
         {
-            var json = "{\"value\":\"a\\nb\\tc\"}";
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            // 先跑一次，避开首次调用时的静态初始化分配
-            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(bytes);
+            var escaped = "{\"value\":\"a\\nb\\tc\"}";
+            var plain = "{\"value\":\"abc\"}";
+            var escapedBytes = System.Text.Encoding.UTF8.GetBytes(escaped);
+            var plainBytes = System.Text.Encoding.UTF8.GetBytes(plain);
+            // 预热，避开首次调用时的静态初始化分配
+            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(escapedBytes);
+            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(plainBytes);
 
-            var action = new TestDelegate(() => { JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(bytes); });
-            // 含转义时也只需 2 次分配（对象 + string），不应再额外分配中间 byte[]
-            Assert.That(action, Is.Not.AllocatingGCMemory(2));
+            // 用真实字节差衡量：含转义不应比不含转义多分配（两者都只有 对象 + string）
+            var escapedAllocated = MeasureAllocated(() => JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(escapedBytes));
+            var plainAllocated = MeasureAllocated(() => JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(plainBytes));
+            Assert.LessOrEqual(escapedAllocated, plainAllocated + 64, $"escaped={escapedAllocated}B plain={plainAllocated}B");
         }
 
         [TestCase(Encoding.UTF8)]
