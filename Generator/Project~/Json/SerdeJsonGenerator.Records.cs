@@ -329,30 +329,6 @@ public partial class SerdeJsonGenerator
             or SpecialType.System_Decimal;
     }
 
-    // 元素/标量 -> struct 读取器（集合用）
-    private static bool TryGetCursorElementReader(ITypeSymbol element, out string readerStruct)
-    {
-        readerStruct = element.SpecialType switch
-        {
-            SpecialType.System_String => "global::PeroTools2.Serde.Json.StringCursorReader",
-            SpecialType.System_Char => "global::PeroTools2.Serde.Json.CharCursorReader",
-            SpecialType.System_Boolean => "global::PeroTools2.Serde.Json.BooleanCursorReader",
-            SpecialType.System_Byte => "global::PeroTools2.Serde.Json.ByteCursorReader",
-            SpecialType.System_SByte => "global::PeroTools2.Serde.Json.SByteCursorReader",
-            SpecialType.System_Int16 => "global::PeroTools2.Serde.Json.Int16CursorReader",
-            SpecialType.System_UInt16 => "global::PeroTools2.Serde.Json.UInt16CursorReader",
-            SpecialType.System_Int32 => "global::PeroTools2.Serde.Json.Int32CursorReader",
-            SpecialType.System_UInt32 => "global::PeroTools2.Serde.Json.UInt32CursorReader",
-            SpecialType.System_Int64 => "global::PeroTools2.Serde.Json.Int64CursorReader",
-            SpecialType.System_UInt64 => "global::PeroTools2.Serde.Json.UInt64CursorReader",
-            SpecialType.System_Single => "global::PeroTools2.Serde.Json.SingleCursorReader",
-            SpecialType.System_Double => "global::PeroTools2.Serde.Json.DoubleCursorReader",
-            SpecialType.System_Decimal => "global::PeroTools2.Serde.Json.DecimalCursorReader",
-            _ => null,
-        };
-        return readerStruct != null;
-    }
-
     // 只有纯 ASCII 且不含 " 和 \ 的成员名, 生成期常量才与运行期的前缀/长度语义一致
     private static bool IsSimpleKey(string name)
     {
@@ -390,20 +366,6 @@ public partial class SerdeJsonGenerator
         if (member.formatter != null)
         {
             expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
-            return true;
-        }
-
-        if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReader(arrayType.ElementType, out var arrayReader))
-        {
-            expression = $"{ns}.JsonReader.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
-            return true;
-        }
-
-        if (type is INamedTypeSymbol named && named.TypeArguments.Length == 1
-            && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
-            && TryGetCursorElementReader(named.TypeArguments[0], out var listReader))
-        {
-            expression = $"{ns}.JsonReader.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
             return true;
         }
 
@@ -493,20 +455,6 @@ public partial class SerdeJsonGenerator
             return true;
         }
 
-        if (type is IArrayTypeSymbol arrayType && TryGetCursorElementReaderUtf16(arrayType.ElementType, out var arrayReader))
-        {
-            expression = $"{ns}.JsonReader.ReadArray<{arrayType.ElementType.ToDisplayString()}, {arrayReader}>(ref cursor)";
-            return true;
-        }
-
-        if (type is INamedTypeSymbol named && named.TypeArguments.Length == 1
-            && named.Name == "List" && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic"
-            && TryGetCursorElementReaderUtf16(named.TypeArguments[0], out var listReader))
-        {
-            expression = $"{ns}.JsonReader.ReadList<{named.TypeArguments[0].ToDisplayString()}, {listReader}>(ref cursor)";
-            return true;
-        }
-
         if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
         {
             expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
@@ -526,30 +474,6 @@ public partial class SerdeJsonGenerator
         }
 
         return false;
-    }
-
-    // UTF-16 元素/标量 -> struct 读取器（集合用）
-    private static bool TryGetCursorElementReaderUtf16(ITypeSymbol element, out string readerStruct)
-    {
-        readerStruct = element.SpecialType switch
-        {
-            SpecialType.System_String => "global::PeroTools2.Serde.Json.StringCursorReaderUtf16",
-            SpecialType.System_Char => "global::PeroTools2.Serde.Json.CharCursorReaderUtf16",
-            SpecialType.System_Boolean => "global::PeroTools2.Serde.Json.BooleanCursorReaderUtf16",
-            SpecialType.System_Byte => "global::PeroTools2.Serde.Json.ByteCursorReaderUtf16",
-            SpecialType.System_SByte => "global::PeroTools2.Serde.Json.SByteCursorReaderUtf16",
-            SpecialType.System_Int16 => "global::PeroTools2.Serde.Json.Int16CursorReaderUtf16",
-            SpecialType.System_UInt16 => "global::PeroTools2.Serde.Json.UInt16CursorReaderUtf16",
-            SpecialType.System_Int32 => "global::PeroTools2.Serde.Json.Int32CursorReaderUtf16",
-            SpecialType.System_UInt32 => "global::PeroTools2.Serde.Json.UInt32CursorReaderUtf16",
-            SpecialType.System_Int64 => "global::PeroTools2.Serde.Json.Int64CursorReaderUtf16",
-            SpecialType.System_UInt64 => "global::PeroTools2.Serde.Json.UInt64CursorReaderUtf16",
-            SpecialType.System_Single => "global::PeroTools2.Serde.Json.SingleCursorReaderUtf16",
-            SpecialType.System_Double => "global::PeroTools2.Serde.Json.DoubleCursorReaderUtf16",
-            SpecialType.System_Decimal => "global::PeroTools2.Serde.Json.DecimalCursorReaderUtf16",
-            _ => null,
-        };
-        return readerStruct != null;
     }
 
     // key 前 8 个字符打包成两个 ulong（每 4 字符一个）
