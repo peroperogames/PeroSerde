@@ -122,6 +122,47 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(expected, result);
         }
 
+        [TestCase("\"abc\"", "abc")]
+        [TestCase("\"a\\nb\"", "a\nb")]
+        [TestCase("\"\"", "")]
+        public void RootLevelStringDeserializeTest(string json, string expected)
+        {
+            // 根级字符串正好结束在缓冲区末尾时也必须能正确解析
+            var utf8 = JsonConverter.UTF8.Deserialize<string>(System.Text.Encoding.UTF8.GetBytes(json));
+            var utf16 = JsonConverter.UTF16.Deserialize<string>(json);
+            Assert.AreEqual(expected, utf8);
+            Assert.AreEqual(expected, utf16);
+        }
+
+        private static long MeasureAllocated(TestDelegate action)
+        {
+            const int iterations = 16;
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < iterations; i++)
+            {
+                action();
+            }
+
+            return (GC.GetAllocatedBytesForCurrentThread() - before) / iterations;
+        }
+
+        [Test]
+        public void EscapeCharacterDeserializeAllocationTest()
+        {
+            var escaped = "{\"value\":\"a\\nb\\tc\"}";
+            var plain = "{\"value\":\"abc\"}";
+            var escapedBytes = System.Text.Encoding.UTF8.GetBytes(escaped);
+            var plainBytes = System.Text.Encoding.UTF8.GetBytes(plain);
+            // 预热，避开首次调用时的静态初始化分配
+            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(escapedBytes);
+            JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(plainBytes);
+
+            // 用真实字节差衡量：含转义不应比不含转义多分配（两者都只有 对象 + string）
+            var escapedAllocated = MeasureAllocated(() => JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(escapedBytes));
+            var plainAllocated = MeasureAllocated(() => JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(plainBytes));
+            Assert.LessOrEqual(escapedAllocated, plainAllocated + 64, $"escaped={escapedAllocated}B plain={plainAllocated}B");
+        }
+
         [TestCase(Encoding.UTF8)]
         [TestCase(Encoding.UTF16)]
         public void EscapeCharacterDeserializeTest(Encoding encoding)

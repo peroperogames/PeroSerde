@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2024/12/23
@@ -27,20 +27,32 @@ namespace PeroTools2.Serde.Json
         public string DeserializeUtf8(ref ReadOnlySpan<byte> span, ref JsonReaderUtf8 reader)
         {
             var remains = reader.remains;
-            var result = reader.ReadUntilEnd();
-            if (SpanConverter.IsNull(result)) return null;
-            if(remains[0] != (byte) '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
-            return SpanConverter.IsNull(result) ? null : Encoding.UTF8.GetString(result);
+            unsafe
+            {
+                fixed (byte* src = remains)
+                {
+                    // 与游标路径共用同一个字符串解析入口
+                    var value = JsonReader.ReadStringValueUtf8(src, remains.Length, out var advance);
+                    reader.Advance(advance);
+                    return value;
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string DeserializeUtf16(ref ReadOnlySpan<char> span, ref JsonReaderUtf16 reader)
         {
             var remains = reader.remains;
-            var result = reader.ReadUntilEnd();
-            if (SpanConverter.IsNull(result)) return null;
-            if(remains[0] != '"') throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
-            return result.ToString();
+            unsafe
+            {
+                fixed (char* src = remains)
+                {
+                    // 与游标路径共用同一个字符串解析入口
+                    var value = JsonReader.ReadStringValueUtf16(src, remains.Length, out var advance);
+                    reader.Advance(advance);
+                    return value;
+                }
+            }
         }
     }
 }

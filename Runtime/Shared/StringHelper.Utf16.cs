@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: AidenMX
  * Created On: 2024/01/20
@@ -391,6 +391,30 @@ namespace PeroTools2.Serde
                 ? (byte) (c | 0x20)
                 : c;
 
+        /// <summary>取 span 前 8 个字符（每 4 个字符打包成一个 ulong）作为 key 前缀，供 switch 分发。</summary>
+        public static void GetKeyPrefix(ReadOnlySpan<char> key, out ulong low, out ulong high)
+        {
+            low = 0;
+            high = 0;
+            var length = key.Length;
+            var first = length < 4 ? length : 4;
+            for (var i = 0; i < first; i++)
+            {
+                low |= (ulong) key[i] << (i * 16);
+            }
+
+            var second = length - 4;
+            if (second > 4)
+            {
+                second = 4;
+            }
+
+            for (var i = 0; i < second; i++)
+            {
+                high |= (ulong) key[i + 4] << (i * 16);
+            }
+        }
+
         /// <summary>判断一个字符是否为空白字符</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWhiteSpace(char c) =>
@@ -404,7 +428,42 @@ namespace PeroTools2.Serde
         /// <param name="length">字符串长度</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(char* chars, int length, char c) => SlowIndexOf(chars, length, c);
+        public static int IndexOf(char* chars, int length, char c)
+        {
+            // 一次比较 8 个字符（4 个 uint，每 uint 装 2 个 char）; 误报用标量在块内确认
+            if (length < 8)
+            {
+                return SlowIndexOf(chars, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6) ^ broadcast;
+                if ((ZeroCharMask(v0) | ZeroCharMask(v1) | ZeroCharMask(v2) | ZeroCharMask(v3)) != 0)
+                {
+                    var found = SlowIndexOf(offset, 8, c);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - chars) + found;
+                    }
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            var tail = SlowIndexOf(offset, remaining, c);
+            return tail >= 0 ? (int) (offset - chars) + tail : -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ZeroCharMask(uint v) => (v - 0x0001_0001u) & ~v & 0x8000_8000u;
 
         /// <summary>
         /// 在字符串中找到指定两个字符中任意字符的索引，没找到则返回 -1。
@@ -415,8 +474,45 @@ namespace PeroTools2.Serde
         /// <param name="c2">字符2</param>
         /// <returns>返回一个 int 值。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOfAny(char* chars, int length, char c1, char c2) =>
-            SlowIndexOfAny(chars, length, c1, c2);
+        public static int IndexOfAny(char* chars, int length, char c1, char c2)
+        {
+            if (length < 8)
+            {
+                return SlowIndexOfAny(chars, length, c1, c2);
+            }
+
+            var broadcast1 = (uint) c1 * 0x0001_0001u;
+            var broadcast2 = (uint) c2 * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset);
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2);
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4);
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6);
+
+                var m0 = ZeroCharMask(v0 ^ broadcast1) | ZeroCharMask(v0 ^ broadcast2);
+                var m1 = ZeroCharMask(v1 ^ broadcast1) | ZeroCharMask(v1 ^ broadcast2);
+                var m2 = ZeroCharMask(v2 ^ broadcast1) | ZeroCharMask(v2 ^ broadcast2);
+                var m3 = ZeroCharMask(v3 ^ broadcast1) | ZeroCharMask(v3 ^ broadcast2);
+
+                if ((m0 | m1 | m2 | m3) != 0)
+                {
+                    var found = SlowIndexOfAny(offset, 8, c1, c2);
+                    if (found >= 0)
+                    {
+                        return (int) (offset - chars) + found;
+                    }
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            var tail = SlowIndexOfAny(offset, remaining, c1, c2);
+            return tail >= 0 ? (int) (offset - chars) + tail : -1;
+        }
 
         /// <summary>
         /// 检索字符串中是否存在指定字符。
@@ -426,7 +522,33 @@ namespace PeroTools2.Serde
         /// <param name="c">指定字符</param>
         /// <returns>返回是否存在</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Contains(char* chars, int length, char c) => SlowContains(chars, length, c);
+        public static bool Contains(char* chars, int length, char c)
+        {
+            if (length < 8)
+            {
+                return SlowContains(chars, length, c);
+            }
+
+            var broadcast = (uint) c * 0x0001_0001u;
+            var offset = chars;
+            var remaining = length;
+            while (remaining >= 8)
+            {
+                var v0 = Unsafe.ReadUnaligned<uint>(offset) ^ broadcast;
+                var v1 = Unsafe.ReadUnaligned<uint>(offset + 2) ^ broadcast;
+                var v2 = Unsafe.ReadUnaligned<uint>(offset + 4) ^ broadcast;
+                var v3 = Unsafe.ReadUnaligned<uint>(offset + 6) ^ broadcast;
+                if ((ZeroCharMask(v0) | ZeroCharMask(v1) | ZeroCharMask(v2) | ZeroCharMask(v3)) != 0 && SlowContains(offset, 8, c))
+                {
+                    return true;
+                }
+
+                offset += 8;
+                remaining -= 8;
+            }
+
+            return remaining > 0 && SlowContains(offset, remaining, c);
+        }
 
         /// <summary>获取字符串的元数据引用。</summary>
         /// <returns>返回第一个字符的引用</returns>
@@ -444,6 +566,63 @@ namespace PeroTools2.Serde
 #endif
         }
 
+        /// <summary>判断是否含有需要 JSON 转义的字符（&lt; 0x20、双引号或反斜杠），向量化扫描。</summary>
+        public static bool ContainsEscapeChar(ReadOnlySpan<char> chars)
+        {
+            fixed (char* p = chars)
+            {
+                return ContainsEscapeChar(p, chars.Length);
+            }
+        }
+
+        /// <summary>判断一段 UTF16 字符序列是否含有需要转义的字符（&lt; 0x20、双引号或反斜杠）。</summary>
+        public static bool ContainsEscapeChar(char* chars, int length)
+        {
+            // 8 个字符一跳（4×uint，每 uint 装 2 个 char）
+            var pos = 0;
+            var vectorLimit = length - 8;
+            if (vectorLimit >= 0)
+            {
+                var quote = (uint) '"' * 0x0001_0001u;
+                var slash = (uint) '\\' * 0x0001_0001u;
+                while (pos <= vectorLimit)
+                {
+                    var p = chars + pos;
+                    var v0 = Unsafe.ReadUnaligned<uint>(p);
+                    var v1 = Unsafe.ReadUnaligned<uint>(p + 2);
+                    var v2 = Unsafe.ReadUnaligned<uint>(p + 4);
+                    var v3 = Unsafe.ReadUnaligned<uint>(p + 6);
+                    var hit = ControlCharMask(v0) | ControlCharMask(v1) | ControlCharMask(v2) | ControlCharMask(v3)
+                              | ZeroCharMask(v0 ^ quote) | ZeroCharMask(v1 ^ quote) | ZeroCharMask(v2 ^ quote) | ZeroCharMask(v3 ^ quote)
+                              | ZeroCharMask(v0 ^ slash) | ZeroCharMask(v1 ^ slash) | ZeroCharMask(v2 ^ slash) | ZeroCharMask(v3 ^ slash);
+                    if (hit != 0)
+                    {
+                        // 跨通道借位可能误报，块内用标量确认
+                        return SlowContainsEscapeChar(p, 8);
+                    }
+
+                    pos += 8;
+                }
+            }
+
+            return pos < length && SlowContainsEscapeChar(chars + pos, length - pos);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ControlCharMask(uint v) => (v - 0x0020_0020u) & ~v & 0x8000_8000u;
+
+        private static bool SlowContainsEscapeChar(char* chars, int length)
+        {
+            for (var i = 0; i < length; i++)
+            {
+                var c = chars[i];
+                if (c < 0x20 || c is '"' or '\\')
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         /// <summary>判断一个UTF16字符串是否所有的字符都为 ASCII 字符。</summary>
         public static bool IsAsciiString(string str)
         {

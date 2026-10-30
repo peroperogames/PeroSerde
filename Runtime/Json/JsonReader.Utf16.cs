@@ -1,21 +1,19 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2024/12/20
  */
 
 using System;
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
-using UnityEngine;
 
 namespace PeroTools2.Serde.Json
 {
     [PublicAPI]
     public static unsafe partial class JsonReader
     {
-        private static ReadOnlySpan<char> ReadPrimitiveUntilEndUtf16(char* src, int maxLength, out int advance)
+        internal static ReadOnlySpan<char> ReadPrimitiveUntilEndUtf16(char* src, int maxLength, out int advance)
         {
             advance = 0;
             maxLength += 1;
@@ -43,6 +41,59 @@ namespace PeroTools2.Serde.Json
                 return span.Slice(0, i);
             }
             throw SerdeException.ThrowInvalidAdvance();
+        }
+
+        /// <summary>跳过一个完整的值，返回消费的字符数（供游标使用）。</summary>
+        internal static int SkipValueUtf16(ReadOnlySpan<char> span)
+        {
+            var advance = 0;
+            var maxLength = span.Length;
+            fixed (char* src = span)
+            {
+                if (span[0] == '[' || span[0] == '{')
+                {
+                    ReadArrayOrObjectUntilEndUtf16(src, maxLength, out advance);
+                    return advance;
+                }
+                // 数字 或 null
+                if (span[0] != '"')
+                {
+                    ReadPrimitiveUntilEndUtf16(src, maxLength, out advance);
+                    return advance;
+                }
+                // 字符串
+                var index = 0;
+                var canAllocateOnStack = maxLength < 512;
+                var array = canAllocateOnStack ? Array.Empty<char>() : ArrayPool.UTF16.Rent(maxLength);
+                var result = canAllocateOnStack ? stackalloc char[maxLength] : array;
+                try
+                {
+                    for (var i = 1; i < span.Length; i++)
+                    {
+                        var character = span[i];
+                        if (character == '\\')
+                        {
+                            result[index++] = ReadEscapedCharUtf16(src + i, out var length);
+                            i += length - 1; // -1 跳过当前字符
+                        }
+                        else if (character == '"')
+                        {
+                            // 包括双引号
+                            advance = i + 1;
+                            return advance;
+                        }
+                        else
+                        {
+                            result[index++] = character;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (!canAllocateOnStack) ArrayPool.UTF16.Return(array);
+                }
+                throw SerdeException.ThrowInvalidAdvance();
+            }
         }
 
         private static ReadOnlySpan<char> ReadArrayOrObjectUntilEndUtf16(char* src, int maxLength, out int advance)
@@ -112,6 +163,32 @@ namespace PeroTools2.Serde.Json
                 return span.Slice(0, i);
             }
             throw SerdeException.ThrowInvalidAdvance();
+        }
+
+        /// <summary>UTF-16 字符串类型的唯一解析入口：null 返回 null。</summary>
+        internal static string ReadStringValueUtf16(char* src, int length, out int advance)
+        {
+            advance = 0;
+            if (length > 0 && src[0] == '"')
+            {
+                if (TryReadStringUtf16(src, length, out var value, out advance))
+                {
+                    return value;
+                }
+            }
+
+            var result = ReadValueUntilEndUtf16(src, length, out advance);
+            if (SpanConverter.IsNull(result))
+            {
+                return null;
+            }
+
+            if (length == 0 || src[0] != '"')
+            {
+                throw new SerdeException("Invalid json format. Expect '\"' at the beginning of string.");
+            }
+
+            return SpanConverter.ToString(result);
         }
 
         public static ReadOnlySpan<char> ReadValueUntilEndUtf16(char* src, int maxLength, out int advance)
@@ -269,7 +346,281 @@ namespace PeroTools2.Serde.Json
 
         #endregion
 
+        /// <summary>
+        /// 读取一个 JSON 字符串值（允许转义），只做一次堆分配.
+        /// </summary>
+        /// <remarks>
+        /// 直接按 <paramref name="maxLength"/> 扫描完整缓冲区，因此字符串结束在缓冲区末尾也能正确解析；
+        /// 遇到非法转义时返回 false，由调用方走通用路径抛出原有异常.
+        /// </remarks>
+        internal static bool TryReadStringUtf16(char* src, int maxLength, out string result, out int advance)
+        {
+            result = null;
+            advance = 0;
+            var span = new ReadOnlySpan<char>(src, maxLength);
+
+            var hasEscape = false;
+            var end = -1;
+            for (var i = 1; i < span.Length; i++)
+            {
+                var c = span[i];
+                if (c == '"')
+                {
+                    end = i;
+                    break;
+                }
+                if (c != '\\')
+                {
+                    continue;
+                }
+                hasEscape = true;
+                if (i + 1 >= span.Length)
+                {
+                    return false;
+                }
+                i += span[i + 1] == 'u' ? 5 : 1;
+                if (i >= span.Length)
+                {
+                    return false;
+                }
+            }
+
+            if (end < 0)
+            {
+                return false;
+            }
+
+            var token = span.Slice(1, end - 1);
+            advance = end + 1;
+            if (!hasEscape)
+            {
+                result = new string(token);
+                return true;
+            }
+
+            // 先算输出字符数
+            var length = 0;
+            for (var i = 0; i < token.Length; i++)
+            {
+                if (token[i] == '\\')
+                {
+                    if (token[i + 1] == 'u')
+                    {
+                        if (Hex(token[i + 2]) < 0 || Hex(token[i + 3]) < 0 || Hex(token[i + 4]) < 0 || Hex(token[i + 5]) < 0)
+                        {
+                            return false;
+                        }
+                        i += 5;
+                    }
+                    else
+                    {
+                        i += 1;
+                    }
+                }
+                length++;
+            }
+
+            // 再一次性写进字符串
+            var chars = new string('\0', length);
+            var index = 0;
+            fixed (char* dest = chars)
+            {
+                for (var i = 0; i < token.Length; i++)
+                {
+                    if (token[i] != '\\')
+                    {
+                        dest[index++] = token[i];
+                        continue;
+                    }
+                    dest[index++] = ReadEscapedCharUtf16(src + 1 + i, out var escapedLength);
+                    i += escapedLength - 1;
+                }
+            }
+
+            result = chars;
+            return true;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static int Hex(char c)
+            {
+                if (c is >= '0' and <= '9') return c - '0';
+                if (c is >= 'a' and <= 'f') return c - 'a' + 10;
+                if (c is >= 'A' and <= 'F') return c - 'A' + 10;
+                return -1;
+            }
+        }
+
         #region Read Primitive
+
+        /// <summary>读取嵌套的 [SerdeJsonSerializable] 对象：借道 reader，把消费量同步回游标。</summary>
+        public static T ReadNested<T>(ref JsonCursorUtf16 cursor)
+        {
+            var span = new ReadOnlySpan<char>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf16(span, cursor.p);
+            var value = reader.ReadValue<T>();
+            cursor.p = cursor.end - reader.remains.Length;
+            return value;
+        }
+
+        /// <summary>用成员指定的 formatter 读取（显式 [SerdeJsonFormatter] 的类型不在 provider 注册表里）。</summary>
+        public static T ReadNested<T>(ref JsonCursorUtf16 cursor, object formatter)
+        {
+            var span = new ReadOnlySpan<char>(cursor.p, (int) (cursor.end - cursor.p));
+            var reader = new JsonReaderUtf16(span, cursor.p);
+            T value;
+            if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+            {
+                value = reader.ReadValue(fixedFormatter);
+            }
+            else if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+            {
+                value = reader.ReadValue(unfixedFormatter);
+            }
+            else
+            {
+                throw SerdeException.ThrowFormatterNotFound(typeof(T));
+            }
+
+            cursor.p = cursor.end - reader.remains.Length;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ReadInt32(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadIntUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ReadInt64(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadLongUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ReadUInt32(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUintUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ReadUInt64(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUlongUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ReadInt16(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadShortUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ReadUInt16(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadUshortUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte ReadByte(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadByteUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static sbyte ReadSByte(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadSbyteUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ReadSingle(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadFloatUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double ReadDouble(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadDoubleUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static decimal ReadDecimal(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadDecimalUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ReadBoolean(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadBoolUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static char ReadChar(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadCharUtf16(cursor.p, out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ReadString(ref JsonCursorUtf16 cursor)
+        {
+            BeginPrimitive(ref cursor);
+            var value = ReadStringValueUtf16(cursor.p, (int) (cursor.end - cursor.p), out var advance);
+            cursor.p += advance;
+            return value;
+        }
+
+        /// <summary>跳过空白并确认还有内容可读。</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void BeginPrimitive(ref JsonCursorUtf16 cursor)
+        {
+            cursor.SkipWhiteSpace();
+            if (cursor.p >= cursor.end)
+            {
+                throw SerdeException.ThrowInvalidJson("Invalid json format.");
+            }
+        }
 
         /// <summary>读转义字符, 支持UTF8和UTF16</summary>
         // ReSharper disable once CognitiveComplexity

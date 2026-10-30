@@ -115,7 +115,7 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             /// <exception cref="SerdeException">当该类型的格式化器从未注册时抛出</exception>
-            public static T Deserialize<T>(ReadOnlySpan<char> json)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -133,7 +133,10 @@ namespace PeroTools2.Serde
                         throw SerdeException.ThrowFormatterNotFound(typeof(T));
                     }
                 }
-                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
+                fixed (char* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
+                }
             }
 
             /// <summary>
@@ -143,13 +146,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (char* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>
@@ -159,13 +165,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (char* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>
@@ -289,7 +298,7 @@ namespace PeroTools2.Serde
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
             /// <exception cref="SerdeException">当该类型的格式化器从未注册时抛出</exception>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -307,7 +316,10 @@ namespace PeroTools2.Serde
                         throw SerdeException.ThrowFormatterNotFound(typeof(T));
                     }
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
+                }
             }
 
             /// <summary>
@@ -317,13 +329,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>
@@ -333,13 +348,16 @@ namespace PeroTools2.Serde
             /// <param name="formatter">格式化器</param>
             /// <typeparam name="T">序列化值的类型</typeparam>
             /// <returns>反序列化后的对象实例</returns>
-            public static T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
+            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
                     return default;
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
+                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
+                }
             }
 
             /// <summary>
@@ -382,7 +400,7 @@ namespace PeroTools2.Serde
             {
                 if (typeof(T).IsArray)
                 {
-                    var type = typeof(Json.ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
+                    var type = typeof(ArrayFormatter<>).MakeGenericType(typeof(T).GetElementType());
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
@@ -401,13 +419,13 @@ namespace PeroTools2.Serde
                 if (IsKeyValuePair(typeof(T)))
                 {
                     var args = typeof(T).GenericTypeArguments;
-                    var type = typeof(Json.KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
+                    var type = typeof(KeyValuePairFormatter<,>).MakeGenericType(args[0], args[1]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
                 if (IsNullable(typeof(T)))
                 {
-                    var type = typeof(Json.NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
+                    var type = typeof(NullableFormatter<>).MakeGenericType(typeof(T).GenericTypeArguments[0]);
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
