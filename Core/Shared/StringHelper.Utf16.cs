@@ -170,142 +170,67 @@ public static unsafe partial class StringHelper
 
     #endregion
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static char ToLowerAscii(char c) => c >= 'A' && c <= 'Z' ? (char) (c | 0x20) : c;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte ToLowerAscii(byte c) => c >= (byte) 'A' && c <= (byte) 'Z' ? (byte) (c | 0x20) : c;
+
     #region EqualsWithIgnoreCase
 
-    /// <summary>Determines whether two utf-16 strings are equal.</summary>
+    // Only ASCII letters are folded: UTF-8 bytes and UTF-16 characters then agree on every input, and characters that
+    // are not case variants of each other (such as '[' / '{') never compare equal. Note that a per-character OR with
+    // 0x20 (or 0x2020 for a pair of lanes) is not a lower-casing operation and produces false positives.
+
+    /// <summary>Determines whether two utf-16 strings are equal, ignoring ASCII letter case.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsWithIgnoreCase(Span<char> utf16X, Span<char> utf16Y)
     {
-        const ulong lower = 0x2020202020202020;
-
         if (utf16X.Length != utf16Y.Length) return false;
 
-        fixed (char* fixedPtrX = utf16X)
-        fixed (char* fixedPtrY = utf16Y)
+        for (var i = 0; i < utf16X.Length; i++)
         {
-            var x = (ulong*) fixedPtrX;
-            var y = (ulong*) fixedPtrY;
-            var length = utf16X.Length;
-
-            while (length >= 4)
+            if (ToLowerAscii(utf16X[i]) != ToLowerAscii(utf16Y[i]))
             {
-                if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(y) | lower))
-                {
-                    return false;
-                }
-
-                length -= 4;
-                ++x;
-                ++y;
+                return false;
             }
-            // Handle the remaining characters
-            // Dereferencing x directly may cause an out-of-bounds access on some platforms, so compare character by character
-            // return (((*x | lower) ^ (*y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
-            var charX = (char*) x;
-            var charY = (char*) y;
-            while (length > 0)
-            {
-                if ((*charX | 0x20) != (*charY | 0x20))
-                {
-                    return false;
-                }
-
-                length -= 1;
-                ++charX;
-                ++charY;
-            }
-            return true;
         }
+
+        return true;
     }
 
-    /// <summary>Determines whether two utf-8 strings are equal.</summary>
+    /// <summary>Determines whether two utf-8 strings are equal, ignoring ASCII letter case.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsWithIgnoreCase(Span<byte> utf8X, Span<byte> utf8Y)
     {
-        const ulong lower = 0x2020202020202020;
-
         if (utf8X.Length != utf8Y.Length) return false;
 
-        fixed (byte* fixedPtrX = utf8X)
-        fixed (byte* fixedPtrY = utf8Y)
+        for (var i = 0; i < utf8X.Length; i++)
         {
-            var x = (ulong*) fixedPtrX;
-            var y = (ulong*) fixedPtrY;
-            var length = utf8X.Length;
-
-            while (length >= 8)
+            if (ToLowerAscii(utf8X[i]) != ToLowerAscii(utf8Y[i]))
             {
-                if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(y) | lower))
-                {
-                    return false;
-                }
-
-                length -= 8;
-                ++x;
-                ++y;
+                return false;
             }
-            // Handle the remaining characters
-            // Dereferencing x directly may cause an out-of-bounds access on some platforms, so compare character by character
-            // return (((*x | lower) ^ (*y | lower)) & (~(ulong.MaxValue << (length * 8)))) == 0;
-            var byteX = (byte*) x;
-            var byteY = (byte*) y;
-            while (length > 0)
-            {
-                if ((*byteX | 0x20) != (*byteY | 0x20))
-                {
-                    return false;
-                }
-
-                length -= 1;
-                ++byteX;
-                ++byteY;
-            }
-            return true;
         }
+
+        return true;
     }
 
-    /// <summary>Determines whether a string and a utf-16 string are equal.</summary>
+    /// <summary>Determines whether a string and a utf-16 string are equal, ignoring ASCII letter case.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsWithIgnoreCase(Span<char> utf16, string str)
     {
-        const ulong lower = 0x2020202020202020;
-
         if (utf16.Length != str.Length) return false;
 
-        fixed (char* fixedPtrX = utf16)
+        for (var i = 0; i < utf16.Length; i++)
         {
-            var x = (ulong*) fixedPtrX;
-            ref var y = ref Unsafe.As<char, ulong>(ref GetRawStringData(str));
-            var length = utf16.Length;
-
-            while (length >= 4)
+            if (ToLowerAscii(utf16[i]) != ToLowerAscii(str[i]))
             {
-                if ((Unsafe.ReadUnaligned<ulong>(x) | lower) != (Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<ulong, byte>(ref y)) | lower))
-                {
-                    return false;
-                }
-
-                length -= 4;
-                ++x;
-                y = ref Unsafe.Add(ref y, 1);
+                return false;
             }
-            // Handle the remaining characters
-            // Dereferencing x directly may cause an out-of-bounds access on some platforms, so compare character by character
-            // return (((*x | lower) ^ (y | lower)) & ~(ulong.MaxValue << (length * 16))) == 0;
-            var charX = (char*) x;
-            while (length > 0)
-            {
-                if ((*charX | 0x20) != (Unsafe.Add(ref Unsafe.As<ulong, char>(ref y), 0) | 0x20))
-                {
-                    return false;
-                }
-
-                length -= 1;
-                ++charX;
-                y = ref Unsafe.Add(ref y, 1);
-            }
-            return true;
         }
+
+        return true;
     }
 
     #endregion

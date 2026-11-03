@@ -4,6 +4,7 @@
  * Created On: 2025/01/14-16:49:53
  */
 
+using System.Collections.ObjectModel;
 using PeroTools2.Serde.Share.Tests;
 
 namespace PeroTools2.Serde.Json.Tests;
@@ -198,6 +199,65 @@ public sealed class FormatterTests
         encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<RoundTripFormatterTestClass>(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Deserialize<RoundTripFormatterTestClass>(JsonConverter.UTF16.Serialize(obj));
+
+    // Escaped characters take up to 6 positions ("\u00XX"), so the reserve size must not follow the raw length.
+    // 0x01 is chosen because it takes the widest escape form, and the length crosses the 256KB default buffer.
+    [TestCase(1024)]
+    [TestCase(128 * 1024)]
+    [TestCase(256 * 1024)]
+    [TestCase(1024 * 1024)]
+    public void EscapedStringLengthTests(int length)
+    {
+        var testValue = new string('\u0001', length);
+
+        var utf8Value = JsonConverter.UTF8.Deserialize<StringFormatterTestClass>(JsonConverter.UTF8.Serialize(new StringFormatterTestClass { value = testValue }));
+        Assert.AreEqual(testValue, utf8Value.value);
+
+        var utf16Value = JsonConverter.UTF16.Deserialize<StringFormatterTestClass>(JsonConverter.UTF16.Serialize(new StringFormatterTestClass { value = testValue }));
+        Assert.AreEqual(testValue, utf16Value.value);
+    }
+
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void ReadOnlyCollectionFormatterTests(Encoding encoding)
+    {
+        var obj = new ReadonlyCollectionFormatterTestClass { numbers = new ReadOnlyCollection<int>([1, 2, 3]) };
+        const string json = "{\"numbers\":[1,2,3]}";
+
+        if (encoding == Encoding.UTF8)
+        {
+            var utf8 = JsonConverter.UTF8.Serialize(obj);
+            Assert.IsTrue(utf8.SequenceEqual(System.Text.Encoding.UTF8.GetBytes(json)));
+            CollectionAssert.AreEqual(obj.numbers, JsonConverter.UTF8.Deserialize<ReadonlyCollectionFormatterTestClass>(utf8).numbers);
+        }
+        else
+        {
+            var utf16 = JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(json, utf16);
+            CollectionAssert.AreEqual(obj.numbers, JsonConverter.UTF16.Deserialize<ReadonlyCollectionFormatterTestClass>(utf16).numbers);
+        }
+    }
+
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void ReadOnlyCollectionFormatterNullTests(Encoding encoding)
+    {
+        var obj = new ReadonlyCollectionFormatterTestClass();
+        const string json = "{\"numbers\":null}";
+
+        if (encoding == Encoding.UTF8)
+        {
+            var utf8 = JsonConverter.UTF8.Serialize(obj);
+            Assert.IsTrue(utf8.SequenceEqual(System.Text.Encoding.UTF8.GetBytes(json)));
+            Assert.IsNull(JsonConverter.UTF8.Deserialize<ReadonlyCollectionFormatterTestClass>(utf8).numbers);
+        }
+        else
+        {
+            var utf16 = JsonConverter.UTF16.Serialize(obj);
+            Assert.AreEqual(json, utf16);
+            Assert.IsNull(JsonConverter.UTF16.Deserialize<ReadonlyCollectionFormatterTestClass>(utf16).numbers);
+        }
+    }
 }
 
 [SerdeJsonSerializable]
@@ -246,6 +306,18 @@ internal sealed partial class RoundTripFormatterTestClass
 
     [SerdeJsonFormatter(typeof(NullableRoundTripFloatFormatter))]
     public float? nullableFloatValue;
+}
+
+[SerdeJsonSerializable]
+internal sealed partial class StringFormatterTestClass
+{
+    public string value;
+}
+
+[SerdeJsonSerializable]
+internal sealed partial class ReadonlyCollectionFormatterTestClass
+{
+    public ReadOnlyCollection<int> numbers;
 }
 
 [SerdeJsonSerializable]

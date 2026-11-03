@@ -82,23 +82,27 @@ public sealed class ReusableBufferWriter<T> : IBufferWriter<T> where T : unmanag
             }
         }
         // CurrentBuffer is not large enough, allocate a new Buffer
+        // The already written data is copied into the new Buffer, so the request has to leave room for it as well,
+        // otherwise the returned free region is smaller than the requested sizeHint.
+        var writtenCount = m_CurrentBuffer.isNull ? 0 : m_CurrentBuffer.writtenCount;
+        var requiredSize = sizeHint + writtenCount;
         BufferSegment<T> next;
         m_NextBufferSize ??= initial_buffer_size;
-        if (sizeHint <= m_NextBufferSize)
+        if (requiredSize <= m_NextBufferSize)
         {
             next = new BufferSegment<T>(m_NextBufferSize.Value, cachePool);
             m_NextBufferSize = MathUtil.NewArrayCapacity(m_NextBufferSize.Value);
         }
         else
         {
-            next = new BufferSegment<T>(sizeHint, cachePool);
+            next = new BufferSegment<T>(requiredSize, cachePool);
         }
         // Replace CurrentBuffer with NextBuffer
         // If the old CurrentBuffer already holds data, copy it to the new Buffer
-        if (m_CurrentBuffer.writtenCount != 0)
+        if (writtenCount != 0)
         {
             m_CurrentBuffer.writtenBuffer.CopyTo(next.freeBuffer);
-            next.Advance(m_CurrentBuffer.writtenCount);
+            next.Advance(writtenCount);
         }
         m_CurrentBuffer.Free();
         m_CurrentBuffer = next;

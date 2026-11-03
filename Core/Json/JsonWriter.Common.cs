@@ -112,7 +112,8 @@ public ref struct JsonWriterUtf8(ReusableBufferWriter<byte> writer)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, ISerdeJsonFormatter<T> formatter, bool writeComma = false)
     {
-        fixed (byte* startPtr = GetSpan(key.Length + 2))
+        // Two quotes, the key itself and the colon that ends it
+        fixed (byte* startPtr = GetSpan(key.Length + 3))
         {
             var destPtr = startPtr;
             destPtr += JsonWriter.WriteStringNoEscapeUtf8(destPtr, key);
@@ -398,7 +399,12 @@ public ref struct JsonWriterUtf8(ReusableBufferWriter<byte> writer)
             WriteNull();
             return;
         }
-        fixed (byte* desPtr = GetSpan(Encoding.UTF8.GetMaxByteCount(value.Length) + 2))
+        // An escaped character takes up to 6 bytes ("\u00XX"), which is more than its unescaped size, so the
+        // reserve size has to follow the escaping instead of the raw length.
+        var sizeHint = StringHelper.ContainsEscapeChar(value)
+            ? value.Length * JsonWriter.MaxEscapedCharWidth + 2
+            : Encoding.UTF8.GetMaxByteCount(value.Length) + 2;
+        fixed (byte* desPtr = GetSpan(sizeHint))
         {
             var length = JsonWriter.WriteDoubleQuoteUtf8(desPtr);
             length += JsonWriter.WriteStringValueUtf8(value, desPtr + length);
@@ -416,7 +422,11 @@ public ref struct JsonWriterUtf8(ReusableBufferWriter<byte> writer)
             WriteNull();
             return;
         }
-        fixed (byte* desPtr = GetSpan(Encoding.UTF8.GetMaxByteCount(value.Length)))
+        // Escaped characters take up to 6 bytes ("\u00XX"); reserve for the escaped form to stay in bounds
+        var sizeHint = StringHelper.ContainsEscapeChar(value)
+            ? value.Length * JsonWriter.MaxEscapedCharWidth
+            : Encoding.UTF8.GetMaxByteCount(value.Length);
+        fixed (byte* desPtr = GetSpan(sizeHint))
         {
             Advance(JsonWriter.WriteStringValueUtf8(value, desPtr));
         }
@@ -605,7 +615,8 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, ISerdeJsonFormatter<T> formatter, bool writeComma = false)
     {
-        fixed (char* startPtr = GetSpan(key.Length + 2))
+        // Two quotes, the key itself and the colon that ends it
+        fixed (char* startPtr = GetSpan(key.Length + 3))
         {
             var destPtr = startPtr;
             destPtr += JsonWriter.WriteStringNoEscapeUtf16(destPtr, key);
@@ -891,7 +902,11 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
             WriteNull();
             return;
         }
-        fixed (char* desPtr = GetSpan(value.Length + 2))
+        // Escaped characters take up to 6 chars ("\u00XX"), which is longer than the raw string
+        var sizeHint = StringHelper.ContainsEscapeChar(value)
+            ? value.Length * JsonWriter.MaxEscapedCharWidth + 2
+            : value.Length + 2;
+        fixed (char* desPtr = GetSpan(sizeHint))
         {
             var length = JsonWriter.WriteDoubleQuoteUtf16(desPtr);
             length += JsonWriter.WriteStringValueUtf16(value, desPtr + length);
@@ -909,7 +924,11 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
             WriteNull();
             return;
         }
-        fixed (char* desPtr = GetSpan(value.Length))
+        // Escaped characters take up to 6 chars ("\u00XX"), which is longer than the raw string
+        var sizeHint = StringHelper.ContainsEscapeChar(value)
+            ? value.Length * JsonWriter.MaxEscapedCharWidth
+            : value.Length;
+        fixed (char* desPtr = GetSpan(sizeHint))
         {
             Advance(JsonWriter.WriteStringValueUtf16(value, desPtr));
         }

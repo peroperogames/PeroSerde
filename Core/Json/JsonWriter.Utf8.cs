@@ -13,6 +13,9 @@ namespace PeroTools2.Serde.Json;
 
 public static unsafe partial class JsonWriter
 {
+    /// <summary>The widest form a single escaped character occupies ("\u00XX")</summary>
+    public const int MaxEscapedCharWidth = 6;
+
     #region Write String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde.Json;
@@ -90,8 +91,9 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
 /// Json formatter for ReadOnlyCollection
 /// </summary>
 /// <typeparam name="T">Element type</typeparam>
+/// <typeparam name="TCollection">Collection type</typeparam>
 [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
-public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : IReadOnlyCollection<T>, new()
+public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : IReadOnlyCollection<T>
 {
     private static readonly IFixedSerdeJsonFormatter<T> s_FixedFormatter;
     private static readonly ISerdeJsonFormatter<T> s_UnfixedFormatter;
@@ -113,6 +115,11 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     private static readonly bool s_IsConcurrentBag = typeof(TCollection) == typeof(ConcurrentBag<T>);
     private static readonly bool s_IsConcurrentQueue = typeof(TCollection) == typeof(ConcurrentQueue<T>);
     private static readonly bool s_IsConcurrentStack = typeof(TCollection) == typeof(ConcurrentStack<T>);
+
+    // ReadOnlyCollection<T> and interface-typed collections are not creatable through a parameterless constructor
+    private static readonly bool s_IsReadOnlyCollection = typeof(TCollection) == typeof(ReadOnlyCollection<T>);
+    private static readonly bool s_IsInterface = typeof(TCollection).IsInterface;
+    private static readonly ConstructorInfo s_ParameterlessCtor = typeof(TCollection).GetConstructor(Type.EmptyTypes);
 
     static ReadonlyCollectionFormatter()
     {
@@ -199,7 +206,8 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         var list = s_IsFixed
             ? reader.ReadCollection<List<T>, T>(s_FixedFormatter)
             : reader.ReadCollection<List<T>, T>(s_UnfixedFormatter);
-        return (TCollection) CreateReadOnlyCollection(list);
+        // A json null yields no list, and the collection stays null instead of wrapping a missing one
+        return list == null ? default : (TCollection) CreateReadOnlyCollection(list);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -242,7 +250,8 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         var list = s_IsFixed
             ? reader.ReadCollection<List<T>, T>(s_FixedFormatter)
             : reader.ReadCollection<List<T>, T>(s_UnfixedFormatter);
-        return (TCollection) CreateReadOnlyCollection(list);
+        // A json null yields no list, and the collection stays null instead of wrapping a missing one
+        return list == null ? default : (TCollection) CreateReadOnlyCollection(list);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -272,9 +281,19 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         {
             return new ConcurrentStack<T>(col);
         }
+        // ReadOnlyCollection<T> has no parameterless constructor, so it wraps the materialized list instead
+        if (s_IsReadOnlyCollection)
+        {
+            return new ReadOnlyCollection<T>(col);
+        }
+        // Interface members (IReadOnlyCollection<T>, IReadOnlyList<T>, ...) are satisfied by the list itself
+        if (s_IsInterface)
+        {
+            return col;
+        }
         if (s_IsICollection)
         {
-            var instance = new TCollection();
+            var instance = (TCollection) CreateInstance();
             var collection = (ICollection<T>) instance;
             foreach (var item in col)
             {
@@ -284,7 +303,7 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         }
         if (s_IsIProducerConsumerCollection)
         {
-            var instance = new TCollection();
+            var instance = (TCollection) CreateInstance();
             var collection = (IProducerConsumerCollection<T>) instance;
             foreach (var item in col)
             {
@@ -293,5 +312,16 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
             return (TCollection) collection;
         }
         throw SerdeException.ThrowNotSupportedType(typeof(TCollection));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static object CreateInstance()
+    {
+        // TCollection is not constrained to new(), so its parameterless constructor is resolved once at type initialization
+        if (s_ParameterlessCtor == null)
+        {
+            throw SerdeException.ThrowNotSupportedType(typeof(TCollection));
+        }
+        return s_ParameterlessCtor.Invoke(null);
     }
 }

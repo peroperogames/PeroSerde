@@ -122,7 +122,9 @@ public struct TypeMeta
         {
             return BuiltinKind.Nullable;
         }
-        if (type.ContainsInterface(referenceSymbols.iCollectionInterface))
+        // CollectionFormatter requires a parameterless constructor, so types that cannot provide one (such as
+        // ReadOnlyCollection<T>) are handled by ReadonlyCollectionFormatter, which materializes a list and wraps it.
+        if (type.ContainsInterface(referenceSymbols.iCollectionInterface) && HasPublicParameterlessConstructor(type))
         {
             return BuiltinKind.Collection;
         }
@@ -135,6 +137,23 @@ public struct TypeMeta
             return BuiltinKind.Enum;
         }
         return BuiltinKind.Value;
+    }
+
+    /// <summary>
+    /// Determines whether the type can be created through a public parameterless constructor
+    /// </summary>
+    private static bool HasPublicParameterlessConstructor(ITypeSymbol type)
+    {
+        switch (type)
+        {
+            case INamedTypeSymbol { TypeKind: TypeKind.Struct }:
+                return true;
+            case INamedTypeSymbol namedType:
+                return namedType.InstanceConstructors.Any(ctor => ctor.Parameters.Length == 0
+                                                                  && ctor.DeclaredAccessibility == Accessibility.Public);
+            default:
+                return false;
+        }
     }
 }
 

@@ -178,7 +178,7 @@ public static class SpanConverter
     {
         if (!Utf8Parser.TryParse(span, out double value, out var consumed) || span.Length != consumed)
         {
-            throw SerdeException.ThrowInvalidParsing<bool>();
+            throw SerdeException.ThrowInvalidParsing<double>();
         }
         // Utf8Parser also drops the sign bit of "-0" on Mono; restore it here
         return value == 0.0 && span.Length > 0 && span[0] == (byte) '-' ? -0.0 : value;
