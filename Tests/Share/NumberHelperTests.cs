@@ -4,6 +4,7 @@
  * Created On: 2025/01/14-18:59:57
  */
 
+using System.Globalization;
 using PeroTools2.Serde.Json;
 
 namespace PeroTools2.Serde.Share.Tests;
@@ -35,7 +36,7 @@ public sealed class NumberHelperTests
             var dest = stackalloc char[FloatFormatter.max_size];
             var length = NumberHelper.ToUtf16StringUnsafe(value, dest);
             var span = new Span<char>(dest, length);
-            Assert.AreEqual(value.ToString(), new String(span));
+            Assert.AreEqual(value.ToString(CultureInfo.InvariantCulture), new string(span));
             var result = MathF.Abs(float.Parse(span) - value);
             Assert.LessOrEqual(result, 0.001f);
         }

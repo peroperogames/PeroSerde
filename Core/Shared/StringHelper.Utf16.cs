@@ -19,8 +19,6 @@ namespace PeroTools2.Serde;
 /// </remarks>
 public static unsafe partial class StringHelper
 {
-    private const ulong hash_seed = 0x97121819UL;
-
     #region Equals
 
     /// <summary>Determines whether a utf-8 string and a utf-16 string are equal, ignoring alignment.</summary>
@@ -436,7 +434,7 @@ public static unsafe partial class StringHelper
             return SlowIndexOf(chars, length, c);
         }
 
-        var broadcast = (uint) c * 0x0001_0001u;
+        var broadcast = c * 0x0001_0001u;
         var offset = chars;
         var remaining = length;
         while (remaining >= 8)
@@ -481,8 +479,8 @@ public static unsafe partial class StringHelper
             return SlowIndexOfAny(chars, length, c1, c2);
         }
 
-        var broadcast1 = (uint) c1 * 0x0001_0001u;
-        var broadcast2 = (uint) c2 * 0x0001_0001u;
+        var broadcast1 = c1 * 0x0001_0001u;
+        var broadcast2 = c2 * 0x0001_0001u;
         var offset = chars;
         var remaining = length;
         while (remaining >= 8)
@@ -529,7 +527,7 @@ public static unsafe partial class StringHelper
             return SlowContains(chars, length, c);
         }
 
-        var broadcast = (uint) c * 0x0001_0001u;
+        var broadcast = c * 0x0001_0001u;
         var offset = chars;
         var remaining = length;
         while (remaining >= 8)
@@ -583,8 +581,8 @@ public static unsafe partial class StringHelper
         var vectorLimit = length - 8;
         if (vectorLimit >= 0)
         {
-            var quote = (uint) '"' * 0x0001_0001u;
-            var slash = (uint) '\\' * 0x0001_0001u;
+            var quote = '"' * 0x0001_0001u;
+            var slash = '\\' * 0x0001_0001u;
             while (pos <= vectorLimit)
             {
                 var p = chars + pos;

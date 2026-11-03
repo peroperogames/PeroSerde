@@ -82,7 +82,7 @@ public unsafe ref struct JsonReaderUtf8
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
+    public T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
     {
         T result;
         var span = remains;
@@ -205,7 +205,7 @@ public unsafe ref struct JsonReaderUtf8
     #region Read Literal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe ReadOnlySpan<byte> ReadUntilEnd()
+    public ReadOnlySpan<byte> ReadUntilEnd()
     {
         var span = remains;
         fixed (byte* src = remains)
@@ -364,16 +364,6 @@ public unsafe ref struct JsonReaderUtf8
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe bool TryGetIndexFromSpan(ref ReadOnlySpan<byte> span, int length, byte character, out int index)
-    {
-        fixed (byte* ptr = span)
-        {
-            index = StringHelper.IndexOf(ptr, length, character);
-        }
-        return index != -1;
-    }
-
     #endregion
 }
 
@@ -449,7 +439,7 @@ public unsafe ref struct JsonReaderUtf16
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
+    public T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
     {
         T result;
         var span = remains;
@@ -572,7 +562,7 @@ public unsafe ref struct JsonReaderUtf16
     #region Read Literal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe ReadOnlySpan<char> ReadUntilEnd()
+    public ReadOnlySpan<char> ReadUntilEnd()
     {
         var span = remains;
         fixed (char* src = remains)
@@ -732,7 +722,7 @@ public unsafe ref struct JsonReaderUtf16
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe bool TryGetIndexFromSpan(ref ReadOnlySpan<char> span, int length, char character, out int index)
+    private static bool TryGetIndexFromSpan(ref ReadOnlySpan<char> span, int length, char character, out int index)
     {
         fixed (char* ptr = span)
         {

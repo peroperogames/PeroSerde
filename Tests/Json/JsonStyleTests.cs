@@ -14,7 +14,7 @@ namespace PeroTools2.Serde.Json.Tests;
 
 public sealed class JsonStyleTests
 {
-    public static readonly string s_LargeJsonTestFile = ResolveTestFile("very_large_test.json");
+    private static readonly string s_LargeJsonTestFile = ResolveTestFile("very_large_test.json");
 
     private static string ResolveTestFile(string fileName)
     {

@@ -126,7 +126,7 @@ public ref struct JsonWriter<#= utf #>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, ISerdeJsonFormatter<T> formatter, bool writeComma = false)
+    public void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, ISerdeJsonFormatter<T> formatter, bool writeComma = false)
     {
         fixed (<#= charType #>* startPtr = GetSpan(key.Length + 2))
         {

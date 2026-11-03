@@ -62,9 +62,19 @@ public enum StringFlags
 }
 
 [SerdeJsonSerializable]
-public partial struct BoolType(bool value)
+public partial struct BoolType(bool value) : IEquatable<BoolType>
 {
     public bool value = value;
+
+    public bool Equals(BoolType other) => value == other.value;
+
+    public override bool Equals(object obj) => obj is BoolType other && Equals(other);
+
+    public readonly override int GetHashCode() => value.GetHashCode();
+
+    public static bool operator ==(BoolType left, BoolType right) => left.Equals(right);
+
+    public static bool operator !=(BoolType left, BoolType right) => !(left == right);
 }
 
 [SerdeJsonSerializable]

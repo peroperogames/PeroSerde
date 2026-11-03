@@ -19,7 +19,7 @@ namespace PeroTools2.Serde.Share.Editor.Tests
         /// <summary>
         /// Whether any allocation occurred
         /// </summary>
-        public static AllocatingGCMemoryConstraint AllocatingGCMemory(this ConstraintExpression chain, int threshold = 0)
+        public static AllocatingGCMemoryConstraint AllocatingGCMemory(this ConstraintExpression chain, int threshold)
         {
             var constraint = new AllocatingGCMemoryConstraint(threshold);
             chain.Append(constraint);

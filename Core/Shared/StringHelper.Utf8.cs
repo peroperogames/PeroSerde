@@ -101,7 +101,7 @@ public static unsafe partial class StringHelper
             return SlowIndexOf(bytes, length, c);
         }
 
-        var broadcast = (uint) c * 0x0101_0101u;
+        var broadcast = c * 0x0101_0101u;
         var offset = bytes;
         var remaining = length;
         while (remaining >= 16)
@@ -146,8 +146,8 @@ public static unsafe partial class StringHelper
             return SlowIndexOfAny(bytes, length, c1, c2);
         }
 
-        var broadcast1 = (uint) c1 * 0x0101_0101u;
-        var broadcast2 = (uint) c2 * 0x0101_0101u;
+        var broadcast1 = c1 * 0x0101_0101u;
+        var broadcast2 = c2 * 0x0101_0101u;
         var offset = bytes;
         var remaining = length;
         while (remaining >= 16)
@@ -194,7 +194,7 @@ public static unsafe partial class StringHelper
             return SlowContains(bytes, length, c);
         }
 
-        var broadcast = (uint) c * 0x0101_0101u;
+        var broadcast = c * 0x0101_0101u;
         var offset = bytes;
         var remaining = length;
         while (remaining >= 16)

@@ -17,6 +17,7 @@ namespace PeroTools2.Serde.Json;
 /// Json formatter for Collection
 /// </summary>
 /// <typeparam name="T">Element type</typeparam>
+/// <typeparam name="TCollection">Collection type</typeparam>
 [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
 public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : ICollection<T>, new()
 {
@@ -106,7 +107,6 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     private static readonly bool s_IsCollection = typeof(TCollection) == typeof(Collection<T>);
 
     // .NET Standard library implementations of IReadOnlyCollection<T>
-    private static readonly bool s_IsReadOnlyCollection = typeof(TCollection) == typeof(ReadOnlyCollection<T>);
     private static readonly bool s_IsArray = typeof(TCollection) == typeof(T[]);
     private static readonly bool s_IsQueue = typeof(TCollection) == typeof(Queue<T>);
     private static readonly bool s_IsStack = typeof(TCollection) == typeof(Stack<T>);

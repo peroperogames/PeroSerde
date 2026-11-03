@@ -93,7 +93,7 @@ public ref struct JsonWriterUtf8(ReusableBufferWriter<byte> writer)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, bool writeComma = false)
+    public void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, bool writeComma = false)
     {
         var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
         if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
@@ -505,7 +505,6 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
 {
     private Span<char> m_BufferRef = default;
     private int m_AdvancedCount = 0;
-    private int m_WrittenCount = 0;
 
     #region Buffer Op
 
@@ -550,7 +549,6 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
         }
         m_BufferRef = m_BufferRef.Slice(count);
         m_AdvancedCount += count;
-        m_WrittenCount += count;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -562,7 +560,6 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
             m_AdvancedCount = 0;
         }
         m_BufferRef = default;
-        m_WrittenCount = 0;
     }
 
     #endregion
@@ -589,7 +586,7 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, bool writeComma = false)
+    public void WriteNamedValue<T>(ReadOnlySpan<char> key, T value, bool writeComma = false)
     {
         var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
         if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
