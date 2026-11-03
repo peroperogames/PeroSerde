@@ -20,11 +20,9 @@ var emitNoGc = true;
  * Created On: 2024/12/25
  */
 
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
-using PeroTools2.Serde.Editor.Tests;
+using PeroTools2.Serde.Share.Editor.Tests;
 
 namespace PeroTools2.Serde.Json.Editor.Tests
 {

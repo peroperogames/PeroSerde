@@ -192,9 +192,9 @@ namespace PeroTools2.Serde.Json.Editor.Tests
 
         public bool Equals(HexColorType other)
             => Mathf.Abs(other.value.r - value.r) < 0.01f &&
-               Mathf.Abs(other.value.r - value.g) < 0.01f &&
-               Mathf.Abs(other.value.r - value.b) < 0.01f &&
-               Mathf.Abs(other.value.r - value.a) < 0.01f;
+               Mathf.Abs(other.value.g - value.g) < 0.01f &&
+               Mathf.Abs(other.value.b - value.b) < 0.01f &&
+               Mathf.Abs(other.value.a - value.a) < 0.01f;
 
         private sealed class HexColorConverter : JsonConverter<Color>
         {

@@ -10,7 +10,8 @@ using System;
 using System.Globalization;
 using NUnit.Framework;
 
-namespace PeroTools2.Serde.Editor.Tests;
+namespace PeroTools2.Serde.Share.Tests;
+
 public sealed class SpanConverterTests
 {<#
 var types = new Dictionary<string, (string value1, string value2)>
