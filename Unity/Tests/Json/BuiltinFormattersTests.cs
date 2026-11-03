@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) PeroPeroGames Co., Ltd.
  * Author: Gatongone
  * Created On: 2024/12/25

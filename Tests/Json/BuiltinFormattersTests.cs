@@ -84,7 +84,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void CharTypeSerializeTest(Encoding encoding)
@@ -158,7 +157,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ByteTypeSerializeTest(Encoding encoding)
@@ -232,7 +230,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void SbyteTypeSerializeTest(Encoding encoding)
@@ -306,7 +303,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ShortTypeSerializeTest(Encoding encoding)
@@ -380,7 +376,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UshortTypeSerializeTest(Encoding encoding)
@@ -454,7 +449,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void IntTypeSerializeTest(Encoding encoding)
@@ -528,7 +522,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UintTypeSerializeTest(Encoding encoding)
@@ -602,7 +595,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void LongTypeSerializeTest(Encoding encoding)
@@ -676,7 +668,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UlongTypeSerializeTest(Encoding encoding)
@@ -750,7 +741,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void FloatTypeSerializeTest(Encoding encoding)
@@ -824,7 +814,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DoubleTypeSerializeTest(Encoding encoding)
@@ -898,12 +887,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DecimalTypeSerializeTest(Encoding encoding)
     {
-        var obj = new DecimalType(13 / 2);
+        var obj = new DecimalType(13/2);
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -914,7 +902,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DecimalTypeDeserializeTest(Encoding encoding)
     {
-        var obj = new DecimalType(13 / 2);
+        var obj = new DecimalType(13/2);
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<DecimalType>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -926,7 +914,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DecimalTypeSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new DecimalType(13 / 2);
+        var obj = new DecimalType(13/2);
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -951,7 +939,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DecimalTypeDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new DecimalType(13 / 2);
+        var obj = new DecimalType(13/2);
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.
@@ -972,7 +960,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableBoolTypeSerializeTest(Encoding encoding)
@@ -1046,7 +1033,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableCharTypeSerializeTest(Encoding encoding)
@@ -1120,7 +1106,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableByteTypeSerializeTest(Encoding encoding)
@@ -1194,7 +1179,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableSbyteTypeSerializeTest(Encoding encoding)
@@ -1268,7 +1252,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableShortTypeSerializeTest(Encoding encoding)
@@ -1342,7 +1325,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUshortTypeSerializeTest(Encoding encoding)
@@ -1416,7 +1398,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableIntTypeSerializeTest(Encoding encoding)
@@ -1490,7 +1471,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUintTypeSerializeTest(Encoding encoding)
@@ -1564,7 +1544,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableLongTypeSerializeTest(Encoding encoding)
@@ -1638,7 +1617,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUlongTypeSerializeTest(Encoding encoding)
@@ -1712,7 +1690,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableFloatTypeSerializeTest(Encoding encoding)
@@ -1786,7 +1763,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableDoubleTypeSerializeTest(Encoding encoding)
@@ -1860,7 +1836,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableDecimalTypeSerializeTest(Encoding encoding)
@@ -1934,7 +1909,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringBoolTypeSerializeTest(Encoding encoding)
@@ -2008,7 +1982,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringByteTypeSerializeTest(Encoding encoding)
@@ -2082,7 +2055,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringSbyteTypeSerializeTest(Encoding encoding)
@@ -2156,7 +2128,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringShortTypeSerializeTest(Encoding encoding)
@@ -2230,7 +2201,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUshortTypeSerializeTest(Encoding encoding)
@@ -2304,7 +2274,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringIntTypeSerializeTest(Encoding encoding)
@@ -2378,7 +2347,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUintTypeSerializeTest(Encoding encoding)
@@ -2452,7 +2420,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringLongTypeSerializeTest(Encoding encoding)
@@ -2526,7 +2493,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUlongTypeSerializeTest(Encoding encoding)
@@ -2600,7 +2566,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringFloatTypeSerializeTest(Encoding encoding)
@@ -2674,7 +2639,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringDoubleTypeSerializeTest(Encoding encoding)
@@ -2748,12 +2712,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringDecimalTypeSerializeTest(Encoding encoding)
     {
-        var obj = new StringDecimalType(13 / 2);
+        var obj = new StringDecimalType(13/2);
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -2764,7 +2727,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void StringDecimalTypeDeserializeTest(Encoding encoding)
     {
-        var obj = new StringDecimalType(13 / 2);
+        var obj = new StringDecimalType(13/2);
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<StringDecimalType>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -2776,7 +2739,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void StringDecimalTypeSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new StringDecimalType(13 / 2);
+        var obj = new StringDecimalType(13/2);
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -2801,7 +2764,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void StringDecimalTypeDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new StringDecimalType(13 / 2);
+        var obj = new StringDecimalType(13/2);
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.
@@ -2822,7 +2785,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableBoolTypeSerializeTest(Encoding encoding)
@@ -2896,7 +2858,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableByteTypeSerializeTest(Encoding encoding)
@@ -2970,7 +2931,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableSbyteTypeSerializeTest(Encoding encoding)
@@ -3044,7 +3004,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableShortTypeSerializeTest(Encoding encoding)
@@ -3118,7 +3077,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUshortTypeSerializeTest(Encoding encoding)
@@ -3192,7 +3150,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableIntTypeSerializeTest(Encoding encoding)
@@ -3266,7 +3223,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUintTypeSerializeTest(Encoding encoding)
@@ -3340,7 +3296,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableLongTypeSerializeTest(Encoding encoding)
@@ -3414,7 +3369,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUlongTypeSerializeTest(Encoding encoding)
@@ -3488,7 +3442,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableFloatTypeSerializeTest(Encoding encoding)
@@ -3562,7 +3515,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableDoubleTypeSerializeTest(Encoding encoding)
@@ -3636,7 +3588,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableDecimalTypeSerializeTest(Encoding encoding)
@@ -3710,7 +3661,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringTypeSerializeTest(Encoding encoding)
@@ -3784,7 +3734,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DateTimeTypeSerializeTest(Encoding encoding)
@@ -3858,7 +3807,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UnixMillisecondDateTimeTypeSerializeTest(Encoding encoding)
@@ -3932,7 +3880,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UnixSecondDateTimeTypeSerializeTest(Encoding encoding)
@@ -4006,7 +3953,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void GuidTypeSerializeTest(Encoding encoding)
@@ -4080,7 +4026,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void BoolTypeArraySerializeTest(Encoding encoding)
@@ -4154,7 +4099,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListBoolTypeSerializeTest(Encoding encoding)
@@ -4228,7 +4172,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListNumberTypeSerializeTest(Encoding encoding)
@@ -4302,12 +4245,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListObjectTypeSerializeTest(Encoding encoding)
     {
-        var obj = new ListObjectType(new List<BoolType> { new(true), new(false) });
+        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -4318,7 +4260,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void ListObjectTypeDeserializeTest(Encoding encoding)
     {
-        var obj = new ListObjectType(new List<BoolType> { new(true), new(false) });
+        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<ListObjectType>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -4330,7 +4272,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void ListObjectTypeSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new ListObjectType(new List<BoolType> { new(true), new(false) });
+        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -4355,7 +4297,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void ListObjectTypeDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new ListObjectType(new List<BoolType> { new(true), new(false) });
+        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.
@@ -4376,12 +4318,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DictionaryNumberTypeSerializeTest(Encoding encoding)
     {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
+        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -4392,7 +4333,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryNumberTypeDeserializeTest(Encoding encoding)
     {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
+        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<DictionaryNumberType>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -4404,7 +4345,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryNumberTypeSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
+        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -4429,7 +4370,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryNumberTypeDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { { 1, new BoolType(true) }, { 2, new BoolType(false) } });
+        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.
@@ -4450,12 +4391,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DictionaryStringTypeSerializeTest(Encoding encoding)
     {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
+        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -4466,7 +4406,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryStringTypeDeserializeTest(Encoding encoding)
     {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
+        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<DictionaryStringType>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -4478,7 +4418,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryStringTypeSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
+        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -4503,7 +4443,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void DictionaryStringTypeDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { { "True", new BoolType(true) }, { "False", new BoolType(false) } });
+        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.
@@ -4524,7 +4464,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberEnumTypeSerializeTest(Encoding encoding)
@@ -4598,7 +4537,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringEnumTypeSerializeTest(Encoding encoding)
@@ -4672,7 +4610,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNumberEnumTypeSerializeTest(Encoding encoding)
@@ -4746,7 +4683,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberStringEnumTypeSerializeTest(Encoding encoding)
@@ -4820,7 +4756,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberFlagsTypeSerializeTest(Encoding encoding)
@@ -4894,7 +4829,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringFlagsTypeSerializeTest(Encoding encoding)
@@ -4968,7 +4902,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void LazyTypeSerializeTest(Encoding encoding)
@@ -5042,7 +4975,6 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableTypeSerializeTest(Encoding encoding)
@@ -5116,12 +5048,11 @@ public sealed class BuiltinFormattersTests
             }
         }
     }
-
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void GenericTypeCollectionSerializeTest(Encoding encoding)
     {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new(1), new(2) });
+        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
         var json = encoding == Encoding.UTF8
             ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
             : JsonConverter.UTF16.Serialize(obj);
@@ -5132,7 +5063,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void GenericTypeCollectionDeserializeTest(Encoding encoding)
     {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new(1), new(2) });
+        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var newObj = encoding == Encoding.UTF8
             ? JsonConverter.UTF8.Deserialize<GenericTypeCollection>(System.Text.Encoding.UTF8.GetBytes(json))
@@ -5144,7 +5075,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void GenericTypeCollectionSerializeNoGCTest(Encoding encoding)
     {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new(1), new(2) });
+        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
         // Warm up once so pooled buffers are already rented.
         Serialize(encoding, obj);
 
@@ -5169,7 +5100,7 @@ public sealed class BuiltinFormattersTests
     [TestCase(Encoding.UTF16)]
     public void GenericTypeCollectionDeserializeNoGCTest(Encoding encoding)
     {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new(1), new(2) });
+        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
         // Warm up once to cover pool allocation.

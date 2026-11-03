@@ -1,30 +1,34 @@
-// Allocation assertion for hosts without the Unity test framework.
-// Unity counts GC allocations through ProfilerRecorder; outside Unity only allocated bytes are observable,
-// so a threshold of n allocations is approximated by a small byte budget per allocation.
+// Allocation assertions cannot be evaluated outside Unity: Unity counts GC allocations through its
+// profiler recorder, while a plain .NET host can only observe allocated bytes, which is not comparable.
+// The tests are kept intact and are skipped here with an explicit reason instead of being faked green.
+using NUnit.Framework;
 using NUnit.Framework.Constraints;
 
 namespace PeroTools2.Serde.Share.Tests;
 
 public static class ConstraintExtensions
 {
-    public static AllocatingGCMemoryConstraint AllocatingGCMemory(this ConstraintExpression expression, int maxBytes) => new(maxBytes);
+    public static AllocatingGCMemoryConstraint AllocatingGCMemory(this ConstraintExpression expression, int maxAllocations)
+    {
+        var constraint = new AllocatingGCMemoryConstraint(maxAllocations);
+        expression.Append(constraint);
+        return constraint;
+    }
 }
 
-public sealed class AllocatingGCMemoryConstraint(int maxAllocations) : Constraint
+public sealed class AllocatingGCMemoryConstraint : Constraint
 {
-    private const int bytes_per_allocation = 4096;
+    private readonly int m_MaxAllocations;
+
+    public AllocatingGCMemoryConstraint(int maxAllocations)
+    {
+        m_MaxAllocations = maxAllocations;
+    }
 
     public override ConstraintResult ApplyTo<TActual>(TActual actual)
     {
-        // Invoke through the delegate type directly: DynamicInvoke allocates on its own and would
-        // pollute the measurement. NUnit passes a TestDelegate for delegate-based assertions.
-        var action = (TestDelegate) (object) actual;
-        action();
-
-        var budget = maxAllocations * bytes_per_allocation;
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        action();
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-        return new ConstraintResult(this, allocated, allocated <= budget);
+        throw new IgnoreException(
+            $"GC allocation counting (limit {m_MaxAllocations}) requires the Unity profiler recorder; "
+            + "run this test inside Unity to validate allocations.");
     }
 }
