@@ -14,7 +14,7 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "Newtonsoft.Json.dll",
-        "PeroTools2.Serde.dll"
+        "PeroTools2.Serde.Core.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

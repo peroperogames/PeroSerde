@@ -50,20 +50,37 @@ public static unsafe partial class JsonReader
         maxLength += 1;
         var span = new ReadOnlySpan<byte>(src, maxLength);
         var inString = false;
+        var escaped = false;
         for (var i = 0; i < maxLength; i++)
         {
             var character = (char) span[i];
-            var isWhiteSpace = StringHelper.IsWhiteSpace(character);
-            // Excluding the terminator
-            if (isWhiteSpace) continue;
             if (inString)
             {
-                if (character is '"' && (char) span[i - 1] != '\\')
+                // Escape state machine: a backslash escapes the next character, so a string ending
+                // with an escaped backslash still terminates on the following quote.
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (character is '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (character is '"')
                 {
                     inString = false;
                 }
+
                 continue;
             }
+
+            var isWhiteSpace = StringHelper.IsWhiteSpace(character);
+            // Excluding the terminator
+            if (isWhiteSpace) continue;
             if (character is '"')
             {
                 inString = true;

@@ -102,20 +102,36 @@ public static unsafe partial class JsonReader
         maxLength += 1;
         var span = new ReadOnlySpan<char>(src, maxLength);
         var inString = false;
+        var escaped = false;
         for (var i = 0; i < maxLength; i++)
         {
             var character = span[i];
-            var isWhiteSpace = StringHelper.IsWhiteSpace(character);
-            // Excluding the terminator
-            if (isWhiteSpace) continue;
             if (inString)
             {
-                if (character is '"' && span[i - 1] != '\\')
+                // Escape state machine, see the UTF-8 twin: "\\" before the closing quote must not keep us in the string.
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (character is '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (character is '"')
                 {
                     inString = false;
                 }
+
                 continue;
             }
+
+            var isWhiteSpace = StringHelper.IsWhiteSpace(character);
+            // Excluding the terminator
+            if (isWhiteSpace) continue;
             if (character is '"')
             {
                 inString = true;

@@ -192,7 +192,7 @@ public ref struct JsonWriterUtf8(ReusableBufferWriter<byte> writer)
         {
             var bytesWritten = formatter.SerializeUtf8Unsafe(value, destPtr);
             if (writeComma)
-                JsonWriter.WriteValueEndingUtf8(destPtr);
+                JsonWriter.WriteValueEndingUtf8(destPtr + bytesWritten);
             Advance(bytesWritten + commaAdvance);
         }
     }
@@ -688,7 +688,7 @@ public ref struct JsonWriterUtf16(ReusableBufferWriter<char> writer)
         {
             var charsWritten = formatter.SerializeUtf16Unsafe(value, destPtr);
             if (writeComma)
-                JsonWriter.WriteValueEndingUtf16(destPtr);
+                JsonWriter.WriteValueEndingUtf16(destPtr + charsWritten);
             Advance(charsWritten + commaAdvance);
         }
     }
