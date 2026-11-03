@@ -46,7 +46,7 @@ public static class IndentFormatHelper
                         {
                             j++;
                         }
-                        if (j < json.Length && json[j] == '}' && c == '{' || (json[j] == ']' && c == '['))
+                        if (j < json.Length && ((json[j] == '}' && c == '{') || (json[j] == ']' && c == '[')))
                         {
                             isEmptyStructure = true;
                         }

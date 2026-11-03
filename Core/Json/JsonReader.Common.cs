@@ -317,9 +317,23 @@ public unsafe ref struct JsonReaderUtf8
             throw SerdeException.ThrowInvalidJson(m_Json.ToString());
         }
 
+        var escaped = false;
         for (var i = m_Advanced + 1; i < m_Json.Length; i++)
         {
-            if (m_Json[i].Equals((byte) '"') && m_Json[i - 1] != (byte) '\\')
+            var character = m_Json[i];
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (character == (byte) '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (character == (byte) '"')
             {
                 var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
                 Advance(i + 1 - m_Advanced);
@@ -674,9 +688,23 @@ public unsafe ref struct JsonReaderUtf16
             throw SerdeException.ThrowInvalidJson(m_Json.ToString());
         }
 
+        var escaped = false;
         for (var i = m_Advanced + 1; i < m_Json.Length; i++)
         {
-            if (m_Json[i].Equals('"') && m_Json[i - 1] != '\\')
+            var character = m_Json[i];
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (character == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (character == '"')
             {
                 var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
                 Advance(i + 1 - m_Advanced);

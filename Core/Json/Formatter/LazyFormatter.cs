@@ -17,7 +17,7 @@ public sealed class LazyFormatter<T> : ISerdeJsonFormatter<Lazy<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf8(Lazy<T> value, ref JsonWriterUtf8 writer)
     {
-        if (value.IsValueCreated)
+        if (value != null && value.IsValueCreated)
         {
             writer.WriteValue(value.Value);
         }
@@ -30,7 +30,7 @@ public sealed class LazyFormatter<T> : ISerdeJsonFormatter<Lazy<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf16(Lazy<T> value, ref JsonWriterUtf16 writer)
     {
-        if (value.IsValueCreated)
+        if (value != null && value.IsValueCreated)
         {
             writer.WriteValue(value.Value);
         }
