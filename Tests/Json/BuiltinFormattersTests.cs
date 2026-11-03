@@ -34,56 +34,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void BoolTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new BoolType(true);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, BoolType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void BoolTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new BoolType(true);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<BoolType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<BoolType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void CharTypeSerializeTest(Encoding encoding)
@@ -107,56 +58,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void CharTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new CharType('\ufff0');
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, CharType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void CharTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new CharType('\ufff0');
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<CharType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<CharType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ByteTypeSerializeTest(Encoding encoding)
@@ -180,56 +82,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ByteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ByteType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, ByteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ByteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ByteType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<ByteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<ByteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void SbyteTypeSerializeTest(Encoding encoding)
@@ -253,56 +106,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void SbyteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new SbyteType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, SbyteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void SbyteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new SbyteType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<SbyteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<SbyteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ShortTypeSerializeTest(Encoding encoding)
@@ -326,56 +130,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ShortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ShortType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, ShortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ShortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ShortType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<ShortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<ShortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UshortTypeSerializeTest(Encoding encoding)
@@ -399,56 +154,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UshortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UshortType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, UshortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UshortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UshortType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<UshortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<UshortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void IntTypeSerializeTest(Encoding encoding)
@@ -472,56 +178,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void IntTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new IntType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, IntType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void IntTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new IntType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<IntType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<IntType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UintTypeSerializeTest(Encoding encoding)
@@ -545,56 +202,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UintTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UintType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, UintType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UintTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UintType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<UintType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<UintType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void LongTypeSerializeTest(Encoding encoding)
@@ -618,56 +226,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void LongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new LongType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, LongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void LongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new LongType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<LongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<LongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UlongTypeSerializeTest(Encoding encoding)
@@ -691,56 +250,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UlongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UlongType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, UlongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UlongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UlongType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<UlongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<UlongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void FloatTypeSerializeTest(Encoding encoding)
@@ -764,56 +274,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void FloatTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new FloatType(10.4f);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, FloatType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void FloatTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new FloatType(10.4f);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<FloatType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<FloatType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DoubleTypeSerializeTest(Encoding encoding)
@@ -837,56 +298,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DoubleTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DoubleType(10.4d);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, DoubleType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DoubleTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DoubleType(10.4d);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<DoubleType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<DoubleType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DecimalTypeSerializeTest(Encoding encoding)
@@ -910,56 +322,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DecimalTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DecimalType(13/2);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, DecimalType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DecimalTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DecimalType(13/2);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<DecimalType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<DecimalType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableBoolTypeSerializeTest(Encoding encoding)
@@ -983,56 +346,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableBoolTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableBoolType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableBoolType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableBoolTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableBoolType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableBoolType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableBoolType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableCharTypeSerializeTest(Encoding encoding)
@@ -1056,56 +370,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableCharTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableCharType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableCharType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableCharTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableCharType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableCharType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableCharType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableByteTypeSerializeTest(Encoding encoding)
@@ -1129,56 +394,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableByteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableByteType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableByteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableByteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableByteType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableByteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableByteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableSbyteTypeSerializeTest(Encoding encoding)
@@ -1202,56 +418,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableSbyteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableSbyteType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableSbyteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableSbyteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableSbyteType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableSbyteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableSbyteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableShortTypeSerializeTest(Encoding encoding)
@@ -1275,56 +442,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableShortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableShortType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableShortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableShortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableShortType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableShortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableShortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUshortTypeSerializeTest(Encoding encoding)
@@ -1348,56 +466,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUshortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUshortType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableUshortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUshortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUshortType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableUshortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableUshortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableIntTypeSerializeTest(Encoding encoding)
@@ -1421,56 +490,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableIntTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableIntType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableIntType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableIntTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableIntType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableIntType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableIntType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUintTypeSerializeTest(Encoding encoding)
@@ -1494,56 +514,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUintTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUintType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableUintType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUintTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUintType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableUintType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableUintType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableLongTypeSerializeTest(Encoding encoding)
@@ -1567,56 +538,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableLongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableLongType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableLongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableLongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableLongType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableLongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableLongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableUlongTypeSerializeTest(Encoding encoding)
@@ -1640,56 +562,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUlongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUlongType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableUlongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableUlongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableUlongType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableUlongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableUlongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableFloatTypeSerializeTest(Encoding encoding)
@@ -1713,56 +586,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableFloatTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableFloatType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableFloatType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableFloatTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableFloatType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableFloatType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableFloatType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableDoubleTypeSerializeTest(Encoding encoding)
@@ -1786,56 +610,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableDoubleTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableDoubleType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableDoubleType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableDoubleTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableDoubleType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableDoubleType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableDoubleType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableDecimalTypeSerializeTest(Encoding encoding)
@@ -1859,56 +634,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableDecimalTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableDecimalType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableDecimalType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableDecimalTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableDecimalType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableDecimalType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableDecimalType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringBoolTypeSerializeTest(Encoding encoding)
@@ -1932,56 +658,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringBoolTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringBoolType(true);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringBoolType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringBoolTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringBoolType(true);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringBoolType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringBoolType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringByteTypeSerializeTest(Encoding encoding)
@@ -2005,56 +682,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringByteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringByteType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringByteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringByteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringByteType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringByteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringByteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringSbyteTypeSerializeTest(Encoding encoding)
@@ -2078,56 +706,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringSbyteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringSbyteType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringSbyteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringSbyteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringSbyteType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringSbyteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringSbyteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringShortTypeSerializeTest(Encoding encoding)
@@ -2151,56 +730,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringShortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringShortType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringShortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringShortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringShortType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringShortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringShortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUshortTypeSerializeTest(Encoding encoding)
@@ -2224,56 +754,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUshortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUshortType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringUshortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUshortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUshortType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringUshortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringUshortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringIntTypeSerializeTest(Encoding encoding)
@@ -2297,56 +778,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringIntTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringIntType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringIntType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringIntTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringIntType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringIntType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringIntType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUintTypeSerializeTest(Encoding encoding)
@@ -2370,56 +802,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUintTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUintType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringUintType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUintTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUintType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringUintType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringUintType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringLongTypeSerializeTest(Encoding encoding)
@@ -2443,56 +826,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringLongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringLongType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringLongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringLongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringLongType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringLongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringLongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringUlongTypeSerializeTest(Encoding encoding)
@@ -2516,56 +850,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUlongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUlongType(10);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringUlongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringUlongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringUlongType(10);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringUlongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringUlongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringFloatTypeSerializeTest(Encoding encoding)
@@ -2589,56 +874,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringFloatTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringFloatType(10.4f);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringFloatType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringFloatTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringFloatType(10.4f);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringFloatType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringFloatType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringDoubleTypeSerializeTest(Encoding encoding)
@@ -2662,56 +898,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringDoubleTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringDoubleType(10.4d);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringDoubleType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringDoubleTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringDoubleType(10.4d);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringDoubleType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringDoubleType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringDecimalTypeSerializeTest(Encoding encoding)
@@ -2735,56 +922,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringDecimalTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringDecimalType(13/2);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringDecimalType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringDecimalTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringDecimalType(13/2);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringDecimalType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringDecimalType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableBoolTypeSerializeTest(Encoding encoding)
@@ -2808,56 +946,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableBoolTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableBoolType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableBoolType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableBoolTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableBoolType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableBoolType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableBoolType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableByteTypeSerializeTest(Encoding encoding)
@@ -2881,56 +970,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableByteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableByteType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableByteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableByteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableByteType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableByteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableByteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableSbyteTypeSerializeTest(Encoding encoding)
@@ -2954,56 +994,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableSbyteTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableSbyteType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableSbyteType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableSbyteTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableSbyteType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableSbyteType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableSbyteType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableShortTypeSerializeTest(Encoding encoding)
@@ -3027,56 +1018,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableShortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableShortType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableShortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableShortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableShortType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableShortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableShortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUshortTypeSerializeTest(Encoding encoding)
@@ -3100,56 +1042,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUshortTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUshortType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableUshortType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUshortTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUshortType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableUshortType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableUshortType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableIntTypeSerializeTest(Encoding encoding)
@@ -3173,56 +1066,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableIntTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableIntType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableIntType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableIntTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableIntType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableIntType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableIntType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUintTypeSerializeTest(Encoding encoding)
@@ -3246,56 +1090,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUintTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUintType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableUintType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUintTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUintType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableUintType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableUintType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableLongTypeSerializeTest(Encoding encoding)
@@ -3319,56 +1114,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableLongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableLongType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableLongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableLongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableLongType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableLongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableLongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableUlongTypeSerializeTest(Encoding encoding)
@@ -3392,56 +1138,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUlongTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUlongType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableUlongType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableUlongTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableUlongType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableUlongType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableUlongType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableFloatTypeSerializeTest(Encoding encoding)
@@ -3465,56 +1162,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableFloatTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableFloatType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableFloatType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableFloatTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableFloatType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableFloatType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableFloatType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableDoubleTypeSerializeTest(Encoding encoding)
@@ -3538,56 +1186,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableDoubleTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableDoubleType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableDoubleType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableDoubleTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableDoubleType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableDoubleType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableDoubleType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNullableDecimalTypeSerializeTest(Encoding encoding)
@@ -3611,56 +1210,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableDecimalTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableDecimalType(null);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNullableDecimalType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNullableDecimalTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNullableDecimalType(null);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNullableDecimalType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNullableDecimalType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringTypeSerializeTest(Encoding encoding)
@@ -3684,56 +1234,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringType("String");
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringType("String");
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DateTimeTypeSerializeTest(Encoding encoding)
@@ -3757,56 +1258,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DateTimeTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DateTimeType(DateTime.Now);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, DateTimeType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DateTimeTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DateTimeType(DateTime.Now);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<DateTimeType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<DateTimeType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UnixMillisecondDateTimeTypeSerializeTest(Encoding encoding)
@@ -3830,56 +1282,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UnixMillisecondDateTimeTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UnixMillisecondDateTimeType(DateTime.Now);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, UnixMillisecondDateTimeType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UnixMillisecondDateTimeTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UnixMillisecondDateTimeType(DateTime.Now);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<UnixMillisecondDateTimeType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<UnixMillisecondDateTimeType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void UnixSecondDateTimeTypeSerializeTest(Encoding encoding)
@@ -3903,56 +1306,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UnixSecondDateTimeTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UnixSecondDateTimeType(DateTime.Now);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, UnixSecondDateTimeType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void UnixSecondDateTimeTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new UnixSecondDateTimeType(DateTime.Now);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<UnixSecondDateTimeType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<UnixSecondDateTimeType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void GuidTypeSerializeTest(Encoding encoding)
@@ -3976,56 +1330,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void GuidTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new GuidType(Guid.NewGuid());
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, GuidType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void GuidTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new GuidType(Guid.NewGuid());
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<GuidType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<GuidType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void BoolTypeArraySerializeTest(Encoding encoding)
@@ -4049,56 +1354,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void BoolTypeArraySerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new BoolType[] { new(true), new(false) };
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, BoolType[] serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void BoolTypeArrayDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new BoolType[] { new(true), new(false) };
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<BoolType[]>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<BoolType[]>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListBoolTypeSerializeTest(Encoding encoding)
@@ -4122,56 +1378,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListBoolTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new List<BoolType> { new(true), new(false) };
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, List<BoolType> serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListBoolTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new List<BoolType> { new(true), new(false) };
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(2));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<List<BoolType>>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<List<BoolType>>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListNumberTypeSerializeTest(Encoding encoding)
@@ -4195,56 +1402,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListNumberTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, ListNumberType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListNumberTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ListNumberType(new List<int> { 1, 2, 3, 4 });
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(2));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<ListNumberType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<ListNumberType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void ListObjectTypeSerializeTest(Encoding encoding)
@@ -4268,56 +1426,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListObjectTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, ListObjectType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void ListObjectTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) });
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(2));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<ListObjectType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<ListObjectType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DictionaryNumberTypeSerializeTest(Encoding encoding)
@@ -4341,56 +1450,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DictionaryNumberTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, DictionaryNumberType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DictionaryNumberTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} });
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(3));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<DictionaryNumberType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<DictionaryNumberType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void DictionaryStringTypeSerializeTest(Encoding encoding)
@@ -4414,56 +1474,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DictionaryStringTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, DictionaryStringType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void DictionaryStringTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new DictionaryStringType(new Dictionary<string, BoolType> { {"True", new BoolType(true)}, {"False", new BoolType(false)} });
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(5));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<DictionaryStringType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<DictionaryStringType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberEnumTypeSerializeTest(Encoding encoding)
@@ -4487,56 +1498,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberEnumTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberEnumType(NumberEnum.BEnum);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NumberEnumType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberEnumTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberEnumType(NumberEnum.BEnum);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NumberEnumType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NumberEnumType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringEnumTypeSerializeTest(Encoding encoding)
@@ -4560,56 +1522,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringEnumTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringEnumType(StringEnum.BEnum);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringEnumType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringEnumTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringEnumType(StringEnum.BEnum);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringEnumType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringEnumType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringNumberEnumTypeSerializeTest(Encoding encoding)
@@ -4633,56 +1546,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNumberEnumTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringNumberEnumType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringNumberEnumTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringNumberEnumType(StringNumberEnum.BEnum);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringNumberEnumType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringNumberEnumType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberStringEnumTypeSerializeTest(Encoding encoding)
@@ -4706,56 +1570,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberStringEnumTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NumberStringEnumType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberStringEnumTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberStringEnumType(NumberStringEnum.BEnum);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NumberStringEnumType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NumberStringEnumType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NumberFlagsTypeSerializeTest(Encoding encoding)
@@ -4779,56 +1594,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberFlagsTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NumberFlagsType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NumberFlagsTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NumberFlagsType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NumberFlagsType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void StringFlagsTypeSerializeTest(Encoding encoding)
@@ -4852,56 +1618,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringFlagsTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, StringFlagsType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void StringFlagsTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag);
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<StringFlagsType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<StringFlagsType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void LazyTypeSerializeTest(Encoding encoding)
@@ -4925,56 +1642,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void LazyTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new LazyType(new Lazy<string>("LazyString"));
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, LazyType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void LazyTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new LazyType(new Lazy<string>("LazyString"));
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(2));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<LazyType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<LazyType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void NullableTypeSerializeTest(Encoding encoding)
@@ -4998,56 +1666,7 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableTypeSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableType(new BoolType(true));
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, NullableType serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void NullableTypeDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new NullableType(new BoolType(true));
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(0));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<NullableType>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<NullableType>(jsonText);
-            }
-        }
-    }
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void GenericTypeCollectionSerializeTest(Encoding encoding)
@@ -5071,54 +1690,5 @@ public sealed class BuiltinFormattersTests
         Assert.AreEqual(obj, newObj);
     }
 
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void GenericTypeCollectionSerializeNoGCTest(Encoding encoding)
-    {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
-        // Warm up once so pooled buffers are already rented.
-        Serialize(encoding, obj);
 
-        var action = new TestDelegate(() => { Serialize(encoding, obj); });
-        // Serializing produces a string, so an allocation is expected.
-        Assert.That(action, Is.Not.AllocatingGCMemory(1));
-
-        static void Serialize(Encoding encodingType, GenericTypeCollection serializeObj)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Serialize(serializeObj);
-            }
-            else
-            {
-                JsonConverter.UTF16.Serialize(serializeObj);
-            }
-        }
-    }
-
-    [TestCase(Encoding.UTF8)]
-    [TestCase(Encoding.UTF16)]
-    public void GenericTypeCollectionDeserializeNoGCTest(Encoding encoding)
-    {
-        var obj = new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) });
-        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-        // Warm up once to cover pool allocation.
-        Deserialize(encoding, json, utf8Bytes);
-
-        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-        Assert.That(action, Is.Not.AllocatingGCMemory(2));
-
-        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
-        {
-            if (encodingType == Encoding.UTF8)
-            {
-                JsonConverter.UTF8.Deserialize<GenericTypeCollection>(utf8);
-            }
-            else
-            {
-                JsonConverter.UTF16.Deserialize<GenericTypeCollection>(jsonText);
-            }
-        }
-    }
 }

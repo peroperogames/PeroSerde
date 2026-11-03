@@ -254,9 +254,9 @@ public partial struct UnixSecondDateTimeType(DateTime value) : IEquatable<UnixSe
 
     public bool Equals(UnixSecondDateTimeType other) => other.value.ToString(CultureInfo.CurrentCulture) == value.ToString(CultureInfo.CurrentCulture);
 
-    public override bool Equals(object obj) => obj is UnixMillisecondDateTimeType other && Equals(other);
+    public override bool Equals(object obj) => obj is UnixSecondDateTimeType other && Equals(other);
 
-    public override int GetHashCode() => value.GetHashCode();
+    public readonly override int GetHashCode() => value.GetHashCode();
 
     private sealed class UnixSecondsConverter : JsonConverter<DateTime>
     {

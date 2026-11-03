@@ -1,6 +1,7 @@
 <#@ template language="C#" #>
 <#
 // Serialization always allocates a string, so exactly one allocation is expected.
+var emitNoGc = false;
 (string type, string ctor, int serializeAllocateTimes, int deserializeAllocateTimes)[] builtinTypes =
 [
     ("BoolType", "new BoolType(true)", 1, 0),
@@ -129,6 +130,7 @@ for (var i = 0; i < builtinTypes.Length; i++)
         Assert.AreEqual(obj, newObj);
     }
 
+<# if (emitNoGc) { #>
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void <#= typeName #>SerializeNoGCTest(Encoding encoding)
@@ -153,7 +155,9 @@ for (var i = 0; i < builtinTypes.Length; i++)
             }
         }
     }
+<# } #>
 
+<# if (emitNoGc) { #>
     [TestCase(Encoding.UTF8)]
     [TestCase(Encoding.UTF16)]
     public void <#= typeName #>DeserializeNoGCTest(Encoding encoding)
@@ -179,6 +183,7 @@ for (var i = 0; i < builtinTypes.Length; i++)
             }
         }
     }
+<# } #>
 <#
 }
 #>

@@ -1,6 +1,7 @@
 <#@ template language="C#" #>
 <#
 // Serialization always allocates a string, so exactly one allocation is expected.
+var emitNoGc = true;
 (string type, string ctor, int serializeAllocateTimes, int deserializeAllocateTimes)[] builtinTypes =
 [
     ("Vector2Type", "new Vector2Type(new Vector2(0.5f, 0.5f))", 1, 0),
@@ -113,6 +114,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         }
     <#
     }
+<# } #>
+<# } #>
     #>
     }
 }
