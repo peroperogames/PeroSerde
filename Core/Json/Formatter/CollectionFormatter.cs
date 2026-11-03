@@ -286,7 +286,7 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         {
             return new ReadOnlyCollection<T>(col);
         }
-        // Interface members (IReadOnlyCollection<T>, IReadOnlyList<T>, ...) are satisfied by the list itself
+        // Interface members that reach this formatter (IReadOnlyCollection<T>, IReadOnlyList<T>, ...) are satisfied by the list itself
         if (s_IsInterface)
         {
             return col;
