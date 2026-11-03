@@ -369,15 +369,6 @@ public unsafe ref struct JsonReader<#= utf #>
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe bool TryGetIndexFromSpan(ref ReadOnlySpan<<#= charType #>> span, int length, <#= charType #> character, out int index)
-    {
-        fixed (<#= charType #>* ptr = span)
-        {
-            index = StringHelper.IndexOf(ptr, length, character);
-        }
-        return index != -1;
-    }
     #endregion
 }
 <#
