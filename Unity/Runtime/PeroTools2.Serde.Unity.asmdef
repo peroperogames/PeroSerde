@@ -1,0 +1,16 @@
+{
+    "name": "PeroTools2.Serde.Unity",
+    "rootNamespace": "PeroTools2.Serde.Unity",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "PeroTools2.Serde.Core.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

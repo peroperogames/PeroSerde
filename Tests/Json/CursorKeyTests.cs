@@ -1,108 +1,107 @@
 /*
  * Copyright (c) PeroPeroGames Co., Ltd.
+ * Author: Gatongone
+ * Created On: 2026/11/03
  */
 
-using System;
-using System.Text;
-using NUnit.Framework;
+namespace PeroTools2.Serde.Json.Tests;
 
-namespace PeroTools2.Serde.Json.Editor.Tests
+[SerdeJsonSerializable]
+public partial class CursorKeySimpleObject
 {
-    [SerdeJsonSerializable]
-    public partial class CursorKeySimpleObject
+    public long nameabcd;
+}
+
+[SerdeJsonSerializable]
+public partial class CursorKeyCollisionObject
+{
+    public long nameabcd1;
+    public long nameabcd2;
+}
+
+/// <summary>
+/// Equivalence and fallback-path tests for key prefix matching.
+/// If the generation-time prefix constant and the runtime packing differ in a single bit, members silently keep their default value, so this behavior must be pinned down by tests.
+/// </summary>
+public sealed unsafe class CursorKeyTests
+{
+    private static ulong NaivePrefix(ReadOnlySpan<byte> key)
     {
-        public long nameabcd;
+        ulong value = 0;
+        for (var i = 0; i < key.Length && i < 8; i++)
+        {
+            value |= (ulong) key[i] << (i * 8);
+        }
+
+        return value;
     }
 
-    [SerdeJsonSerializable]
-    public partial class CursorKeyCollisionObject
+    private static ulong RuntimePrefix(ReadOnlySpan<byte> key)
     {
-        public long nameabcd1;
-        public long nameabcd2;
+        fixed (byte* p = key)
+        {
+            return StringHelper.GetKeyPrefix(p, key.Length);
+        }
     }
 
-    /// <summary>
-    /// key 前缀匹配的等价性与回退路径测试。
-    /// 生成期前缀常量与运行期打包只要有一位不一致，成员就会静默保持默认值，因此必须有测试锁住。
-    /// </summary>
-    public sealed unsafe class CursorKeyTests
+    [Test]
+    public void KeyPrefixMatchesNaiveTest()
     {
-        private static ulong NaivePrefix(ReadOnlySpan<byte> key)
+        foreach (var length in new[] { 0, 1, 2, 7, 8, 9, 15, 16, 17 })
         {
-            ulong value = 0;
-            for (var i = 0; i < key.Length && i < 8; i++)
+            var buffer = new byte[length];
+            for (var i = 0; i < length; i++)
             {
-                value |= (ulong) key[i] << (i * 8);
+                buffer[i] = (byte) (0x20 + (i * 7) % 0x5F);
             }
 
-            return value;
+            Assert.AreEqual(NaivePrefix(buffer), RuntimePrefix(buffer), $"length={length}");
         }
 
-        private static ulong RuntimePrefix(ReadOnlySpan<byte> key)
-        {
-            fixed (byte* p = key)
-            {
-                return StringHelper.GetKeyPrefix(p, key.Length);
-            }
-        }
-        [Test]
-        public void KeyPrefixMatchesNaiveTest()
-        {
-            foreach (var length in new[] { 0, 1, 2, 7, 8, 9, 15, 16, 17 })
-            {
-                var buffer = new byte[length];
-                for (var i = 0; i < length; i++)
-                {
-                    buffer[i] = (byte) (0x20 + (i * 7) % 0x5F);
-                }
+        var special = new byte[] { 0x00, 0x80, 0xFF, 0x7F, 0x00, 0x41, 0x42, 0x43, 0x44 };
+        Assert.AreEqual(NaivePrefix(special), RuntimePrefix(special));
+    }
 
-                Assert.AreEqual(NaivePrefix(buffer), RuntimePrefix(buffer), $"length={length}");
-            }
+    [Test]
+    public void NonAsciiUnicodeEscapeTest()
+    {
+        // \u00E9 must be encoded as 2 UTF-8 bytes and must not be truncated to a single byte
+        var json = "\"\\u00E9\""u8.ToArray();
+        Assert.AreEqual("é", JsonConverter.UTF8.Deserialize<string>(json));
+    }
 
-            var special = new byte[] { 0x00, 0x80, 0xFF, 0x7F, 0x00, 0x41, 0x42, 0x43, 0x44 };
-            Assert.AreEqual(NaivePrefix(special), RuntimePrefix(special));
-        }
+    [Test]
+    public void SurrogatePairUnicodeEscapeTest()
+    {
+        // A surrogate pair must be merged into one 4-byte UTF-8 code unit
+        var json = "\"\\uD83D\\uDE00\""u8.ToArray();
+        Assert.AreEqual("😀", JsonConverter.UTF8.Deserialize<string>(json));
+    }
 
-        [Test]
-        public void NonAsciiUnicodeEscapeTest()
-        {
-            // \u00E9 必须按 UTF-8 编码成 2 字节，不能被截成单字节
-            var json = Encoding.UTF8.GetBytes("\"\\u00E9\"");
-            Assert.AreEqual("é", JsonConverter.UTF8.Deserialize<string>(json));
-        }
+    [Test]
+    public void EscapedBackslashAtEndTest()
+    {
+        // The value ends with an escaped backslash
+        var json = "{\"value\":\"a\\\\\"}"u8.ToArray();
+        var value = JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(json);
+        Assert.AreEqual("a\\", value.value);
+    }
 
-        [Test]
-        public void SurrogatePairUnicodeEscapeTest()
-        {
-            // 代理对必须合并成一个 4 字节 UTF-8 码元
-            var json = Encoding.UTF8.GetBytes("\"\\uD83D\\uDE00\"");
-            Assert.AreEqual("😀", JsonConverter.UTF8.Deserialize<string>(json));
-        }
+    [Test]
+    public void EightByteMemberNameTest()
+    {
+        var json = "{\"nameabcd\":123456789}"u8.ToArray();
+        var value = JsonConverter.UTF8.Deserialize<CursorKeySimpleObject>(json);
+        Assert.AreEqual(123456789L, value.nameabcd);
+    }
 
-        [Test]
-        public void EscapedBackslashAtEndTest()
-        {
-            // 值内容以转义反斜杠结尾
-            var json = Encoding.UTF8.GetBytes("{\"value\":\"a\\\\\"}");
-            var value = JsonConverter.UTF8.Deserialize<EscapeCharacterJsonObject>(json);
-            Assert.AreEqual("a\\", value.value);
-        }
-        [Test]
-        public void EightByteMemberNameTest()
-        {
-            var json = Encoding.UTF8.GetBytes("{\"nameabcd\":123456789}");
-            var value = JsonConverter.UTF8.Deserialize<CursorKeySimpleObject>(json);
-            Assert.AreEqual(123456789L, value.nameabcd);
-        }
-
-        [Test]
-        public void SharedPrefixMembersTest()
-        {
-            // 两个成员前 8 字符相同 -> 前缀冲突 -> 整体回退旧路径，但仍必须正确反序列化
-            var json = Encoding.UTF8.GetBytes("{\"nameabcd1\":11,\"nameabcd2\":22}");
-            var value = JsonConverter.UTF8.Deserialize<CursorKeyCollisionObject>(json);
-            Assert.AreEqual(11L, value.nameabcd1);
-            Assert.AreEqual(22L, value.nameabcd2);
-        }
+    [Test]
+    public void SharedPrefixMembersTest()
+    {
+        // The first 8 characters of two members are identical -> prefix collision -> fall back to the old path entirely, but deserialization must still be correct
+        var json = "{\"nameabcd1\":11,\"nameabcd2\":22}"u8.ToArray();
+        var value = JsonConverter.UTF8.Deserialize<CursorKeyCollisionObject>(json);
+        Assert.AreEqual(11L, value.nameabcd1);
+        Assert.AreEqual(22L, value.nameabcd2);
     }
 }

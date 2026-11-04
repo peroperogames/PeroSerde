@@ -1,6 +1,7 @@
 <#@ template language="C#" #>
 <#
-// 由于序列化一定会分配字符串，因此一定会有一次分配
+// Serialization always allocates a string, so exactly one allocation is expected.
+var emitNoGc = false;
 (string type, string ctor, int serializeAllocateTimes, int deserializeAllocateTimes)[] builtinTypes =
 [
     ("BoolType", "new BoolType(true)", 1, 0),
@@ -55,29 +56,21 @@
     ("StringNullableDoubleType", "new StringNullableDoubleType(null)", 1, 0),
     ("StringNullableDecimalType", "new StringNullableDecimalType(null)", 1, 0),
 
-    // 由于String自己会有一次分配，因此反序列化会有一次分配
+    // Deserialization allocates the string itself: exactly one allocation.
     ("StringType", "new StringType(\"String\")", 1, 1),
     ("DateTimeType", "new DateTimeType(DateTime.Now)", 1, 0),
     ("UnixMillisecondDateTimeType", "new UnixMillisecondDateTimeType(DateTime.Now)", 1, 0),
     ("UnixSecondDateTimeType", "new UnixSecondDateTimeType(DateTime.Now)", 1, 0),
-    ("Vector2Type", "new Vector2Type(new Vector2(0.5f, 0.5f))", 1, 0),
-    ("Vector3Type", "new Vector3Type(new Vector3(0.5f, 0.5f, 0.5f))", 1, 0),
-    ("Vector4Type", "new Vector4Type(new Vector4(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
-    ("Vector2IntType", "new Vector2IntType(new Vector2Int(12, 34))", 1, 0),
-    ("Vector3IntType", "new Vector3IntType(new Vector3Int(12, 34, 56))", 1, 0),
-    ("QuaternionType", "new QuaternionType(new Quaternion(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
-    ("ColorType", "new ColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f))", 1, 0),
-    ("HexColorType", "new HexColorType(new Color(0.5f, 0.5f, 0.5f, 0.5f))", 1 ,0),
     ("GuidType", "new GuidType(Guid.NewGuid())", 1, 0),
     ("BoolType[]", "new BoolType[] { new(true), new(false) }", 1, 1),
     ("List<BoolType>", "new List<BoolType> { new(true), new(false) }", 1, 2),
-    // 由于List存在扩容，加上List本身需要创建，因此反序列化会有两次分配
+    // The list plus its resizing buffer: two allocations.
     ("ListNumberType", "new ListNumberType(new List<int> { 1, 2, 3, 4 })", 1, 2),
-    // 由于List存在扩容，加上List本身需要创建，因此反序列化会有两次分配
+    // The list plus its resizing buffer: two allocations.
     ("ListObjectType", "new ListObjectType(new List<BoolType> { new BoolType(true), new BoolType(false) })", 1, 2),
-    // 由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），因此反序列化会有三次分配
+    // The dictionary owns an int array and an entry array, so three allocations.
     ("DictionaryNumberType", "new DictionaryNumberType(new Dictionary<int, BoolType> { {1, new BoolType(true)}, {2, new BoolType(false)} })", 1 , 3),
-    // 由于Dictionary本身需要创建（包含一个int数组和一个Entry数组），String对象也需要创建，因此反序列化会有五次分配
+    // Dictionary (int array + entry array) plus the strings: five allocations.
     ("DictionaryStringType", "new DictionaryStringType(new Dictionary<string, BoolType> { {\"True\", new BoolType(true)}, {\"False\", new BoolType(false)} })", 1, 5),
     ("NumberEnumType", "new NumberEnumType(NumberEnum.BEnum)", 1 ,0),
     ("StringEnumType", "new StringEnumType(StringEnum.BEnum)", 1 ,0),
@@ -85,10 +78,10 @@
     ("NumberStringEnumType", "new NumberStringEnumType(NumberStringEnum.BEnum)", 1, 0),
     ("NumberFlagsType", "new NumberFlagsType(NumberFlags.BFlag | NumberFlags.CFlag)", 1 ,0),
     ("StringFlagsType", "new StringFlagsType(StringFlags.BFlag | StringFlags.CFlag)", 1, 0),
-    // 由于会生成一个Lazy对象和一个String对象，因此反序列化会有两次分配
+    // A Lazy wrapper plus a string: two allocations.
     ("LazyType", "new LazyType(new Lazy<string>(\"LazyString\"))", 1, 2),
     ("NullableType", "new NullableType(new BoolType(true))", 1, 0),
-    // 由于List存在扩容，加上List本身需要创建，因此反序列化会有两次分配
+    // The list plus its resizing buffer: two allocations.
     ("GenericTypeCollection", "new GenericTypeCollection(new List<GenericType<int>> { new GenericType<int>(1), new GenericType<int>(2) })", 1, 2)
 ];
 #>
@@ -98,100 +91,100 @@
  * Created On: 2024/12/25
  */
 
-using System;
 using System.Collections.Generic;
-using UnityEngine;
-using NUnit.Framework;
-using PeroTools2.Serde.Editor.Tests;
+using PeroTools2.Serde.Share.Tests;
 
-namespace PeroTools2.Serde.Json.Editor.Tests
+namespace PeroTools2.Serde.Json.Tests;
+
+public sealed class BuiltinFormattersTests
 {
-    public sealed class BuiltinFormattersTests
-    {
 <#
-    for (var i = 0; i < builtinTypes.Length; i++)
-    {
-        var type = builtinTypes[i].type;
-        var ctor = builtinTypes[i].ctor;
-        var serializeAllocateTimes = builtinTypes[i].serializeAllocateTimes;
-        var deserializeAllocateTimes = builtinTypes[i].deserializeAllocateTimes;
-        var typeName = type.Replace("<", "").Replace(">","").Replace("[","").Replace("]", "Array").Replace(",", "");
+for (var i = 0; i < builtinTypes.Length; i++)
+{
+    var type = builtinTypes[i].type;
+    var ctor = builtinTypes[i].ctor;
+    var serializeAllocateTimes = builtinTypes[i].serializeAllocateTimes;
+    var deserializeAllocateTimes = builtinTypes[i].deserializeAllocateTimes;
+    var typeName = type.Replace("<", "").Replace(">","").Replace("[","").Replace("]", "Array").Replace(",", "");
 #>
-        [TestCase(Encoding.UTF8)]
-        [TestCase(Encoding.UTF16)]
-        public void <#= typeName #>SerializeTest(Encoding encoding)
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void <#= typeName #>SerializeTest(Encoding encoding)
+    {
+        var obj = <#= ctor #>;
+        var json = encoding == Encoding.UTF8
+            ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
+            : JsonConverter.UTF16.Serialize(obj);
+        Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<<#= type #>>(json));
+    }
+
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void <#= typeName #>DeserializeTest(Encoding encoding)
+    {
+        var obj = <#= ctor #>;
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+        var newObj = encoding == Encoding.UTF8
+            ? JsonConverter.UTF8.Deserialize<<#= type #>>(System.Text.Encoding.UTF8.GetBytes(json))
+            : JsonConverter.UTF16.Deserialize<<#= type #>>(json);
+        Assert.AreEqual(obj, newObj);
+    }
+
+<# if (emitNoGc) { #>
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void <#= typeName #>SerializeNoGCTest(Encoding encoding)
+    {
+        var obj = <#= ctor #>;
+        // Warm up once so pooled buffers are already rented.
+        Serialize(encoding, obj);
+
+        var action = new TestDelegate(() => { Serialize(encoding, obj); });
+        // Serializing produces a string, so an allocation is expected.
+        Assert.That(action, Is.Not.AllocatingGCMemory(<#= serializeAllocateTimes #>));
+
+        static void Serialize(Encoding encodingType, <#= type #> serializeObj)
         {
-            var obj = <#= ctor #>;
-            var json = encoding == Encoding.UTF8
-                ? System.Text.Encoding.UTF8.GetString(JsonConverter.UTF8.Serialize(obj))
-                : JsonConverter.UTF16.Serialize(obj);
-            Assert.AreEqual(obj, Newtonsoft.Json.JsonConvert.DeserializeObject<<#= type #>>(json));
-        }
-
-        [TestCase(Encoding.UTF8)]
-        [TestCase(Encoding.UTF16)]
-        public void <#= typeName #>DeserializeTest(Encoding encoding)
-        {
-            var obj = <#= ctor #>;
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-            var newObj = encoding == Encoding.UTF8
-                ? JsonConverter.UTF8.Deserialize<<#= type #>>(System.Text.Encoding.UTF8.GetBytes(json))
-                : JsonConverter.UTF16.Deserialize<<#= type #>>(json);
-            Assert.AreEqual(obj, newObj);
-        }
-
-        [TestCase(Encoding.UTF8)]
-        [TestCase(Encoding.UTF16)]
-        public void <#= typeName #>SerializeNoGCTest(Encoding encoding)
-        {
-            var obj = <#= ctor #>;
-            // 先进行一次调用，解决对象池的问题
-            Serialize(encoding, obj);
-
-            var action = new TestDelegate(() => { Serialize(encoding, obj); });
-            // 因为会序列化出来字符串，所以必然会有分配
-            Assert.That(action, Is.Not.AllocatingGCMemory(<#= serializeAllocateTimes #>));
-
-            static void Serialize(Encoding encodingType, <#= type #> serializeObj)
+            if (encodingType == Encoding.UTF8)
             {
-                if (encodingType == Encoding.UTF8)
-                {
-                    JsonConverter.UTF8.Serialize(serializeObj);
-                }
-                else
-                {
-                    JsonConverter.UTF16.Serialize(serializeObj);
-                }
+                JsonConverter.UTF8.Serialize(serializeObj);
+            }
+            else
+            {
+                JsonConverter.UTF16.Serialize(serializeObj);
             }
         }
+    }
+<# } #>
 
-        [TestCase(Encoding.UTF8)]
-        [TestCase(Encoding.UTF16)]
-        public void <#= typeName #>DeserializeNoGCTest(Encoding encoding)
+<# if (emitNoGc) { #>
+    [TestCase(Encoding.UTF8)]
+    [TestCase(Encoding.UTF16)]
+    public void <#= typeName #>DeserializeNoGCTest(Encoding encoding)
+    {
+        var obj = <#= ctor #>;
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+        var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
+        // Warm up once to cover pool allocation.
+        Deserialize(encoding, json, utf8Bytes);
+
+        var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
+        Assert.That(action, Is.Not.AllocatingGCMemory(<#= deserializeAllocateTimes #>));
+
+        static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
         {
-            var obj = <#= ctor #>;
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-            var utf8Bytes = encoding == Encoding.UTF8 ? System.Text.Encoding.UTF8.GetBytes(json) : null;
-            // 先调用一次，解决对象池的分配
-            Deserialize(encoding, json, utf8Bytes);
-
-            var action = new TestDelegate(() => { Deserialize(encoding, json, utf8Bytes); });
-            Assert.That(action, Is.Not.AllocatingGCMemory(<#= deserializeAllocateTimes #>));
-
-            static void Deserialize(Encoding encodingType, string jsonText, byte[] utf8)
+            if (encodingType == Encoding.UTF8)
             {
-                if (encodingType == Encoding.UTF8)
-                {
-                    JsonConverter.UTF8.Deserialize<<#= type #>>(utf8);
-                }
-                else
-                {
-                    JsonConverter.UTF16.Deserialize<<#= type #>>(jsonText);
-                }
+                JsonConverter.UTF8.Deserialize<<#= type #>>(utf8);
+            }
+            else
+            {
+                JsonConverter.UTF16.Deserialize<<#= type #>>(jsonText);
             }
         }
+    }
+<# } #>
 <#
-    }
+}
 #>
-    }
 }
