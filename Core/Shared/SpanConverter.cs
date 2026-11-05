@@ -6,7 +6,9 @@
 
 using System;
 using System.Buffers.Text;
+using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PeroTools2.Serde;
@@ -37,9 +39,9 @@ public static class SpanConverter
     public static unsafe bool IsNull(in ReadOnlySpan<char> span)
     {
         // Little endian
-        const ulong le_llun = 0x006C006C0075006E;
+        const ulong le_llun = 0x006C_006C_0075_006E;
         // Big endian
-        const ulong be_llun = 0x6C006C0075006E00;
+        const ulong be_llun = 0x6C00_6C00_7500_6E00;
 
         if (span.Length != 4)
         {
@@ -57,10 +59,20 @@ public static class SpanConverter
     #region UTF16
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static sbyte ToSbyte(in ReadOnlySpan<char> span) => sbyte.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<sbyte>();
+    public static sbyte ToSbyte(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= sbyte.MinValue && value <= sbyte.MaxValue
+            ? (sbyte) value
+            : sbyte.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<sbyte>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ToByte(in ReadOnlySpan<char> span) => byte.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<byte>();
+    public static byte ToByte(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= byte.MinValue && value <= byte.MaxValue
+            ? (byte) value
+            : byte.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<byte>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DateTime ToDateTime(in ReadOnlySpan<char> span) => DateTime.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<DateTime>();
@@ -74,7 +86,44 @@ public static class SpanConverter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double ToDouble(in ReadOnlySpan<char> span)
     {
-        if (!double.TryParse(span, out var result))
+        if (!TryParseRealUtf16(span, out var mantissa, out var exponent, out var negative))
+        {
+            return ParseDoubleSlow(span);
+        }
+        // Clinger's fast path: the mantissa and the power of ten are both exact in double, so the multiply/divide
+        // rounds correctly and casting then rounds once more to float
+        var result = exponent >= 0
+            ? mantissa * doublePowersOfTen[exponent]
+            : mantissa / doublePowersOfTen[-exponent];
+        return negative ? -result : result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float ToFloat(in ReadOnlySpan<char> span)
+    {
+        if (!TryParseRealUtf16(span, out var mantissa, out var exponent, out var negative))
+        {
+            return ParseFloatSlow(span);
+        }
+        var result = exponent >= 0
+            ? (float) (mantissa * doublePowersOfTen[exponent])
+            : (float) (mantissa / doublePowersOfTen[-exponent]);
+#if DEBUG
+        // The fast path above rounds through double; fail loudly if that ever disagrees with the framework parser
+        var expected = ParseFloatSlow(span);
+        if (!result.Equals(expected))
+        {
+            throw new InvalidOperationException($"float fast path mismatch: {new string(span)} -> {result} != {expected}");
+        }
+#endif
+        return negative ? -result : result;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static double ParseDoubleSlow(in ReadOnlySpan<char> span)
+    {
+        // Json numbers are culture invariant, and the invariant parser is the fast one
+        if (!double.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
         {
             throw SerdeException.ThrowInvalidParsing<double>();
         }
@@ -82,10 +131,11 @@ public static class SpanConverter
         return result == 0.0 && span.Length > 0 && span[0] == '-' ? -0.0 : result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float ToFloat(in ReadOnlySpan<char> span)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static float ParseFloatSlow(in ReadOnlySpan<char> span)
     {
-        if (!float.TryParse(span, out var result))
+        // Json numbers are culture invariant, and the invariant parser is the fast one
+        if (!float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
         {
             throw SerdeException.ThrowInvalidParsing<float>();
         }
@@ -93,29 +143,230 @@ public static class SpanConverter
         return result == 0f && span.Length > 0 && span[0] == '-' ? -0.0f : result;
     }
 
+    // Exact powers of ten that are representable in double, the limit for Clinger's fast path
+    internal static readonly double[] doublePowersOfTen =
+    {
+        1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18,
+        1e19, 1e20, 1e21, 1e22
+    };
+
+    /// <summary>
+    /// Parses <c>[-]digits[.digits][e[+-]digits]</c> into a mantissa and a power of ten.
+    /// </summary>
+    /// <remarks>
+    /// Returns false when the value does not fit the exact fast path (more than 15 significant digits, a mantissa that
+    /// does not fit in 2^53, or an exponent outside ±22), which leaves the work to the framework parser.
+    /// </remarks>
+    private static bool TryParseRealUtf16(in ReadOnlySpan<char> span, out ulong mantissa, out int exponent, out bool negative)
+    {
+        mantissa = 0;
+        exponent = 0;
+        negative = false;
+
+        var index = 0;
+        if (span.IsEmpty) return false;
+        if (span[0] == '-')
+        {
+            negative = true;
+            index = 1;
+        }
+        else if (span[0] == '+')
+        {
+            index = 1;
+        }
+
+        var digits = 0;
+        var seenDigit = false;
+        var fraction = 0;
+        for (; index < span.Length; index++)
+        {
+            var c = span[index];
+            if ((uint) (c - '0') > 9) break;
+            seenDigit = true;
+            if (digits < 15)
+            {
+                // Skip leading zeros, they do not consume precision
+                if (mantissa == 0 && c == '0')
+                {
+                    continue;
+                }
+                mantissa = mantissa * 10 + (ulong) (c - '0');
+                digits++;
+            }
+            else
+            {
+                // Too many significant digits for the exact fast path
+                return false;
+            }
+        }
+
+        if (index < span.Length && span[index] == '.')
+        {
+            index++;
+            for (; index < span.Length; index++)
+            {
+                var c = span[index];
+                if ((uint) (c - '0') > 9) break;
+                seenDigit = true;
+                if (digits < 15)
+                {
+                    if (mantissa == 0 && c == '0')
+                    {
+                        fraction--;
+                        continue;
+                    }
+                    mantissa = mantissa * 10 + (ulong) (c - '0');
+                    digits++;
+                    fraction--;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (!seenDigit) return false;
+        exponent = fraction;
+
+        if (index < span.Length)
+        {
+            var c = span[index];
+            if (c is not ('e' or 'E')) return false;
+            index++;
+            var negativeExponent = false;
+            if (index < span.Length && (span[index] == '+' || span[index] == '-'))
+            {
+                negativeExponent = span[index] == '-';
+                index++;
+            }
+            if (index >= span.Length) return false;
+            var value = 0;
+            for (; index < span.Length; index++)
+            {
+                var digit = span[index] - '0';
+                if ((uint) digit > 9 || value > 1000) return false;
+                value = value * 10 + digit;
+            }
+            exponent += negativeExponent ? -value : value;
+        }
+
+        if (exponent is < -22 or > 22) return false;
+        if (mantissa > 1UL << 53) return false;
+        return true;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ToBool(in ReadOnlySpan<char> span) => bool.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<bool>();
+    public unsafe static bool ToBool(in ReadOnlySpan<char> span)
+    {
+        const ulong le_eurt = 0x0065_0075_0072_0074;
+        const ulong le_slaf = 0x0073_006C_0061_0066;
+        const ulong be_eurt = 0x0074_0072_0075_0065;
+        const ulong be_slaf = 0x0066_0061_006C_0073;
+
+        // The reader hands over the exact token, so the two literals are the whole common case
+        if (span.Length == 4)
+        {
+            fixed (char* ptr = span)
+            {
+                var v = Unsafe.ReadUnaligned<ulong>(ptr);
+                if (v == (BitConverter.IsLittleEndian ? le_eurt : be_eurt)) return true;
+            }
+        }
+        else if (span.Length == 5)
+        {
+            fixed (char* ptr = span)
+            {
+                var v = Unsafe.ReadUnaligned<ulong>(ptr);
+                if (v == (BitConverter.IsLittleEndian ? le_slaf : be_slaf) && span[4] == 'e') return false;
+            }
+        }
+        throw SerdeException.ThrowInvalidParsing<bool>();
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char ToChar(in ReadOnlySpan<char> span) => span[0];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short ToShort(in ReadOnlySpan<char> span) => short.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<short>();
+    public static short ToShort(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= short.MinValue && value <= short.MaxValue
+            ? (short) value
+            : short.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<short>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ushort ToUshort(in ReadOnlySpan<char> span) => ushort.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<ushort>();
+    public static ushort ToUshort(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= ushort.MinValue && value <= ushort.MaxValue
+            ? (ushort) value
+            : ushort.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<ushort>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ToInt(in ReadOnlySpan<char> span) => int.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<int>();
+    public static int ToInt(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= int.MinValue && value <= int.MaxValue
+            ? (int) value
+            : int.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<int>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ToUint(in ReadOnlySpan<char> span) => uint.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<uint>();
+    public static uint ToUint(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= uint.MinValue && value <= uint.MaxValue
+            ? (uint) value
+            : uint.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<uint>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ToLong(in ReadOnlySpan<char> span) => long.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<long>();
+    public static long ToLong(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value)
+            ? value
+            : long.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<long>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong ToUlong(in ReadOnlySpan<char> span) => ulong.TryParse(span, out var result) ? result : throw SerdeException.ThrowInvalidParsing<ulong>();
+    public static ulong ToUlong(in ReadOnlySpan<char> span) =>
+        TryParseIntegerUtf16(span, out var value) && value >= 0
+            ? (ulong) value
+            : ulong.TryParse(span, out var result)
+                ? result
+                : throw SerdeException.ThrowInvalidParsing<ulong>();
+
+    /// <summary>Parses <c>[+-]?[0-9]+</c> without going through the culture aware number parser.</summary>
+    /// <remarks>Falls back to the framework parser on anything else (whitespace, separators, overflow).</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryParseIntegerUtf16(in ReadOnlySpan<char> span, out long value)
+    {
+        value = 0;
+        if (span.IsEmpty) return false;
+
+        var index = 0;
+        var negative = false;
+        if (span[0] == '-')
+        {
+            negative = true;
+            index = 1;
+        }
+        else if (span[0] == '+')
+        {
+            index = 1;
+        }
+        if (index == span.Length) return false;
+
+        for (; index < span.Length; index++)
+        {
+            var digit = span[index] - '0';
+            if ((uint) digit > 9) return false;
+            // Leave the overflowing values to the framework parser
+            if (value > (long.MaxValue - digit) / 10) return false;
+            value = value * 10 + digit;
+        }
+        if (negative) value = -value;
+        return true;
+    }
 
     #endregion
 
@@ -163,6 +414,9 @@ public static class SpanConverter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ToString(in ReadOnlySpan<byte> span) => Encoding.UTF8.GetString(span);
 
+#if NET8_0_OR_GREATER
+#endif
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static decimal ToDecimal(in ReadOnlySpan<byte> span)
     {
@@ -199,8 +453,8 @@ public static class SpanConverter
     public static unsafe bool ToBool(in ReadOnlySpan<byte> span)
     {
         // UTF8 has no byte order issue, so it can simply be read in reverse
-        const uint eurt = 0x65757274U;
-        const uint slaf = 0x736C6166U;
+        const uint eurt = 0x6575_7274U;
+        const uint slaf = 0x736C_6166U;
 
         fixed (byte* ptr = span)
         {

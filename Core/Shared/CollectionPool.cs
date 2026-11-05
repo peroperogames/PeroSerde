@@ -4,7 +4,7 @@
  * Created On: 2024/12/23
  */
 
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -14,18 +14,45 @@ namespace PeroTools2.Serde;
 /// Pool of List objects
 /// </summary>
 /// <typeparam name="T"></typeparam>
+/// <remarks>
+/// The cache is per thread. A concurrent queue costs a CAS loop plus a cache line transfer on every rent and return,
+/// which is more than the pooled list saves on a five element array, so the pool has to stay off the shared path to be
+/// worth having at all.
+/// </remarks>
 internal sealed class ListPool<T>
 {
+    private const int MaxDepth = 8;
+
     public static readonly ListPool<T> shared = new();
-    private static readonly ConcurrentQueue<List<T>> s_Queue = new();
+
+    [ThreadStatic] private static List<T>[] t_Items;
+
+    [ThreadStatic] private static int t_Count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<T> Rent() => s_Queue.TryDequeue(out var collection) ? collection : new List<T>();
+    public List<T> Rent()
+    {
+        var items = t_Items;
+        if (items != null && t_Count > 0)
+        {
+            var index = --t_Count;
+            var list = items[index];
+            items[index] = null;
+            return list;
+        }
+        return new List<T>();
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Return(List<T> collection)
     {
         collection.Clear();
-        s_Queue.Enqueue(collection);
+        var items = t_Items ??= new List<T>[MaxDepth];
+        if (t_Count >= items.Length)
+        {
+            // Nesting deeper than the cache holds drops the list instead of growing the cache
+            return;
+        }
+        items[t_Count++] = collection;
     }
 }

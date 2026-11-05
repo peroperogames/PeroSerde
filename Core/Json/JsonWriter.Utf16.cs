@@ -182,6 +182,23 @@ public static unsafe partial class JsonWriter
         {
             return WriteRawUtf16(dest, str);
         }
+        return WriteStringValueEscapedUtf16(str, dest);
+    }
+
+    /// <summary>Writes a <see cref="string"/> into a UTF16 buffer.</summary>
+    /// <param name="str">The value to write</param>
+    /// <param name="dest">The destination</param>
+    /// <param name="hasEscape">Whether the value contains a character that has to be escaped, as returned by
+    /// <see cref="StringHelper.ContainsEscapeChar(ReadOnlySpan{char})"/>. The caller already scans for the reserve
+    /// size, so it hands the result over instead of walking the string twice.</param>
+    /// <returns>charsWritten</returns>
+    public static int WriteStringValueUtf16(ReadOnlySpan<char> str, char* dest, bool hasEscape)
+    {
+        return hasEscape ? WriteStringValueEscapedUtf16(str, dest) : WriteRawUtf16(dest, str);
+    }
+
+    private static int WriteStringValueEscapedUtf16(ReadOnlySpan<char> str, char* dest)
+    {
 
         // Escape characters must be handled, so the string has to be walked to find them and written separately.
         var originalPtr = dest;

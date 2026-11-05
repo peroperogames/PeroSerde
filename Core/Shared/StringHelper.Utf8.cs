@@ -64,6 +64,24 @@ public static unsafe partial class StringHelper
 
     #endregion
 
+    /// <summary>Takes the first 8 bytes of the key (little endian, zero padded) as a key prefix for switch dispatch.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetKeyPrefix(ReadOnlySpan<byte> key)
+    {
+        if (key.Length >= 8)
+        {
+            return Unsafe.ReadUnaligned<ulong>(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(key));
+        }
+
+        ulong value = 0;
+        for (var i = 0; i < key.Length; i++)
+        {
+            value |= (ulong) key[i] << (i * 8);
+        }
+
+        return value;
+    }
+
     /// <summary>Takes the first 8 bytes at the pointer (little endian, zero padded) as a key prefix for switch dispatch.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong GetKeyPrefix(byte* start, int length)

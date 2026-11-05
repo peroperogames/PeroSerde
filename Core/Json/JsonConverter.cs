@@ -121,7 +121,7 @@ namespace PeroTools2.Serde.Json
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
 
-                if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                if (!SerdeJsonFormatterProvider.IsResolved<T>() && !SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
                     {
@@ -133,10 +133,7 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
-                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
             }
 
             /// <summary>
@@ -154,10 +151,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -175,10 +169,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -311,7 +302,7 @@ namespace PeroTools2.Serde.Json
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
 
-                if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                if (!SerdeJsonFormatterProvider.IsResolved<T>() && !SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
                     {
@@ -323,10 +314,7 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
-                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
             }
 
             /// <summary>
@@ -344,10 +332,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -365,10 +350,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>

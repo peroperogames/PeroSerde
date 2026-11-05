@@ -40,6 +40,29 @@ public static unsafe partial class StringHelper
         return true;
     }
 
+    /// <summary>Compares a UTF8 span against a string from <paramref name="offset"/> onwards.</summary>
+    /// <remarks>
+    /// The generated key dispatch already matched the first eight bytes through its packed switch, so only the tail of
+    /// a longer member name has to be compared again. The name must be pure ASCII, which the generator guarantees.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool EqualsUnaligned(ReadOnlySpan<byte> utf8, ReadOnlySpan<char> utf16, int offset)
+    {
+        if (utf8.Length != utf16.Length)
+        {
+            return false;
+        }
+
+        for (var i = offset; i < utf8.Length; i++)
+        {
+            if (utf8[i] != utf16[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
     /// <summary>Determines whether two utf-16 strings are equal.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Equals(ReadOnlySpan<char> utf16X, ReadOnlySpan<char> utf16Y)
@@ -128,7 +151,6 @@ public static unsafe partial class StringHelper
         }
     }
 
-    /// <summary>Determines whether two utf-16 strings are equal.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Equals(string strX, string strY)
     {
@@ -338,7 +360,7 @@ public static unsafe partial class StringHelper
         }
     }
 
-    /// <summary>Determines whether a character is a whitespace character</summary>
+   /// <summary>Determines whether a character is a whitespace character</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsWhiteSpace(char c) =>
         c == 0x20 || (c >= 0x9 && c <= 0xd) || c == 0x85 || c == 0xa0;
@@ -479,11 +501,11 @@ public static unsafe partial class StringHelper
     public static ref char GetRawStringData(string str)
     {
 #if NET7_0_OR_GREATER
-            // C# 11 supports str.GetPinnableReference(), but with the C# 12 ref readonly feature, C# 12 or later is required to pass a read-only reference to Unsafe.AsRef() correctly
-            fixed (char* fixedPtr = str)
-            {
-                return ref Unsafe.AsRef<char>(fixedPtr);
-            }
+        // C# 11 supports str.GetPinnableReference(), but with the C# 12 ref readonly feature, C# 12 or later is required to pass a read-only reference to Unsafe.AsRef() correctly
+        fixed (char* fixedPtr = str)
+        {
+            return ref Unsafe.AsRef<char>(fixedPtr);
+        }
 #else
         return ref Unsafe.AsRef(in str.AsSpan().GetPinnableReference());
 #endif
@@ -546,6 +568,7 @@ public static unsafe partial class StringHelper
         }
         return false;
     }
+
     /// <summary>Determines whether all characters of a UTF16 string are ASCII characters.</summary>
     public static bool IsAsciiString(string str)
     {

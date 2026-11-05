@@ -44,6 +44,7 @@ internal static partial class NumberHelper
     }
 
     /// <summary>Computes x raised to the power of y</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]  
     internal static double Pow(double x, int y)
     {
         if (y >= 0 && y < s_PositiveExponents.Length)
@@ -76,6 +77,7 @@ internal static partial class NumberHelper
 
     /// <summary>Gets the exponent part of a positive floating point number</summary>
     /// <remarks>Cannot handle: negative numbers, Nan, Inf, -Inf</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]  
     private static int GetExponent(double value)
     {
         return value switch

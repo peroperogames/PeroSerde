@@ -15,16 +15,28 @@ foreach (var utf in new[] {"Utf8", "Utf16"})
 {
     var charType = utf == "Utf8" ? "byte" : "char";
     var castStr = utf == "Utf8" ? "(byte) " : "";
+    var directReaders = new[]
+    {
+        (method: "ReadInt32Value", type: "int", parse: "ReadIntFast", span: true),
+        (method: "ReadInt64Value", type: "long", parse: "ReadLongFast", span: true),
+        (method: "ReadInt16Value", type: "short", parse: "ReadShort", span: false),
+        (method: "ReadUInt16Value", type: "ushort", parse: "ReadUshort", span: false),
+        (method: "ReadByteValue", type: "byte", parse: "ReadByte", span: false),
+        (method: "ReadSByteValue", type: "sbyte", parse: "ReadSbyte", span: false),
+        (method: "ReadUInt32Value", type: "uint", parse: "ReadUint", span: false),
+        (method: "ReadUInt64Value", type: "ulong", parse: "ReadUlong", span: false),
+        (method: "ReadSingleValue", type: "float", parse: "ReadFloatFast", span: true),
+        (method: "ReadDoubleValue", type: "double", parse: "ReadDoubleFast", span: true),
+        (method: "ReadDecimalValue", type: "decimal", parse: "ReadDecimal", span: false),
+        (method: "ReadBooleanValue", type: "bool", parse: "ReadBoolFast", span: true),
+        (method: "ReadCharValue", type: "char", parse: "ReadCharFast", span: true)
+    };
 #>
 public unsafe ref struct JsonReader<#= utf #>
 {
     private int m_Advanced;
     private readonly ReadOnlySpan<<#= charType #>> m_Json;
 
-    /// <summary>Base address of the buffer, set only when the entry point pinned it.</summary>
-    private readonly <#= charType #>* m_Base;
-
-    private readonly bool m_HasBase;
     public readonly ReadOnlySpan<<#= charType #>> json => m_Json;
 
     public readonly ReadOnlySpan<<#= charType #>> remains
@@ -37,44 +49,10 @@ public unsafe ref struct JsonReader<#= utf #>
     {
         m_Advanced = 0;
         m_Json = json;
-        m_Base = null;
-        m_HasBase = false;
-    }
-
-    /// <summary>Creates a reader over an already pinned buffer; <paramref name="basePtr"/> points at its start.</summary>
-    internal JsonReader<#= utf #>(ReadOnlySpan<<#= charType #>> json, <#= charType #>* basePtr)
-    {
-        m_Advanced = 0;
-        m_Json = json;
-        m_Base = basePtr;
-        m_HasBase = true;
-    }
-
-    /// <summary>Creates a cursor at the current position; the buffer must have been pinned by the entry point.</summary>
-    public JsonCursor<#= utf #> CreateCursor()
-    {
-        if (!m_HasBase)
-        {
-            throw new NotSupportedException(
-                "JsonCursor<#= utf #> requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
-        }
-
-        return new JsonCursor<#= utf #>(m_Base + m_Advanced, m_Base + m_Json.Length);
-    }
-
-    /// <summary>Synchronizes the cursor position back into the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SyncCursor(in JsonCursor<#= utf #> cursor)
-    {
-        m_Advanced = (int) (cursor.p - m_Base);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Advance(int count) => m_Advanced += count;
-
-    /// <summary>Synchronizes the length consumed by the generated cursor back into the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipConsumed(int count) => m_Advanced += count;
 
     #region Read Value
 
@@ -113,14 +91,195 @@ public unsafe ref struct JsonReader<#= utf #>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T ReadValue<T>(bool readComma = false)
     {
-        var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
-        if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+        // The per-call resolution is cached per registration, so the hot path pays one version compare instead of the
+        // three generic static reads and interface casts GetFormatterInternal performs on every call.
+        SerdeJsonFormatterProvider.Resolve<T>(out var fixedFormatter, out var unfixedFormatter);
+        if (fixedFormatter != null)
             return ReadValue(fixedFormatter, readComma);
-        if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+        if (unfixedFormatter != null)
             return ReadValue(unfixedFormatter, readComma);
         throw SerdeException.ThrowFormatterNotFound(typeof(T));
     }
 
+    #endregion
+
+    #region Read Value Directly
+
+<#
+foreach (var reader in directReaders)
+{
+#>
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public <#= reader.type #> <#= reader.method #>(bool readComma = false)
+    {
+<#
+    if (reader.span)
+    {
+#>
+        var value = JsonReader.<#= reader.parse #><#= utf #>(remains, out var advance);
+        Advance(advance);
+<#
+    }
+    else
+    {
+#>
+        var span = remains;
+        <#= reader.type #> value;
+        fixed (<#= charType #>* src = span)
+        {
+            value = JsonReader.<#= reader.parse #><#= utf #>(src, out var advance);
+            Advance(advance);
+        }
+<#
+    }
+#>
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+<#
+}
+#>
+    /// <summary>Reads a string value through the single-allocation fast path, without the formatter indirection.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ReadStringValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadStringValue<#= utf #>(remains, out var advance);
+        Advance(advance);
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    #endregion
+
+    #region Read Collection Directly
+
+<#
+var directCollectionReaders = new[]
+{
+    (method: "ReadInt32Value", type: "int"),
+    (method: "ReadInt64Value", type: "long"),
+    (method: "ReadInt16Value", type: "short"),
+    (method: "ReadUInt16Value", type: "ushort"),
+    (method: "ReadByteValue", type: "byte"),
+    (method: "ReadSByteValue", type: "sbyte"),
+    (method: "ReadUInt32Value", type: "uint"),
+    (method: "ReadUInt64Value", type: "ulong"),
+    (method: "ReadSingleValue", type: "float"),
+    (method: "ReadDoubleValue", type: "double"),
+    (method: "ReadDecimalValue", type: "decimal"),
+    (method: "ReadBooleanValue", type: "bool"),
+    (method: "ReadCharValue", type: "char"),
+    (method: "ReadStringValue", type: "string")
+};
+foreach (var reader in directCollectionReaders)
+{
+    var elementName = reader.method.Substring(0, reader.method.Length - "Value".Length);
+#>
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public <#= reader.type #>[] <#= elementName #>Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<<#= reader.type #>>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if (m_Json[m_Advanced] == <#= castStr #>']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<<#= reader.type #>>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                buffer.Add(<#= reader.method #>());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == <#= castStr #>',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == <#= castStr #>']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<<#= reader.type #>>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<<#= reader.type #>> <#= elementName #>List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<<#= reader.type #>>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if (m_Json[m_Advanced] == <#= castStr #>']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            list.Add(<#= reader.method #>());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == <#= castStr #>',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == <#= castStr #>']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+<#
+}
+#>
     #endregion
 
     #region Read Collection
@@ -266,7 +425,23 @@ public unsafe ref struct JsonReader<#= utf #>
     public bool TryReadKeyBegin() => TryReadChar(':');
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryReadComma() => TryReadChar(',');
+    public bool TryReadComma()
+    {
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
+        if (index >= json.Length || json[index] != <#= castStr #>',')
+        {
+            return false;
+        }
+
+        // Skip the whitespace after the colon so the value reader starts on the value itself
+        index++;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
+        return true;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryReadNull()
@@ -299,19 +474,53 @@ public unsafe ref struct JsonReader<#= utf #>
         return key;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>Reads the next object key and consumes its colon.</summary>
+    /// <remarks>
+    /// This runs once per member, so it walks the buffer directly instead of going through the whitespace, quote and
+    /// character helpers: one whitespace skip, one vectorised quote search and one whitespace skip before the colon.
+    /// Keys that contain escapes keep the general path.
+    /// </remarks>
     public bool TryReadKey(out ReadOnlySpan<<#= charType #>> key)
     {
-        ReadWhiteSpace();
-        if (remains[0] != <#= castStr #>'"')
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != <#= castStr #>'"')
         {
+            m_Advanced = index;
             key = default;
             return false;
         }
-        key = ReadString();
-        ReadWhiteSpace();
-        ReadKeyBegin();
-        ReadWhiteSpace();
+
+        var start = index + 1;
+        var end = JsonReader.IndexOfQuoteOrBackslash<#= utf #>(json, start);
+        if (end < 0)
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        if (json[end] == <#= castStr #>'\\')
+        {
+            // Escaped key: fall back to the general string reader from the opening quote
+            key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return true;
+        }
+
+        key = json.Slice(start, end - start);
+        index = end + 1;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != <#= castStr #>':')
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        // Skip the whitespace after the colon so the value reader starts on the value itself
+        index++;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
         return true;
     }
 
@@ -322,16 +531,30 @@ public unsafe ref struct JsonReader<#= utf #>
             throw SerdeException.ThrowInvalidJson(m_Json.ToString());
         }
 
-        for (var i = m_Advanced + 1; i < m_Json.Length; i++)
+        // Track escapes by skipping the escaped character: outside a string a JSON text holds only quotes and
+        // backslashes, so one vectorised search per special character keeps the common case at a single scan.
+        var position = m_Advanced + 1;
+        while (true)
         {
-            if (m_Json[i].Equals(<#= castStr #>'"') && m_Json[i - 1] != <#= castStr #>'\\')
+            var found = JsonReader.IndexOfQuoteOrBackslash<#= utf #>(m_Json, position);
+            if (found < 0)
             {
-                var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
-                Advance(i + 1 - m_Advanced);
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[found] == <#= castStr #>'"')
+            {
+                var result = m_Json.Slice(m_Advanced + 1, found - m_Advanced - 1);
+                Advance(found + 1 - m_Advanced);
                 return result;
             }
+
+            position = found + 2;
+            if (position >= m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
         }
-        throw SerdeException.ThrowInvalidJson(m_Json.ToString());
     }
 
     /// <summary>
