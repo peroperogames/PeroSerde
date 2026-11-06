@@ -8,6 +8,92 @@ A zero-GC, reflection-free, high-performance serializer/deserializer with UTF8/U
 
 4. **Enums:** Enum, Flags
 
+## Requirements
+
+- Unity 2021.3 or later.
+- [UniTask](https://github.com/Cysharp/UniTask) (`com.cysharp.unitask`) is **optional**. When the package is present the asynchronous command handlers and the operation helpers are `UniTask` based; when it is absent they fall back to `Task` and the package has no external dependency. Declare it yourself in your project manifest if you want the `UniTask` flavour:
+
+  ```json
+  { "dependencies": { "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0" } }
+  ```
+
+## Install
+
+### Nuget
+
+Append following content to project file (`.csproj`):
+
+```xml
+
+<ItemGroup>
+    <PackageReference Include="PeroTools2.Serde" Version="0.2.0"/>
+</ItemGroup>
+```
+
+Or install via CLI:
+
+```sh
+dotnet add package PeroTools2.Serde --version 0.2.0
+```
+
+### Unity
+
+Append following content to `Packages/manifest.json`:
+
+**From [GIT](https://github.com/peroperogames/PeroSerde):**
+
+```json
+{
+  "dependencies": {
+    "com.prpr.serde": "https://github.com/peroperogames/PeroSerde.git#0.2.0-base"
+  }
+}
+```
+
+**From [NPMJS](https://www.npmjs.com/package/com.prpr.serde/):**
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "npmjs",
+      "url": "https://registry.npmjs.org",
+      "scopes": [
+        "com.prpr"
+      ]
+    }
+  ],
+  "dependencies": {
+    "com.prpr.serde": "0.2.0"
+  }
+}
+```
+
+**From [OpenUPM](https://openupm.com/packages/com.prpr.serde/):**
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.prpr"
+      ]
+    }
+  ],
+  "dependencies": {
+    "com.prpr.serde": "0.2.0"
+  }
+}
+```
+
+Or install via CLI:
+
+```sh
+openupm add com.prpr.serde
+```
+
 # Json
 
 ## Serialization/Deserialization
@@ -506,7 +592,7 @@ public partial class MyType
 
 ## Json formatting
 
-### FormatJson(string json): format the given Json data
+### FormatJson (string json): format the given Json data
 
 Formats the input Json string into the standard indented form and returns the formatted string.
 
@@ -604,11 +690,11 @@ public void Test(MyClass obj)
 
 ## Benchmarks
 
-| Runtime | Tool | Sources |
-| --- | --- | --- |
-| .NET 9 | [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet) 0.14.0 | `Bench/Console` |
-| Unity Editor (Mono) | [com.unity.test-framework.performance](https://docs.unity3d.com/Packages/com.unity.test-framework.performance@3.0/manual/index.html) 3.0.3 | `Bench/Unity/SerdePerformanceTests.cs` |
-| Mono / IL2CPP player | stopwatch harness running inside a real player build | `Bench/Unity/SerdeBench.cs` |
+| Runtime              | Tool                                                                                                                                       | Sources                                |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
+| .NET 9               | [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet) 0.14.0                                                                        | `Bench/Console`                        |
+| Unity Editor (Mono)  | [com.unity.test-framework.performance](https://docs.unity3d.com/Packages/com.unity.test-framework.performance@3.0/manual/index.html) 3.0.3 | `Bench/Unity/SerdePerformanceTests.cs` |
+| Mono / IL2CPP player | stopwatch harness running inside a real player build                                                                                       | `Bench/Unity/SerdeBench.cs`            |
 
 Hardware: Intel Core i5-12490F, Windows 11, 64 GB RAM. System.Text.Json is not available on the Unity Mono/IL2CPP profiles, and Swifter.Json cannot be compiled by IL2CPP, so each table lists the serializers that the runtime supports.
 
@@ -638,53 +724,53 @@ Hardware: Intel Core i5-12490F, Windows 11, 64 GB RAM. System.Text.Json is not a
 
 Serialization:
 
-| Method | Mean | Ratio | Allocated |
-| --- | ---: | ---: | ---: |
-| Swifter.Json (UTF16 string) | 455.8 ns | 1.00 | 968 B |
-| Swifter.Json (UTF8 bytes) | 473.4 ns | 1.04 | 592 B |
-| PeroSerde (UTF16 string) | 486.1 ns | 1.07 | 776 B |
-| PeroSerde (UTF8 bytes) | 499.8 ns | 1.10 | 400 B |
-| System.Text.Json (UTF8 bytes) | 696.0 ns | 1.53 | 712 B |
-| System.Text.Json (UTF16 string) | 740.7 ns | 1.62 | 1088 B |
-| Newtonsoft.Json (UTF16 string) | 1315.9 ns | 2.89 | 3384 B |
+| Method                          |      Mean | Ratio | Allocated |
+|---------------------------------|----------:|------:|----------:|
+| Swifter.Json (UTF16 string)     |  455.8 ns |  1.00 |     968 B |
+| Swifter.Json (UTF8 bytes)       |  473.4 ns |  1.04 |     592 B |
+| PeroSerde (UTF16 string)        |  486.1 ns |  1.07 |     776 B |
+| PeroSerde (UTF8 bytes)          |  499.8 ns |  1.10 |     400 B |
+| System.Text.Json (UTF8 bytes)   |  696.0 ns |  1.53 |     712 B |
+| System.Text.Json (UTF16 string) |  740.7 ns |  1.62 |    1088 B |
+| Newtonsoft.Json (UTF16 string)  | 1315.9 ns |  2.89 |    3384 B |
 
 Deserialization:
 
-| Method | Mean | Ratio | Allocated |
-| --- | ---: | ---: | ---: |
-| Swifter.Json (UTF16 string) | 519.3 ns | 1.00 | 1072 B |
-| Swifter.Json (UTF8 bytes) | 591.0 ns | 1.14 | 1072 B |
-| PeroSerde (UTF16 string) | 565.9 ns | 1.09 | 968 B |
-| PeroSerde (UTF8 bytes) | 642.4 ns | 1.24 | 968 B |
-| System.Text.Json (UTF16 string) | 1151.8 ns | 2.22 | 1616 B |
-| System.Text.Json (UTF8 bytes) | 1030.4 ns | 1.98 | 1616 B |
-| Newtonsoft.Json (UTF16 string) | 2190.4 ns | 4.22 | 4088 B |
+| Method                          |      Mean | Ratio | Allocated |
+|---------------------------------|----------:|------:|----------:|
+| Swifter.Json (UTF16 string)     |  519.3 ns |  1.00 |    1072 B |
+| Swifter.Json (UTF8 bytes)       |  591.0 ns |  1.14 |    1072 B |
+| PeroSerde (UTF16 string)        |  565.9 ns |  1.09 |     968 B |
+| PeroSerde (UTF8 bytes)          |  642.4 ns |  1.24 |     968 B |
+| System.Text.Json (UTF16 string) | 1151.8 ns |  2.22 |    1616 B |
+| System.Text.Json (UTF8 bytes)   | 1030.4 ns |  1.98 |    1616 B |
+| Newtonsoft.Json (UTF16 string)  | 2190.4 ns |  4.22 |    4088 B |
 
 ### Mono (Unity Editor)
 
-| Case | PeroSerde UTF16 | PeroSerde UTF8 | Swifter.Json UTF16 | Swifter.Json UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Serialize (375 B) | 7.8 µs | 8.3 µs | 7.0 µs | 8.4 µs | 25.4 µs | 6.0 µs |
-| Deserialize (375 B) | 11.7 µs | 13.5 µs | 8.0 µs | 9.2 µs | 35.2 µs | 10.0 µs |
-| Serialize (1000 items, 73 KB) | 1.90 ms | 1.72 ms | 1.42 ms | 1.58 ms | 9.53 ms | 0.62 ms |
-| Deserialize (1000 items, 73 KB) | 2.37 ms | 2.94 ms | 1.71 ms | 1.76 ms | 11.02 ms | 1.38 ms |
+| Case                            | PeroSerde UTF16 | PeroSerde UTF8 | Swifter.Json UTF16 | Swifter.Json UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
+|---------------------------------|----------------:|---------------:|-------------------:|------------------:|----------------:|------------------------:|
+| Serialize (375 B)               |          7.8 µs |         8.3 µs |             7.0 µs |            8.4 µs |         25.4 µs |                  6.0 µs |
+| Deserialize (375 B)             |         11.7 µs |        13.5 µs |             8.0 µs |            9.2 µs |         35.2 µs |                 10.0 µs |
+| Serialize (1000 items, 73 KB)   |         1.90 ms |        1.72 ms |            1.42 ms |           1.58 ms |         9.53 ms |                 0.62 ms |
+| Deserialize (1000 items, 73 KB) |         2.37 ms |        2.94 ms |            1.71 ms |           1.76 ms |        11.02 ms |                 1.38 ms |
 
 ### Mono / IL2CPP player
 
 Mono backend:
 
-| Case | PeroSerde UTF16 | PeroSerde UTF8 | Swifter.Json UTF16 | Swifter.Json UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Serialize (375 B) | 3.08 µs | 2.62 µs | 1.91 µs | 1.80 µs | 12.78 µs | 4.71 µs |
-| Deserialize (375 B) | 4.10 µs | 4.20 µs | 3.39 µs | 3.59 µs | 19.05 µs | 8.38 µs |
-| Serialize (1000 items, 73 KB) | 0.572 ms | 0.499 ms | 0.479 ms | 0.531 ms | 3.56 ms | 0.626 ms |
-| Deserialize (1000 items, 73 KB) | 0.575 ms | 0.569 ms | 0.460 ms | 0.735 ms | 4.96 ms | 1.26 ms |
+| Case                            | PeroSerde UTF16 | PeroSerde UTF8 | Swifter.Json UTF16 | Swifter.Json UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
+|---------------------------------|----------------:|---------------:|-------------------:|------------------:|----------------:|------------------------:|
+| Serialize (375 B)               |         3.08 µs |        2.62 µs |            1.91 µs |           1.80 µs |        12.78 µs |                 4.71 µs |
+| Deserialize (375 B)             |         4.10 µs |        4.20 µs |            3.39 µs |           3.59 µs |        19.05 µs |                 8.38 µs |
+| Serialize (1000 items, 73 KB)   |        0.572 ms |       0.499 ms |           0.479 ms |          0.531 ms |         3.56 ms |                0.626 ms |
+| Deserialize (1000 items, 73 KB) |        0.575 ms |       0.569 ms |           0.460 ms |          0.735 ms |         4.96 ms |                 1.26 ms |
 
 IL2CPP backend:
 
-| Case | PeroSerde UTF16 | PeroSerde UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
-| --- | ---: | ---: | ---: | ---: |
-| Serialize (375 B) | 2.63 µs | 2.74 µs | 13.32 µs | 6.42 µs |
-| Deserialize (375 B) | 5.99 µs | 5.61 µs | 23.02 µs | 8.64 µs |
-| Serialize (1000 items, 73 KB) | 0.522 ms | 0.524 ms | 3.99 ms | 0.85 ms |
-| Deserialize (1000 items, 73 KB) | 0.87 ms | 0.76 ms | 4.03 ms | 0.98 ms |
+| Case                            | PeroSerde UTF16 | PeroSerde UTF8 | Newtonsoft.Json | UnityEngine.JsonUtility |
+|---------------------------------|----------------:|---------------:|----------------:|------------------------:|
+| Serialize (375 B)               |         2.63 µs |        2.74 µs |        13.32 µs |                 6.42 µs |
+| Deserialize (375 B)             |         5.99 µs |        5.61 µs |        23.02 µs |                 8.64 µs |
+| Serialize (1000 items, 73 KB)   |        0.522 ms |       0.524 ms |         3.99 ms |                 0.85 ms |
+| Deserialize (1000 items, 73 KB) |         0.87 ms |        0.76 ms |         4.03 ms |                 0.98 ms |
