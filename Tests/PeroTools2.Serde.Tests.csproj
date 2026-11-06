@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- net8.0 resolves PeroTools2.Serde.Core to its netstandard2.1 build, so the #if branches that only exist for
+         Unity get compiled and tested as well -->
+    <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
     <LangVersion>14</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>

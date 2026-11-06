@@ -64,7 +64,11 @@ public static unsafe partial class StringHelper
 
     #endregion
 
-    /// <summary>Takes the first 8 bytes of the key (little endian, zero padded) as a key prefix for switch dispatch.</summary>
+    /// <summary>Packs the first eight bytes of the key into a <c>ulong</c> for switch dispatch.</summary>
+    /// <remarks>
+    /// A key of eight bytes or longer is read as one little endian word; a shorter key is packed the same way but zero
+    /// padded, so a caller can compare against a constant that was built from an ASCII member name with the same rule.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong GetKeyPrefix(ReadOnlySpan<byte> key)
     {
@@ -98,6 +102,7 @@ public static unsafe partial class StringHelper
         }
         return value;
     }
+
     /// <summary>Compares a UTF8 byte span against a UTF16 string, decoding the bytes as it goes.</summary>
     /// <remarks>
     /// <see cref="StringHelper.EqualsUnaligned(ReadOnlySpan{byte}, ReadOnlySpan{char})"/> assumes one byte per character,
@@ -130,7 +135,7 @@ public static unsafe partial class StringHelper
             else if ((b & 0xF8) == 0xF0 && byteIndex + 3 < utf8.Length)
             {
                 codePoint = ((b & 0x07) << 18) | ((utf8[byteIndex + 1] & 0x3F) << 12)
-                    | ((utf8[byteIndex + 2] & 0x3F) << 6) | (utf8[byteIndex + 3] & 0x3F);
+                                               | ((utf8[byteIndex + 2] & 0x3F) << 6) | (utf8[byteIndex + 3] & 0x3F);
                 byteIndex += 4;
             }
             else
@@ -167,6 +172,7 @@ public static unsafe partial class StringHelper
 
         return byteIndex == utf8.Length && charIndex == utf16.Length;
     }
+
     /// <summary>Determines whether a character is a whitespace character</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsWhiteSpace(byte c) =>
