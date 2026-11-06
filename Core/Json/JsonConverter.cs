@@ -216,6 +216,11 @@ namespace PeroTools2.Serde.Json
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -253,6 +258,11 @@ namespace PeroTools2.Serde.Json
             /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -279,6 +289,11 @@ namespace PeroTools2.Serde.Json
             /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -782,6 +797,11 @@ namespace PeroTools2.Serde.Json
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
@@ -819,6 +839,11 @@ namespace PeroTools2.Serde.Json
             /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
@@ -845,6 +870,11 @@ namespace PeroTools2.Serde.Json
             /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            /// write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            /// nothing is rolled back, so the caller has to discard or rebuild it
+            /// </remarks>
             public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();

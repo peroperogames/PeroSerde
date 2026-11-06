@@ -17,6 +17,8 @@
     <Compile Include="Json\**\*.cs" />
     <Compile Include="Share\**\*.cs" />
     <Compile Include="Shims\**\*.cs" />
+    <!-- the output target tests are shared with the Unity edit mode test assembly, so they run in both runners -->
+    <Compile Include="..\Unity\Tests\Json\JsonConverterOutputTests.cs" Link="Json\JsonConverterOutputTests.cs" />
     <Compile Update="Json\BuiltinFormattersTests.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
