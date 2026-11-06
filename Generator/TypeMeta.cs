@@ -118,7 +118,9 @@ public struct TypeMeta
         {
             return BuiltinKind.KeyValuePair;
         }
-        if (type.IsGenericTypeOf(referenceSymbols.nullableType) || type.ToDisplayString().Last() == '?')
+        // Only Nullable<T> is a nullable value. A nullable reference type (string?) also displays with a trailing '?'
+        // but has no type argument, so it stays a plain member; its null handling comes from canBeNull.
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
         {
             return BuiltinKind.Nullable;
         }

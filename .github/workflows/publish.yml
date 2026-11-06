@@ -14,6 +14,6 @@ jobs:
       unity-plugin-project: 'PeroSerde.sln'
       unity-plugin-configuration: 'Release'
       channels: peronpm,npmjs,nuget
-      nuget-project: 'PeroSerde.sln'
+      nuget-project: 'Core/PeroTools2.Serde.Core.csproj'
       nuget-user: 'Peropero'
     secrets: inherit

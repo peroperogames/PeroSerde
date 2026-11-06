@@ -160,16 +160,17 @@ public partial class SerdeJsonGenerator
                     _ when member.kind is BuiltinKind.ReadonlyCollection && namedTypeSymbol.TryGetCollectionElementType(out var elementType)
                         => $"PeroTools2.Serde.Json.ReadonlyCollectionFormatter<{member.type.ToDisplayString()}, {elementType.ToDisplayString()}>",
 
-                    _ when member.kind is BuiltinKind.Nullable
+                    // the arity guards keep a misclassified type from throwing inside the generator
+                    _ when member.kind is BuiltinKind.Nullable && namedTypeSymbol.TypeArguments.Length == 1
                         => $"PeroTools2.Serde.Json.NullableFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}>",
 
-                    _ when member.kind is BuiltinKind.Lazy
+                    _ when member.kind is BuiltinKind.Lazy && namedTypeSymbol.TypeArguments.Length == 1
                         => $"PeroTools2.Serde.Json.LazyFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}>",
 
-                    _ when member.kind is BuiltinKind.Dictionary
+                    _ when member.kind is BuiltinKind.Dictionary && namedTypeSymbol.TypeArguments.Length == 2
                         => $"PeroTools2.Serde.Json.DictionaryFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}, {namedTypeSymbol.TypeArguments[1].ToDisplayString()}>",
 
-                    _ when member.kind is BuiltinKind.KeyValuePair
+                    _ when member.kind is BuiltinKind.KeyValuePair && namedTypeSymbol.TypeArguments.Length == 2
                         => $"PeroTools2.Serde.Json.KeyValuePairFormatter<{namedTypeSymbol.TypeArguments[0].ToDisplayString()}, {namedTypeSymbol.TypeArguments[1].ToDisplayString()}>",
 
                     _ => string.Empty
