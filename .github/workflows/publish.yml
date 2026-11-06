@@ -7,13 +7,22 @@ jobs:
     if: github.actor != 'perotoolsbot[bot]'
     uses: peroperogames/ToolsWorkflow/.github/workflows/publish-npm.yml@main
     permissions:
+      # The version commit, and the OIDC identity nuget.org trusts.
       contents: write
       id-token: write
     with:
+      # The UPM package; the repository's projects sit beside it, at the root.
       working-directory: 'Unity'
+      # The package ships two precompiled assemblies, Core and Generator, and each
+      # project's own PostBuild target copies its output into Unity/Plugins. Building
+      # the solution rebuilds both, so neither can drift from the version being
+      # released.
       unity-plugin-project: 'PeroSerde.sln'
+      # Not `Unity` (the default): that configuration exists for packages that compile
+      # differently for Unity, and PeroSerde's does not define it.
       unity-plugin-configuration: 'Release'
-      channels: peronpm,nuget
+      # PeroNPM is the default; npmjs and nuget.org are asked for explicitly.
+      channels: peronpm,npmjs,nuget
       nuget-project: 'PeroSerde.sln'
       nuget-user: 'Peropero'
     secrets: inherit
