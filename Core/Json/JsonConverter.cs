@@ -5,8 +5,11 @@
  */
 
 using System;
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace PeroTools2.Serde.Json
 {
@@ -20,10 +23,9 @@ namespace PeroTools2.Serde.Json
         /// </summary>
         public static class UTF16
         {
-            static UTF16()
-            {
-                ReusableBufferWriter<char>.cachePool = ArrayPool.UTF16;
-            }
+            static UTF16() => ReusableBufferWriter<char>.cachePool = ArrayPool.UTF16;
+
+            #region Serialize Standard
 
             /// <summary>
             /// Serializes an object into a UTF-16 string
@@ -51,7 +53,7 @@ namespace PeroTools2.Serde.Json
                     var jsonWriter = new JsonWriterUtf16(bufferWriter);
                     jsonWriter.WriteValue(value);
                     jsonWriter.Flush();
-                    return new string(bufferWriter.GetWrittenBuffer());
+                    return new string(bufferWriter.GetWrittenSpan());
                 }
                 finally
                 {
@@ -74,7 +76,7 @@ namespace PeroTools2.Serde.Json
                     var jsonWriter = new JsonWriterUtf16(bufferWriter);
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
-                    return new string(bufferWriter.GetWrittenBuffer());
+                    return new string(bufferWriter.GetWrittenSpan());
                 }
                 finally
                 {
@@ -97,7 +99,73 @@ namespace PeroTools2.Serde.Json
                     var jsonWriter = new JsonWriterUtf16(bufferWriter);
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
-                    return new string(bufferWriter.GetWrittenBuffer());
+                    return new string(bufferWriter.GetWrittenSpan());
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Serialize TextWriter
+
+            public static void Serialize<T>(T value, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
                 }
                 finally
                 {
@@ -106,13 +174,277 @@ namespace PeroTools2.Serde.Json
             }
 
             /// <summary>
+            /// Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static async ValueTask SerializeAsync<T>(T value, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await writer.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await writer.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await writer.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Serialize BufferWriter
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static void Serialize<T>(T value, IBufferWriter<char> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, IBufferWriter<char> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, IBufferWriter<char> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Serialize BinaryWriter
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static void Serialize<T>(T value, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf16(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<char>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Deserialize Standard
+
+            /// <summary>
             /// Deserializes a UTF-16 string into an object
             /// </summary>
             /// <param name="json">The UTF-16 string</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json)
+            public static T Deserialize<T>(ReadOnlySpan<char> json)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -152,7 +484,7 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter)
+            public static T Deserialize<T>(ReadOnlySpan<char> json, ISerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -170,7 +502,7 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter)
+            public static T Deserialize<T>(ReadOnlySpan<char> json, IFixedSerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -181,11 +513,13 @@ namespace PeroTools2.Serde.Json
                 return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
+            #endregion
+
             /// <summary>
             /// Trims the leading whitespace characters
             /// </summary>
-            /// <param name="origin"></param>
-            /// <param name="trimmed"></param>
+            /// <param name="origin">The original JSON buffer</param>
+            /// <param name="trimmed">The buffer without its leading whitespace characters</param>
             /// <returns>True if everything is whitespace, otherwise false</returns>
             private static bool TrimWhiteSpace(ReadOnlySpan<char> origin, out ReadOnlySpan<char> trimmed)
             {
@@ -208,12 +542,14 @@ namespace PeroTools2.Serde.Json
             }
         }
 
+        /// <summary>
+        /// UTF-8 JSON serializer/deserializer
+        /// </summary>
         public static class UTF8
         {
-            static UTF8()
-            {
-                ReusableBufferWriter<byte>.cachePool = ArrayPool.UTF8;
-            }
+            static UTF8() => ReusableBufferWriter<byte>.cachePool = ArrayPool.UTF8;
+
+            #region Serialize Standard
 
             /// <summary>
             /// Serializes an object into a UTF-8 string
@@ -295,6 +631,357 @@ namespace PeroTools2.Serde.Json
                 }
             }
 
+            #endregion
+
+            #region Serialize Stream
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static void Serialize<T>(T value, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    stream.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    stream.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    stream.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static async ValueTask SerializeAsync<T>(T value, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await stream.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await stream.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="Stream"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <returns>A task that represents the asynchronous write operation</returns>
+            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, Stream stream)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenMemory();
+                    await stream.WriteAsync(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Serialize BufferWriter
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static void Serialize<T>(T value, IBufferWriter<byte> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, IBufferWriter<byte> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="IBufferWriter{T}"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The buffer writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, IBufferWriter<byte> writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Serialize BinaryWriter
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            public static void Serialize<T>(T value, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                    {
+                        if (BuiltinGenericFormatter<T>.formatter != null)
+                        {
+                            SerdeJsonFormatterProvider.Register(BuiltinGenericFormatter<T>.formatter);
+                        }
+                        else
+                        {
+                            throw SerdeException.ThrowFormatterNotFound(typeof(T));
+                        }
+                    }
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            /// <summary>
+            /// Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="BinaryWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The binary writer to write the serialized JSON to</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, BinaryWriter writer)
+            {
+                var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
+                try
+                {
+                    var jsonWriter = new JsonWriterUtf8(bufferWriter);
+                    jsonWriter.WriteValue(value, formatter);
+                    jsonWriter.Flush();
+                    var buffer = bufferWriter.GetWrittenSpan();
+                    writer.Write(buffer);
+                }
+                finally
+                {
+                    ReusableBufferWriter<byte>.Pool.Return(bufferWriter);
+                }
+            }
+
+            #endregion
+
+            #region Deserialize Standard
+
             /// <summary>
             /// Deserializes a UTF-8 string into an object
             /// </summary>
@@ -302,7 +989,7 @@ namespace PeroTools2.Serde.Json
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json)
+            public static T Deserialize<T>(ReadOnlySpan<byte> json)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -340,7 +1027,7 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
+            public static T Deserialize<T>(ReadOnlySpan<byte> json, ISerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -358,7 +1045,7 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>The deserialized object instance</returns>
-            public static unsafe T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
+            public static T Deserialize<T>(ReadOnlySpan<byte> json, IFixedSerdeJsonFormatter<T> formatter)
             {
                 if (TrimWhiteSpace(json, out var jsonTrimmedWhiteSpace))
                 {
@@ -369,11 +1056,13 @@ namespace PeroTools2.Serde.Json
                 return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
+            #endregion
+
             /// <summary>
             /// Trims the leading whitespace characters
             /// </summary>
-            /// <param name="origin"></param>
-            /// <param name="trimmed"></param>
+            /// <param name="origin">The original JSON buffer</param>
+            /// <param name="trimmed">The buffer without its leading whitespace characters</param>
             /// <returns>True if everything is whitespace, otherwise false</returns>
             private static bool TrimWhiteSpace(ReadOnlySpan<byte> origin, out ReadOnlySpan<byte> trimmed)
             {
@@ -403,6 +1092,9 @@ namespace PeroTools2.Serde.Json
         [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
         private static class BuiltinGenericFormatter<T>
         {
+            /// <summary>
+            /// The formatter instance for the built-in generic type, or null when the type is not supported
+            /// </summary>
             internal static readonly ISerdeJsonFormatter<T> formatter;
 
             static BuiltinGenericFormatter()
@@ -415,7 +1107,8 @@ namespace PeroTools2.Serde.Json
                 }
                 if (typeof(T).IsEnum)
                 {
-                    var type = typeof(EnumNumberFormatter<>).MakeGenericType(typeof(T).GetElementType());
+                    // An enum has no element type, so the generic argument is the enum type itself
+                    var type = typeof(EnumNumberFormatter<>).MakeGenericType(typeof(T));
                     formatter = Activator.CreateInstance(type) as ISerdeJsonFormatter<T>;
                     return;
                 }
@@ -445,6 +1138,11 @@ namespace PeroTools2.Serde.Json
                 }
             }
 
+            /// <summary>
+            /// Checks whether the type implements a generic collection interface
+            /// </summary>
+            /// <param name="type">The type to check</param>
+            /// <returns>True if the type is a collection, otherwise false</returns>
             private static bool IsCollection(Type type)
             {
                 foreach (var iType in type.GetInterfaces())
@@ -456,14 +1154,29 @@ namespace PeroTools2.Serde.Json
                 return false;
             }
 
+            /// <summary>
+            /// Checks whether the type is <see cref="Nullable{T}"/>
+            /// </summary>
+            /// <param name="type">The type to check</param>
+            /// <returns>True if the type is nullable, otherwise false</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsNullable(Type type) =>
                 type.Name.Equals("Nullable`1") && type.Namespace.Equals("System");
 
+            /// <summary>
+            /// Checks whether the type is <see cref="Lazy{T}"/>
+            /// </summary>
+            /// <param name="type">The type to check</param>
+            /// <returns>True if the type is lazy, otherwise false</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsLazy(Type type) =>
                 type.Name.Equals("Lazy`1") && type.Namespace.Equals("System");
 
+            /// <summary>
+            /// Checks whether the type is <see cref="KeyValuePair{TKey,TValue}"/>
+            /// </summary>
+            /// <param name="type">The type to check</param>
+            /// <returns>True if the type is a key-value pair, otherwise false</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool IsKeyValuePair(Type type) =>
                 type.Name.Equals("KeyValuePair`2") && type.Namespace.Equals("System.Collections.Generic");
@@ -476,16 +1189,31 @@ namespace PeroTools2.Serde.Json
 /// The primitive parsers rely on a terminator byte after the value, so a root-level scalar that sits
 /// exactly at the end of the buffer would otherwise read past the buffer.
 /// </summary>
-internal static class JsonBufferSentinel
+file static class JsonBufferSentinel
 {
+    /// <summary>
+    /// Checks whether the given last byte needs a trailing space to terminate the value
+    /// </summary>
+    /// <param name="last">The last byte of the JSON buffer</param>
+    /// <returns>True if the buffer needs padding, otherwise false</returns>
     internal static bool NeedsPadding(byte last) =>
         last != (byte) '}' && last != (byte) ']' && last != (byte) ',' && last != (byte) '"'
         && !PeroTools2.Serde.StringHelper.IsWhiteSpace(last);
 
+    /// <summary>
+    /// Checks whether the given last character needs a trailing space to terminate the value
+    /// </summary>
+    /// <param name="last">The last character of the JSON buffer</param>
+    /// <returns>True if the buffer needs padding, otherwise false</returns>
     internal static bool NeedsPadding(char last) =>
         last != '}' && last != ']' && last != ',' && last != '"'
         && !PeroTools2.Serde.StringHelper.IsWhiteSpace(last);
 
+    /// <summary>
+    /// Appends a trailing space to the UTF-8 JSON buffer when required
+    /// </summary>
+    /// <param name="json">The UTF-8 JSON buffer</param>
+    /// <returns>The padded buffer, or the original buffer when no padding is needed</returns>
     internal static ReadOnlySpan<byte> PadUtf8(ReadOnlySpan<byte> json)
     {
         if (json.Length == 0 || !NeedsPadding(json[^1]))
@@ -499,6 +1227,11 @@ internal static class JsonBufferSentinel
         return padded;
     }
 
+    /// <summary>
+    /// Appends a trailing space to the UTF-16 JSON buffer when required
+    /// </summary>
+    /// <param name="json">The UTF-16 JSON buffer</param>
+    /// <returns>The padded buffer, or the original buffer when no padding is needed</returns>
     internal static ReadOnlySpan<char> PadUtf16(ReadOnlySpan<char> json)
     {
         if (json.Length == 0 || !NeedsPadding(json[^1]))
