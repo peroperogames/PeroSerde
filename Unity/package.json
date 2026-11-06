@@ -10,6 +10,10 @@
   },
   "documentationUrl": "https://github.com/peroperogames/PeroSerde/blob/master/README.md",
   "changelogUrl": "https://github.com/peroperogames/PeroSerde/releases",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peroperogames/PeroSerde.git"
+  },
   "dependencies": {
     "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
   },

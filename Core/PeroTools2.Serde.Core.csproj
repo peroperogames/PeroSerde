@@ -28,6 +28,10 @@
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false"/>
+    </ItemGroup>
+
     <Target Name="PostBuild" BeforeTargets="PostBuildEvent">
         <PropertyGroup>
             <UnitySupportVer>'netstandard2.1'</UnitySupportVer>
