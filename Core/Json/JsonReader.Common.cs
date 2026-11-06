@@ -287,6 +287,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -297,6 +302,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt32Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -339,6 +349,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<int>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -349,6 +364,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt32Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -386,6 +406,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -396,6 +421,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt64Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -438,6 +468,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<long>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -448,6 +483,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt64Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -485,6 +525,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -495,6 +540,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt16Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -537,6 +587,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<short>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -547,6 +602,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt16Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -584,6 +644,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -594,6 +659,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt16Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -636,6 +706,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<ushort>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -646,6 +721,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt16Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -683,6 +763,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -693,6 +778,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadByteValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -735,6 +825,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<byte>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -745,6 +840,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadByteValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -782,6 +882,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -792,6 +897,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadSByteValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -834,6 +944,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<sbyte>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -844,6 +959,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadSByteValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -881,6 +1001,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -891,6 +1016,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt32Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -933,6 +1063,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<uint>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -943,6 +1078,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt32Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -980,6 +1120,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -990,6 +1135,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt64Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1032,6 +1182,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<ulong>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1042,6 +1197,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt64Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1079,6 +1239,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1089,6 +1254,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadSingleValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1131,6 +1301,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<float>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1141,6 +1316,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadSingleValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1178,6 +1358,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1188,6 +1373,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadDoubleValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1230,6 +1420,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<double>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1240,6 +1435,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadDoubleValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1277,6 +1477,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1287,6 +1492,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadDecimalValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1329,6 +1539,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<decimal>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1339,6 +1554,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadDecimalValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1376,6 +1596,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1386,6 +1611,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadBooleanValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1428,6 +1658,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<bool>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1438,6 +1673,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadBooleanValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1475,6 +1715,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1485,6 +1730,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadCharValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1527,6 +1777,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<char>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1537,6 +1792,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadCharValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1574,6 +1834,11 @@ public unsafe ref struct JsonReaderUtf8
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == (byte) ']')
             {
                 Advance(1);
@@ -1584,6 +1849,11 @@ public unsafe ref struct JsonReaderUtf8
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadStringValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -1626,6 +1896,11 @@ public unsafe ref struct JsonReaderUtf8
         var list = new List<string>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1636,6 +1911,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadStringValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -1694,6 +1974,11 @@ public unsafe ref struct JsonReaderUtf8
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1702,6 +1987,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == (byte) ',')
@@ -1721,6 +2011,11 @@ public unsafe ref struct JsonReaderUtf8
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
@@ -1729,6 +2024,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == (byte) ',')
@@ -1816,10 +2116,8 @@ public unsafe ref struct JsonReaderUtf8
             return false;
         }
 
-        // Skip the whitespace after the colon so the value reader starts on the value itself
-        index++;
-        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
-        m_Advanced = index;
+        // Consume the comma only: the next key read skips the whitespace in front of the next key
+        m_Advanced = index + 1;
         return true;
     }
 
@@ -1881,7 +2179,8 @@ public unsafe ref struct JsonReaderUtf8
 
         if (json[end] == (byte) '\\')
         {
-            // Escaped key: fall back to the general string reader from the opening quote
+            // Escaped key: fall back to the general string reader, which has to restart from the opening quote
+            m_Advanced = index;
             key = ReadString();
             ReadWhiteSpace();
             ReadKeyBegin();
@@ -2252,6 +2551,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2262,6 +2566,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt32Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2304,6 +2613,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<int>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2314,6 +2628,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt32Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2351,6 +2670,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2361,6 +2685,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt64Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2403,6 +2732,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<long>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2413,6 +2747,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt64Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2450,6 +2789,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2460,6 +2804,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadInt16Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2502,6 +2851,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<short>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2512,6 +2866,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadInt16Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2549,6 +2908,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2559,6 +2923,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt16Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2601,6 +2970,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<ushort>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2611,6 +2985,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt16Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2648,6 +3027,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2658,6 +3042,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadByteValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2700,6 +3089,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<byte>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2710,6 +3104,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadByteValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2747,6 +3146,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2757,6 +3161,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadSByteValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2799,6 +3208,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<sbyte>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2809,6 +3223,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadSByteValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2846,6 +3265,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2856,6 +3280,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt32Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2898,6 +3327,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<uint>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -2908,6 +3342,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt32Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -2945,6 +3384,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -2955,6 +3399,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadUInt64Value());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -2997,6 +3446,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<ulong>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3007,6 +3461,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadUInt64Value());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3044,6 +3503,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3054,6 +3518,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadSingleValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3096,6 +3565,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<float>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3106,6 +3580,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadSingleValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3143,6 +3622,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3153,6 +3637,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadDoubleValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3195,6 +3684,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<double>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3205,6 +3699,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadDoubleValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3242,6 +3741,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3252,6 +3756,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadDecimalValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3294,6 +3803,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<decimal>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3304,6 +3818,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadDecimalValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3341,6 +3860,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3351,6 +3875,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadBooleanValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3393,6 +3922,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<bool>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3403,6 +3937,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadBooleanValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3440,6 +3979,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3450,6 +3994,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadCharValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3492,6 +4041,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<char>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3502,6 +4056,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadCharValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3539,6 +4098,11 @@ public unsafe ref struct JsonReaderUtf16
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == ']')
             {
                 Advance(1);
@@ -3549,6 +4113,11 @@ public unsafe ref struct JsonReaderUtf16
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(ReadStringValue());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -3591,6 +4160,11 @@ public unsafe ref struct JsonReaderUtf16
         var list = new List<string>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3601,6 +4175,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(ReadStringValue());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -3659,6 +4238,11 @@ public unsafe ref struct JsonReaderUtf16
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3667,6 +4251,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == ',')
@@ -3686,6 +4275,11 @@ public unsafe ref struct JsonReaderUtf16
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == ']')
         {
             Advance(1);
@@ -3694,6 +4288,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == ',')
@@ -3781,10 +4380,8 @@ public unsafe ref struct JsonReaderUtf16
             return false;
         }
 
-        // Skip the whitespace after the colon so the value reader starts on the value itself
-        index++;
-        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
-        m_Advanced = index;
+        // Consume the comma only: the next key read skips the whitespace in front of the next key
+        m_Advanced = index + 1;
         return true;
     }
 
@@ -3846,7 +4443,8 @@ public unsafe ref struct JsonReaderUtf16
 
         if (json[end] == '\\')
         {
-            // Escaped key: fall back to the general string reader from the opening quote
+            // Escaped key: fall back to the general string reader, which has to restart from the opening quote
+            m_Advanced = index;
             key = ReadString();
             ReadWhiteSpace();
             ReadKeyBegin();

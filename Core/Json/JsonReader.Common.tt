@@ -191,6 +191,11 @@ foreach (var reader in directCollectionReaders)
         {
             ReadBeginArray();
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             if (m_Json[m_Advanced] == <#= castStr #>']')
             {
                 Advance(1);
@@ -201,6 +206,11 @@ foreach (var reader in directCollectionReaders)
             while (true)
             {
                 ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
                 buffer.Add(<#= reader.method #>());
                 // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
                 // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
@@ -243,6 +253,11 @@ foreach (var reader in directCollectionReaders)
         var list = new List<<#= reader.type #>>();
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if (m_Json[m_Advanced] == <#= castStr #>']')
         {
             Advance(1);
@@ -253,6 +268,11 @@ foreach (var reader in directCollectionReaders)
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             list.Add(<#= reader.method #>());
             ReadWhiteSpace();
             if ((uint) m_Advanced >= (uint) m_Json.Length)
@@ -314,6 +334,11 @@ foreach (var reader in directCollectionReaders)
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == <#= castStr #>']')
         {
             Advance(1);
@@ -322,6 +347,11 @@ foreach (var reader in directCollectionReaders)
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == <#= castStr #>',')
@@ -341,6 +371,11 @@ foreach (var reader in directCollectionReaders)
     {
         ReadBeginArray();
         ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
         if(m_Json[m_Advanced] == <#= castStr #>']')
         {
             Advance(1);
@@ -349,6 +384,11 @@ foreach (var reader in directCollectionReaders)
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == <#= castStr #>',')
@@ -436,10 +476,8 @@ foreach (var reader in directCollectionReaders)
             return false;
         }
 
-        // Skip the whitespace after the colon so the value reader starts on the value itself
-        index++;
-        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
-        m_Advanced = index;
+        // Consume the comma only: the next key read skips the whitespace in front of the next key
+        m_Advanced = index + 1;
         return true;
     }
 
@@ -501,7 +539,8 @@ foreach (var reader in directCollectionReaders)
 
         if (json[end] == <#= castStr #>'\\')
         {
-            // Escaped key: fall back to the general string reader from the opening quote
+            // Escaped key: fall back to the general string reader, which has to restart from the opening quote
+            m_Advanced = index;
             key = ReadString();
             ReadWhiteSpace();
             ReadKeyBegin();

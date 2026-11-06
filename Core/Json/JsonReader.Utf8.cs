@@ -680,87 +680,12 @@ public static unsafe partial class JsonReader
         return SpanConverter.ToInt(in span);
     }
 
-    /// <summary>Parses a small integer in one pass: the digits are read and converted at the same time.</summary>
-    /// <remarks>
-    /// <see cref="ReadIntUtf8"/> has to find the end of the token before it can parse it, which walks the digits twice.
-    /// A cursor-free reader pays that twice per value, so the common case (sign plus at most nine digits) is parsed
-    /// straight from the buffer; anything else falls back to the general path that also reports the JSON errors.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadIntFastUtf8(byte* src, out int advance)
-    {
-        var negative = src[0] == (byte) '-';
-        var index = negative ? 1 : 0;
-        var start = index;
-        var value = 0;
-        while (true)
-        {
-            var digit = src[index] - (byte) '0';
-            if ((uint) digit > 9)
-            {
-                break;
-            }
-            value = (value * 10) + digit;
-            index++;
-        }
-
-        // Ten digit values overflow an int, and a token that is not followed by a delimiter is not a number
-        if (index == start || index - start > 9 || (src[index] != (byte) ',' && src[index] != (byte) ']' && src[index] != (byte) '}'))
-        {
-            return ReadIntUtf8(src, out advance);
-        }
-
-        advance = index;
-        while (StringHelper.IsWhiteSpace(src[advance]))
-        {
-            advance++;
-        }
-
-        return negative ? -value : value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ReadLongUtf8(byte* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf8(src, LongFormatter.max_size, out advance);
         return SpanConverter.ToLong(in span);
     }
 
-    /// <summary>Parses a small 64-bit integer in one pass, see <see cref="ReadIntFastUtf8"/>.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadLongFastUtf8(byte* src, out int advance)
-    {
-        var negative = src[0] == (byte) '-';
-        var index = negative ? 1 : 0;
-        var start = index;
-        long value = 0;
-        while (true)
-        {
-            var digit = src[index] - (byte) '0';
-            if ((uint) digit > 9)
-            {
-                break;
-            }
-            value = (value * 10) + digit;
-            index++;
-        }
-
-        // Nineteen digit values overflow a long, and a token that is not followed by a delimiter is not a number
-        if (index == start || index - start > 18 || (src[index] != (byte) ',' && src[index] != (byte) ']' && src[index] != (byte) '}'))
-        {
-            return ReadLongUtf8(src, out advance);
-        }
-
-        advance = index;
-        while (StringHelper.IsWhiteSpace(src[advance]))
-        {
-            advance++;
-        }
-
-        return negative ? -value : value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort ReadUshortUtf8(byte* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf8(src, UshortFormatter.max_size, out advance);
@@ -968,9 +893,16 @@ public static unsafe partial class JsonReader
             return SpanConverter.ToFloat(in token);
         }
 
+        // Mantissa and power of ten are both exact in float only below 2^24 and 1e10; anything else goes through the
+        // framework parser, because narrowing a rounded double to float can round twice
+        if (mantissa >= 1 << 24 || fractionDigits > 10)
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ToFloat(in token);
+        }
+
         advance = SkipWhiteSpaceUtf8(span, end);
-        double result = fractionDigits == 0 ? mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
-        var value = (float) result;
+        var value = fractionDigits == 0 ? (float) mantissa : (float) mantissa / SpanConverter.floatPowersOfTen[fractionDigits];
         return negative ? -value : value;
     }
 

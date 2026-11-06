@@ -6,6 +6,7 @@
  */
 
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -39,7 +40,7 @@ public static partial class SerdeJsonFormatterProvider
         Dispatch<T>.version == version && (Dispatch<T>.fixedFormatter != null || Dispatch<T>.unfixedFormatter != null);
 
     /// <summary>Bumped on every registration so the per-call caches know they have to resolve again</summary>
-    internal static int version;
+    internal static volatile int version;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Register<T>(ISerdeJsonFormatter<T> formatter)
@@ -79,7 +80,9 @@ public static partial class SerdeJsonFormatterProvider
         var formatter = GetFormatterInternal<T>();
         Dispatch<T>.fixedFormatter = formatter as IFixedSerdeJsonFormatter<T>;
         Dispatch<T>.unfixedFormatter = formatter as ISerdeJsonFormatter<T>;
-        Dispatch<T>.version = version;
+        // Publish the formatter fields before the version that vouches for them, so another thread that reads the new
+        // version can never observe a half written cache
+        Volatile.Write(ref Dispatch<T>.version, Volatile.Read(ref version));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

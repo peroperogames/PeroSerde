@@ -57,13 +57,13 @@ namespace PeroTools2.Serde.Benchmarks.Unity
                         parked.Add(target);
                     }
                 }
-                SetDefine("SERDE_BENCH_NO_SWIFTER");
+                SetSwifterDefine(true);
                 AssetDatabase.Refresh();
                 Build(ScriptingImplementation.IL2CPP, "Builds/IL2CPP/PeroSerdeBench.exe");
             }
             finally
             {
-                SetDefine(null);
+                SetSwifterDefine(false);
                 foreach (var parkedFile in parked)
                 {
                     if (!File.Exists(parkedFile)) continue;
@@ -77,15 +77,22 @@ namespace PeroTools2.Serde.Benchmarks.Unity
             EditorApplication.Exit(0);
         }
 
-        private static void SetDefine(string define)
-        {
+        /// <summary>Adds or removes <c>SERDE_BENCH_NO_SWIFTER</c> without touching the defines the project already has.</summary>
+    private static void SetSwifterDefine(bool excluded)
+    {
 #if UNITY_2022_2_OR_NEWER
-            var target = NamedBuildTarget.Standalone;
-            PlayerSettings.SetScriptingDefineSymbols(target, string.IsNullOrEmpty(define) ? string.Empty : define);
+        var target = NamedBuildTarget.Standalone;
+        var defines = PlayerSettings.GetScriptingDefineSymbols(target).Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+        defines.RemoveAll(item => item == "SERDE_BENCH_NO_SWIFTER");
+        if (excluded) defines.Add("SERDE_BENCH_NO_SWIFTER");
+        PlayerSettings.SetScriptingDefineSymbols(target, string.Join(";", defines));
 #else
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, define ?? string.Empty);
+        var defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone).Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+        defines.RemoveAll(item => item == "SERDE_BENCH_NO_SWIFTER");
+        if (excluded) defines.Add("SERDE_BENCH_NO_SWIFTER");
+        PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, string.Join(";", defines));
 #endif
-        }
+    }
 
         private static void Build(ScriptingImplementation backend, string outputPath)
         {

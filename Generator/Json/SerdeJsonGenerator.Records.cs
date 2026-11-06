@@ -314,7 +314,9 @@ public partial class SerdeJsonGenerator
         builder.AppendLine("            }");
         foreach (var member in fallback)
         {
-            builder.AppendLine($"            if (key.Length == {member.formatName.Length} && PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
+            // A non-ASCII member name has a different length in UTF16 characters and UTF8 bytes, so this branch
+            // compares the bytes instead of guessing a length
+            builder.AppendLine($"            if (PeroTools2.Serde.StringHelper.EqualsUtf8(key, \"{member.formatName}\"))");
             builder.AppendLine("            {");
             builder.AppendLine($"                obj.{member.name} = {MemberReadStatement(member)};");
             builder.AppendLine("                return;");
@@ -343,7 +345,10 @@ public partial class SerdeJsonGenerator
             return;
         }
 
-        var groups = members
+        // Non-ASCII member names go through the string comparer; the packed switch only covers ASCII names
+        var switchable = members.Where(member => IsSimpleKey(member.formatName)).ToArray();
+        var fallback = members.Where(member => !IsSimpleKey(member.formatName)).ToArray();
+        var groups = switchable
             .GroupBy(member => PackPrefix(member.formatName, 0))
             .Select(group => (low: group.Key, candidates: group.ToArray()))
             .ToArray();
@@ -376,6 +381,15 @@ public partial class SerdeJsonGenerator
         }
 
         builder.AppendLine("            }");
+        foreach (var member in fallback)
+        {
+            builder.AppendLine($"            if (key.Length == {member.formatName.Length} && PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
+            builder.AppendLine("            {");
+            builder.AppendLine($"                obj.{member.name} = {MemberReadStatement(member)};");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
         builder.AppendLine("            reader.ReadUntilEnd();");
     }
 

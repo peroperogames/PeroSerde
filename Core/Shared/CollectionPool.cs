@@ -23,6 +23,9 @@ internal sealed class ListPool<T>
 {
     private const int MaxDepth = 8;
 
+    /// <summary>Lists grown past this many elements are dropped instead of pooled.</summary>
+    private const int max_capacity = 16 * 1024;
+
     public static readonly ListPool<T> shared = new();
 
     [ThreadStatic] private static List<T>[] t_Items;
@@ -46,6 +49,12 @@ internal sealed class ListPool<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Return(List<T> collection)
     {
+        // Clear keeps the internal array, so a single huge array would stay on this thread for the rest of the process
+        if (collection.Capacity > max_capacity)
+        {
+            return;
+        }
+
         collection.Clear();
         var items = t_Items ??= new List<T>[MaxDepth];
         if (t_Count >= items.Length)

@@ -375,9 +375,14 @@ public static unsafe partial class JsonReader
             }
 
             hasEscape = true;
+            if (found + 1 >= span.Length)
+            {
+                return false;
+            }
+
             // Skip the escape sequence: \uXXXX is six characters, every other escape is two
             position = found + (span[found + 1] == 'u' ? 6 : 2);
-            if (found + 1 >= span.Length || position > span.Length)
+            if (position > span.Length)
             {
                 return false;
             }
@@ -578,87 +583,12 @@ public static unsafe partial class JsonReader
         return SpanConverter.ToInt(in span);
     }
 
-    /// <summary>Parses a small integer in one pass: the digits are read and converted at the same time.</summary>
-    /// <remarks>
-    /// <see cref="ReadIntUtf16"/> has to find the end of the token before it can parse it, which walks the digits twice.
-    /// A cursor-free reader pays that twice per value, so the common case (sign plus at most nine digits) is parsed
-    /// straight from the buffer; anything else falls back to the general path that also reports the JSON errors.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadIntFastUtf16(char* src, out int advance)
-    {
-        var negative = src[0] == '-';
-        var index = negative ? 1 : 0;
-        var start = index;
-        var value = 0;
-        while (true)
-        {
-            var digit = src[index] - '0';
-            if ((uint) digit > 9)
-            {
-                break;
-            }
-            value = (value * 10) + digit;
-            index++;
-        }
-
-        // Ten digit values overflow an int, and a token that is not followed by a delimiter is not a number
-        if (index == start || index - start > 9 || (src[index] != ',' && src[index] != ']' && src[index] != '}'))
-        {
-            return ReadIntUtf16(src, out advance);
-        }
-
-        advance = index;
-        while (StringHelper.IsWhiteSpace(src[advance]))
-        {
-            advance++;
-        }
-
-        return negative ? -value : value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ReadLongUtf16(char* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf16(src, LongFormatter.max_size, out advance);
         return SpanConverter.ToLong(in span);
     }
 
-    /// <summary>Parses a small 64-bit integer in one pass, see <see cref="ReadIntFastUtf16"/>.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadLongFastUtf16(char* src, out int advance)
-    {
-        var negative = src[0] == '-';
-        var index = negative ? 1 : 0;
-        var start = index;
-        long value = 0;
-        while (true)
-        {
-            var digit = src[index] - '0';
-            if ((uint) digit > 9)
-            {
-                break;
-            }
-            value = (value * 10) + digit;
-            index++;
-        }
-
-        // Nineteen digit values overflow a long, and a token that is not followed by a delimiter is not a number
-        if (index == start || index - start > 18 || (src[index] != ',' && src[index] != ']' && src[index] != '}'))
-        {
-            return ReadLongUtf16(src, out advance);
-        }
-
-        advance = index;
-        while (StringHelper.IsWhiteSpace(src[advance]))
-        {
-            advance++;
-        }
-
-        return negative ? -value : value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort ReadUshortUtf16(char* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf16(src, UshortFormatter.max_size, out advance);
@@ -866,9 +796,16 @@ public static unsafe partial class JsonReader
             return SpanConverter.ToFloat(in token);
         }
 
+        // Mantissa and power of ten are both exact in float only below 2^24 and 1e10; anything else goes through the
+        // framework parser, because narrowing a rounded double to float can round twice
+        if (mantissa >= 1 << 24 || fractionDigits > 10)
+        {
+            var token = ReadPrimitiveUntilEndUtf16(span, out advance);
+            return SpanConverter.ToFloat(in token);
+        }
+
         advance = SkipWhiteSpaceUtf16(span, end);
-        double result = fractionDigits == 0 ? mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
-        var value = (float) result;
+        var value = fractionDigits == 0 ? (float) mantissa : (float) mantissa / SpanConverter.floatPowersOfTen[fractionDigits];
         return negative ? -value : value;
     }
 

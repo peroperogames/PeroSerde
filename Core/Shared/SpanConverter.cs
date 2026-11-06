@@ -144,6 +144,12 @@ public static class SpanConverter
     }
 
     // Exact powers of ten that are representable in double, the limit for Clinger's fast path
+    /// <summary>Powers of ten that are exact in <see cref="float"/>, the limit for the float fast path.</summary>
+    internal static readonly float[] floatPowersOfTen =
+    {
+        1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f, 1e7f, 1e8f, 1e9f, 1e10f
+    };
+
     internal static readonly double[] doublePowersOfTen =
     {
         1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18,

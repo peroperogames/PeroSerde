@@ -19,6 +19,24 @@ public partial class KeyDispatchCollisionObject
     public long nameabcd2;
 }
 
+[SerdeJsonSerializable]
+public partial class ScalarHolder
+{
+    public int value;
+}
+
+[SerdeJsonSerializable]
+public partial class FlagHolder
+{
+    public bool flag;
+}
+
+[SerdeJsonSerializable]
+public partial class NonAsciiMemberHolder
+{
+    public int 值;
+}
+
 /// <summary>
 /// Equivalence and fallback-path tests for the generated key dispatch.
 /// If the generation-time prefix constant and the runtime packing differ in a single bit, members silently keep their
@@ -70,6 +88,98 @@ public sealed unsafe class KeyDispatchTests
         {
             Assert.AreEqual(NaivePrefix(key), RuntimePrefix(key), $"key={key}");
         }
+    }
+
+    [Test]
+    public void EscapedKeyWithWhitespaceTest()
+    {
+        // An escaped key falls back to the general string reader; the whitespace in front of it must not break the read
+        var utf16 = JsonConverter.UTF16.Deserialize<ScalarHolder>("{ \"a\\u0062\": 1, \"value\": 2 }");
+        Assert.AreEqual(2, utf16.value);
+
+        var utf8 = JsonConverter.UTF8.Deserialize<ScalarHolder>("{ \"a\\u0062\": 1, \"value\": 2 }"u8.ToArray());
+        Assert.AreEqual(2, utf8.value);
+    }
+
+    [Test]
+    public void EmptyAndTruncatedArrayTest()
+    {
+        Assert.AreEqual(0, JsonConverter.UTF8.Deserialize<int[]>("[]"u8.ToArray()).Length);
+        Assert.AreEqual(0, JsonConverter.UTF8.Deserialize<int[]>("[  ]"u8.ToArray()).Length);
+        Assert.AreEqual(0, JsonConverter.UTF16.Deserialize<int[]>("[  ]").Length);
+
+        // A truncated array has to report a SerdeException, not an IndexOutOfRangeException
+        Assert.Throws<SerdeException>(() => JsonConverter.UTF8.Deserialize<int[]>("["u8.ToArray()));
+        Assert.Throws<SerdeException>(() => JsonConverter.UTF16.Deserialize<int[]>("["));
+        Assert.Throws<SerdeException>(() => JsonConverter.UTF8.Deserialize<int[]>("[  "u8.ToArray()));
+    }
+
+    [Test]
+    public void ArrayElementWhitespaceTest()
+    {
+        var utf8 = JsonConverter.UTF8.Deserialize<int[]>("[ 1 , 2 ]"u8.ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, utf8);
+
+        var utf16 = JsonConverter.UTF16.Deserialize<int[]>("[ 1 , 2 ]");
+        CollectionAssert.AreEqual(new[] { 1, 2 }, utf16);
+    }
+
+    [Test]
+    public void TopLevelScalarAtBufferEndTest()
+    {
+        // The fastest paths read a delimiter after the token, so a top level value that ends the buffer is the case
+        // where a missing bound shows up as an out of range read
+        Assert.AreEqual(123, JsonConverter.UTF16.Deserialize<int>("123"));
+        Assert.AreEqual(123, JsonConverter.UTF8.Deserialize<int>("123"u8.ToArray()));
+        Assert.AreEqual(1234567890123L, JsonConverter.UTF16.Deserialize<long>("1234567890123"));
+        Assert.AreEqual(1234567890123L, JsonConverter.UTF8.Deserialize<long>("1234567890123"u8.ToArray()));
+        Assert.AreEqual(3.5f, JsonConverter.UTF16.Deserialize<float>("3.5"));
+        Assert.AreEqual(3.5f, JsonConverter.UTF8.Deserialize<float>("3.5"u8.ToArray()));
+        Assert.AreEqual("abc", JsonConverter.UTF16.Deserialize<string>("\"abc\""));
+        Assert.AreEqual(true, JsonConverter.UTF16.Deserialize<bool>("true"));
+    }
+
+    [Test]
+    public void BoolWithTrailingWhitespaceTest()
+    {
+        Assert.AreEqual(true, JsonConverter.UTF16.Deserialize<FlagHolder>("{\"flag\": true }").flag);
+        Assert.AreEqual(true, JsonConverter.UTF8.Deserialize<FlagHolder>("{\"flag\":true  }"u8.ToArray()).flag);
+        Assert.AreEqual(false, JsonConverter.UTF16.Deserialize<FlagHolder>("{\"flag\": false\t}").flag);
+    }
+
+    [Test]
+    public void NonAsciiMemberNameTest()
+    {
+        // The UTF8 key length is a byte count, which is not the character count of the member name
+        var utf8 = JsonConverter.UTF8.Deserialize<NonAsciiMemberHolder>("{\"值\":7}"u8.ToArray());
+        Assert.AreEqual(7, utf8.值);
+
+        var utf16 = JsonConverter.UTF16.Deserialize<NonAsciiMemberHolder>("{\"值\":7}");
+        Assert.AreEqual(7, utf16.值);
+    }
+
+    [Test]
+    public void FloatFastPathParityTest()
+    {
+        var values = new[]
+        {
+            "3.1415927", "0.1", "1.5", "-2.25", "16777217", "33554433", "0.30000001", "123.456789",
+            "1e5", "-0e0", "1.4e-45", "3.4028235e38", "-0.0", "9999999", "16777216"
+        };
+
+        foreach (var text in values)
+        {
+            var expected = float.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
+            Assert.AreEqual(expected, JsonConverter.UTF16.Deserialize<float>(text), $"utf16 {text}");
+            Assert.AreEqual(expected, JsonConverter.UTF8.Deserialize<float>(System.Text.Encoding.UTF8.GetBytes(text)), $"utf8 {text}");
+
+            var expectedDouble = double.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
+            Assert.AreEqual(expectedDouble, JsonConverter.UTF16.Deserialize<double>(text), $"double utf16 {text}");
+        }
+
+        Assert.AreEqual(
+            BitConverter.SingleToInt32Bits(-0.0f),
+            BitConverter.SingleToInt32Bits(JsonConverter.UTF16.Deserialize<float>("-0.0")));
     }
 
     [Test]

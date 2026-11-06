@@ -133,7 +133,16 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
+                try
+                {
+                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    // The fast paths read past the last token, so a truncated document can run past the buffer; report
+                    // it as invalid json instead of leaking the index error
+                    throw SerdeException.ThrowInvalidJson(jsonTrimmedWhiteSpace.ToString());
+                }
             }
 
             /// <summary>
@@ -314,7 +323,14 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
+                try
+                {
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    throw SerdeException.ThrowInvalidJson(System.Text.Encoding.UTF8.GetString(jsonTrimmedWhiteSpace));
+                }
             }
 
             /// <summary>
