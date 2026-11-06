@@ -111,7 +111,7 @@ public sealed class JsonConverterOutputTests
     }
 
     [Test]
-    public void Utf16TextWriterFormatterTest()
+    public async Task Utf16TextWriterFormatterTest()
     {
         var model = CreateModel();
         var expected = JsonConverter.UTF16.Serialize(model);
@@ -120,7 +120,8 @@ public sealed class JsonConverterOutputTests
         using var async = new AsyncStringWriter();
 
         JsonConverter.UTF16.Serialize(model, formatter, sync);
-        JsonConverter.UTF16.SerializeAsync(model, formatter, async).GetAwaiter().GetResult();
+        // awaited instead of blocked on, so a writer that captures the caller synchronization context cannot deadlock
+        await JsonConverter.UTF16.SerializeAsync(model, formatter, async);
 
         Assert.AreEqual(expected, sync.ToString());
         Assert.AreEqual(expected, async.ToString());
@@ -184,7 +185,7 @@ public sealed class JsonConverterOutputTests
 
         var unicode = unicodeStream.ToArray();
         Assert.AreEqual(Encoding.Unicode.GetBytes(json), unicode);
-        CollectionAssert.AreEqual(Encoding.Unicode.GetBytes(json), unicode, "no byte order mark may be written");
+        Assert.IsFalse(unicode.Length >= 2 && unicode[0] == 0xFF && unicode[1] == 0xFE, "no byte order mark may be written");
     }
 
     [Test]
@@ -196,8 +197,9 @@ public sealed class JsonConverterOutputTests
 
         JsonConverter.UTF8.Serialize(model, stream);
 
-        Assert.AreEqual(expected, stream.ToArray());
-        CollectionAssert.AreEqual(expected, stream.ToArray(), "no byte order mark may be written");
+        var bytes = stream.ToArray();
+        Assert.AreEqual(expected, bytes);
+        Assert.IsFalse(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "no byte order mark may be written");
     }
 
     [Test]
@@ -286,10 +288,10 @@ public sealed class JsonConverterOutputTests
     {
         var model = CreateModel();
         var json = JsonConverter.UTF16.Serialize(model);
-        var utf8 = JsonConverter.UTF8.Serialize(model);
+        var utf8 = Encoding.UTF8.GetBytes("\r\n\t " + json);
 
         Assert.AreEqual(model.id, JsonConverter.UTF16.Deserialize<OutputTargetModel>("\r\n\t " + json).id);
         Assert.AreEqual(model.id, JsonConverter.UTF16.Deserialize<OutputTargetModel>(" \r\n\t" + json).id);
-        Assert.AreEqual(model.id, JsonConverter.UTF8.Deserialize<OutputTargetModel>(Encoding.UTF8.GetBytes("\r\n\t " + json)).id);
+        Assert.AreEqual(model.id, JsonConverter.UTF8.Deserialize<OutputTargetModel>(utf8).id);
     }
 }
