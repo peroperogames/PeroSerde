@@ -12,7 +12,19 @@
         <Description>Generator for PeroSerde.</Description>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
-        <IsPackable>false</IsPackable>
+        <!-- A package, because this generator is also consumed outside Unity: the same
+             assembly ships in Unity/Plugins for the editor and comes from nuget.org for
+             a plain .NET project. -->
+        <IsPackable>true</IsPackable>
+        <!-- An analyzer package carries nothing in lib/: the generator has to sit in
+             analyzers/dotnet/cs, which is the only place Roslyn looks. In lib/ it would
+             be an ordinary library whose [Generator] is never loaded. -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <!-- Nothing to depend on — Roslyn ships with the compiler — and a generator that
+             declares dependencies is worse than useless: the compiler would resolve them
+             against its own host. -->
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <DevelopmentDependency>true</DevelopmentDependency>
         <Nullable>enable</Nullable>
         <Copyright>© 2026 PeroperoGames</Copyright>
         <PackageProjectUrl>https://github.com/peroperogames/PeroSerde</PackageProjectUrl>
@@ -26,7 +38,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0"/>
+        <!-- The compiler loads this one, so it is a package reference the consumer must
+             never see: the assemblies it points at are already in the compiler. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The built assembly, where Roslyn looks for a generator. Pack runs after the
+             build in the same invocation, so the file is there by the time it is read. -->
+        <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <!-- PackageReadmeFile names a file *inside* the package, and nothing puts the
+             repository's README there by itself: without this item dotnet pack fails
+             with NU5039 "The readme file 'README.md' does not exist in the package". -->
+        <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false"/>
     </ItemGroup>
 
     <Target Name="PostBuild" BeforeTargets="PostBuildEvent">
