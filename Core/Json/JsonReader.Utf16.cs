@@ -796,9 +796,8 @@ public static unsafe partial class JsonReader
             return SpanConverter.ParseFloatFramework(in token);
         }
 
-        // Mantissa and power of ten are both exact in float only below 2^24 and 1e10; anything else goes to the
-        // framework parser, so the result is never rounded through double first
-        // framework parser, because narrowing a rounded double to float can round twice
+        // Mantissa and power of ten are both exact in float below 2^24 and 1e10; anything else goes to the framework
+        // parser, so the result is never rounded through double first
         if (mantissa >= 1 << 24 || fractionDigits > 10)
         {
             var token = ReadPrimitiveUntilEndUtf16(span, out advance);
