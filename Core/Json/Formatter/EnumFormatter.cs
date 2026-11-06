@@ -186,13 +186,13 @@ public class EnumNumberFormatter<T> : IFixedSerdeJsonFormatter<T> where T : unma
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe T DeserializeUtf8Unsafe(byte* src, out int advance) => EnumInfo<T>.typeCode switch
     {
-        TypeCode.SByte => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf8(new System.ReadOnlySpan<byte>(src, LongFormatter.max_size), out advance)),
+        TypeCode.SByte => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf8(src, out advance)),
         TypeCode.Byte => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf8(src, out advance)),
-        TypeCode.Int16 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf8(new System.ReadOnlySpan<byte>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int16 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf8(src, out advance)),
         TypeCode.UInt16 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf8(src, out advance)),
-        TypeCode.Int32 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf8(new System.ReadOnlySpan<byte>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int32 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf8(src, out advance)),
         TypeCode.UInt32 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf8(src, out advance)),
-        TypeCode.Int64 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf8(new System.ReadOnlySpan<byte>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int64 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf8(src, out advance)),
         TypeCode.UInt64 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf8(src, out advance)),
         _ => throw new ArgumentException($"Enum {typeof(T).Name}'s UnderlyingType {Enum.GetUnderlyingType(typeof(T)).Name} is not support.")
     };
@@ -200,13 +200,13 @@ public class EnumNumberFormatter<T> : IFixedSerdeJsonFormatter<T> where T : unma
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe T DeserializeUtf16Unsafe(char* src, out int advance) => EnumInfo<T>.typeCode switch
     {
-        TypeCode.SByte => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf16(new System.ReadOnlySpan<char>(src, LongFormatter.max_size), out advance)),
+        TypeCode.SByte => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf16(src, out advance)),
         TypeCode.Byte => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf16(src, out advance)),
-        TypeCode.Int16 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf16(new System.ReadOnlySpan<char>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int16 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf16(src, out advance)),
         TypeCode.UInt16 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf16(src, out advance)),
-        TypeCode.Int32 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf16(new System.ReadOnlySpan<char>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int32 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf16(src, out advance)),
         TypeCode.UInt32 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf16(src, out advance)),
-        TypeCode.Int64 => EnumHelper.AsEnum<T>(JsonReader.ReadLongFastUtf16(new System.ReadOnlySpan<char>(src, LongFormatter.max_size), out advance)),
+        TypeCode.Int64 => EnumHelper.AsEnum<T>(JsonReader.ReadLongUtf16(src, out advance)),
         TypeCode.UInt64 => EnumHelper.AsEnum<T>(JsonReader.ReadUlongUtf16(src, out advance)),
         _ => throw new ArgumentException($"Enum {typeof(T).Name}'s UnderlyingType {Enum.GetUnderlyingType(typeof(T)).Name} is not support.")
     };

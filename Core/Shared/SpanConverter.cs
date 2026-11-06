@@ -118,6 +118,33 @@ public static class SpanConverter
         return negative ? -result : result;
     }
 
+    /// <summary>Parses a float with the framework parser, without rounding through double first.</summary>
+    internal static float ParseFloatFramework(in ReadOnlySpan<char> span)
+    {
+        if (!float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
+        {
+            throw SerdeException.ThrowInvalidParsing<float>();
+        }
+
+        return result == 0.0f && span.Length > 0 && span[0] == '-' ? -0.0f : result;
+    }
+
+    /// <summary>Parses a float with the framework parser; the token of a JSON number is pure ASCII.</summary>
+    internal static float ParseFloatFramework(in ReadOnlySpan<byte> span)
+    {
+        Span<char> chars = span.Length <= 64 ? stackalloc char[span.Length] : new char[span.Length];
+        for (var i = 0; i < span.Length; i++)
+        {
+            chars[i] = (char) span[i];
+        }
+
+        if (!float.TryParse(chars, NumberStyles.Float, CultureInfo.InvariantCulture, out var result))
+        {
+            throw SerdeException.ThrowInvalidParsing<float>();
+        }
+
+        return result == 0.0f && span.Length > 0 && span[0] == (byte) '-' ? -0.0f : result;
+    }
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static double ParseDoubleSlow(in ReadOnlySpan<char> span)
     {
@@ -419,8 +446,6 @@ public static class SpanConverter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ToString(in ReadOnlySpan<byte> span) => Encoding.UTF8.GetString(span);
 
-#if NET8_0_OR_GREATER
-#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static decimal ToDecimal(in ReadOnlySpan<byte> span)
