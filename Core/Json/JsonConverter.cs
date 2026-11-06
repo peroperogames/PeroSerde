@@ -9,6 +9,7 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PeroTools2.Serde.Json
@@ -111,6 +112,17 @@ namespace PeroTools2.Serde.Json
 
             #region Serialize TextWriter
 
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            /// <paramref name="writer"/> never observes a partially written document
+            /// </remarks>
             public static void Serialize<T>(T value, TextWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -139,6 +151,17 @@ namespace PeroTools2.Serde.Json
                 }
             }
 
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            /// <paramref name="writer"/> never observes a partially written document
+            /// </remarks>
             public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -156,6 +179,17 @@ namespace PeroTools2.Serde.Json
                 }
             }
 
+            /// <summary>
+            /// Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="TextWriter"/>
+            /// </summary>
+            /// <param name="value">The value to serialize</param>
+            /// <param name="formatter">The formatter</param>
+            /// <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            /// <paramref name="writer"/> never observes a partially written document
+            /// </remarks>
             public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -178,10 +212,11 @@ namespace PeroTools2.Serde.Json
             /// </summary>
             /// <param name="value">The value to serialize</param>
             /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
-            public static async ValueTask SerializeAsync<T>(T value, TextWriter writer)
+            public static async ValueTask SerializeAsync<T>(T value, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
                 try
@@ -201,7 +236,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await writer.WriteAsync(buffer);
+                    await writer.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -215,9 +250,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="value">The value to serialize</param>
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
-            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer)
+            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
                 try
@@ -226,7 +262,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await writer.WriteAsync(buffer);
+                    await writer.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -240,9 +276,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="value">The value to serialize</param>
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The writer to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
-            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer)
+            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, TextWriter writer, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
                 try
@@ -251,7 +288,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await writer.WriteAsync(buffer);
+                    await writer.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -357,6 +394,12 @@ namespace PeroTools2.Serde.Json
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            /// <remarks>
+            /// <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="BinaryWriter.Encoding"/>
+            /// and writes no byte order mark, so a default <see cref="BinaryWriter"/> stores UTF-8 bytes even though this
+            /// overload belongs to the <see cref="UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            /// UTF-16 bytes are required, and prefer <see cref="TextWriter"/> when the target works with characters
+            /// </remarks>
             public static void Serialize<T>(T value, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -392,6 +435,12 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="BinaryWriter.Encoding"/>
+            /// and writes no byte order mark, so a default <see cref="BinaryWriter"/> stores UTF-8 bytes even though this
+            /// overload belongs to the <see cref="UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            /// UTF-16 bytes are required, and prefer <see cref="TextWriter"/> when the target works with characters
+            /// </remarks>
             public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -416,6 +465,12 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="BinaryWriter.Encoding"/>
+            /// and writes no byte order mark, so a default <see cref="BinaryWriter"/> stores UTF-8 bytes even though this
+            /// overload belongs to the <see cref="UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            /// UTF-16 bytes are required, and prefer <see cref="TextWriter"/> when the target works with characters
+            /// </remarks>
             public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<char>.Pool.Rent();
@@ -531,7 +586,7 @@ namespace PeroTools2.Serde.Json
 
                 for (var i = 0; i < origin.Length; i++)
                 {
-                    if (origin[i] != ' ')
+                    if (!StringHelper.IsWhiteSpace(origin[i]))
                     {
                         trimmed = origin.Slice(i, origin.Length - i);
                         return false;
@@ -723,10 +778,11 @@ namespace PeroTools2.Serde.Json
             /// </summary>
             /// <param name="value">The value to serialize</param>
             /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
-            public static async ValueTask SerializeAsync<T>(T value, Stream stream)
+            public static async ValueTask SerializeAsync<T>(T value, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
                 try
@@ -746,7 +802,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await stream.WriteAsync(buffer);
+                    await stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -760,9 +816,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="value">The value to serialize</param>
             /// <param name="formatter">The formatter</param>
             /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
-            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, Stream stream)
+            public static async ValueTask SerializeAsync<T>(T value, ISerdeJsonFormatter<T> formatter, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
                 try
@@ -771,7 +828,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await stream.WriteAsync(buffer);
+                    await stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -785,9 +842,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="value">The value to serialize</param>
             /// <param name="formatter">The formatter</param>
             /// <param name="stream">The stream to write the serialized JSON to</param>
+            /// <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <returns>A task that represents the asynchronous write operation</returns>
-            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, Stream stream)
+            public static async ValueTask SerializeAsync<T>(T value, IFixedSerdeJsonFormatter<T> formatter, Stream stream, CancellationToken cancellationToken = default)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
                 try
@@ -796,7 +854,7 @@ namespace PeroTools2.Serde.Json
                     jsonWriter.WriteValue(value, formatter);
                     jsonWriter.Flush();
                     var buffer = bufferWriter.GetWrittenMemory();
-                    await stream.WriteAsync(buffer);
+                    await stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -902,6 +960,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
             /// <exception cref="SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            /// <remarks>
+            /// The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            /// is written and <see cref="BinaryWriter.Encoding"/> is not involved
+            /// </remarks>
             public static void Serialize<T>(T value, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
@@ -937,6 +999,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            /// is written and <see cref="BinaryWriter.Encoding"/> is not involved
+            /// </remarks>
             public static void Serialize<T>(T value, ISerdeJsonFormatter<T> formatter, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
@@ -961,6 +1027,10 @@ namespace PeroTools2.Serde.Json
             /// <param name="formatter">The formatter</param>
             /// <param name="writer">The binary writer to write the serialized JSON to</param>
             /// <typeparam name="T">The type of the value to serialize</typeparam>
+            /// <remarks>
+            /// The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            /// is written and <see cref="BinaryWriter.Encoding"/> is not involved
+            /// </remarks>
             public static void Serialize<T>(T value, IFixedSerdeJsonFormatter<T> formatter, BinaryWriter writer)
             {
                 var bufferWriter = ReusableBufferWriter<byte>.Pool.Rent();
@@ -1074,7 +1144,7 @@ namespace PeroTools2.Serde.Json
 
                 for (var i = 0; i < origin.Length; i++)
                 {
-                    if (origin[i] != (byte) ' ')
+                    if (!StringHelper.IsWhiteSpace(origin[i]))
                     {
                         trimmed = origin.Slice(i, origin.Length - i);
                         return false;
