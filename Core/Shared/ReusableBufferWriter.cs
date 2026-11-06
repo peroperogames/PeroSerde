@@ -124,8 +124,16 @@ public sealed class ReusableBufferWriter<T> : IBufferWriter<T> where T : unmanag
     /// <summary>
     /// Gets the already written Buffer
     /// </summary>
+    /// <returns>The written part of the Buffer, or an empty span when nothing has been written</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<T> GetWrittenBuffer() => m_CurrentBuffer.isNull ? ReadOnlySpan<T>.Empty : m_CurrentBuffer.writtenBuffer;
+    public ReadOnlySpan<T> GetWrittenSpan() => m_CurrentBuffer.isNull ? ReadOnlySpan<T>.Empty : m_CurrentBuffer.writtenBuffer;
+
+    /// <summary>
+    /// Gets the already written Buffer
+    /// </summary>
+    /// <returns>The written part of the Buffer, or empty memory when nothing has been written</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlyMemory<T> GetWrittenMemory() => m_CurrentBuffer.isNull ? ReadOnlyMemory<T>.Empty : m_CurrentBuffer.writtenMemory;
 
     /// <summary>
     /// Converts the written part of the Buffer into an array
