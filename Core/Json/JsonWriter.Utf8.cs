@@ -7,6 +7,9 @@
 using System;
 using System.Buffers.Text;
 using System.Runtime.CompilerServices;
+#if NET8_0_OR_GREATER
+using System.Runtime.Intrinsics;
+#endif
 using System.Text;
 
 namespace PeroTools2.Serde.Json;
@@ -57,7 +60,23 @@ public static unsafe partial class JsonWriter
         {
             return WriteStringValueNoEscapeUtf8(str, dest);
         }
+        return WriteStringValueEscapedUtf8(str, dest);
+    }
 
+    /// <summary>Writes a <see cref="string"/> into a UTF8 buffer.</summary>
+    /// <param name="str">The value to write</param>
+    /// <param name="dest">The destination</param>
+    /// <param name="hasEscape">Whether the value contains a character that has to be escaped, as returned by
+    /// <see cref="StringHelper.ContainsEscapeChar(ReadOnlySpan{char})"/>. The caller already scans for the reserve
+    /// size, so it hands the result over instead of walking the string twice.</param>
+    /// <returns>bytesWritten</returns>
+    public static int WriteStringValueUtf8(ReadOnlySpan<char> str, byte* dest, bool hasEscape)
+    {
+        return hasEscape ? WriteStringValueEscapedUtf8(str, dest) : WriteStringValueNoEscapeUtf8(str, dest);
+    }
+
+    private static int WriteStringValueEscapedUtf8(ReadOnlySpan<char> str, byte* dest)
+    {
         // Escape characters must be handled, so the string has to be walked to find them and written separately.
         var from = 0;
         var start = dest;
@@ -92,22 +111,48 @@ public static unsafe partial class JsonWriter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int WriteStringValueNoEscapeUtf8(ReadOnlySpan<char> str, byte* dest)
     {
-        // ASCII fast path: JSON keys and most strings are ASCII, so copying byte by byte is enough.
+        // ASCII fast path: JSON keys and most strings are ASCII, so narrowing is a plain copy of the low bytes.
         // On Mono each Encoding.UTF8.GetBytes call costs about 150ns, while copying 10 characters byte by byte costs about 20ns.
         var start = dest;
-        for (var i = 0; i < str.Length; i++)
+        var length = str.Length;
+        var index = 0;
+        if (length >= 16)
         {
-            var c = str[i];
+#if NET8_0_OR_GREATER
+            ref var source = ref Unsafe.As<char, ushort>(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(str));
+            var limit = Vector128.Create((ushort) 0x80);
+            while (index + 16 <= length)
+            {
+                var lower = Vector128.LoadUnsafe(ref source, (nuint) index);
+                var upper = Vector128.LoadUnsafe(ref source, (nuint) (index + 8));
+                if (!Vector128.LessThanAll(lower, limit) || !Vector128.LessThanAll(upper, limit))
+                {
+                    // Non-ASCII: hand the rest to the encoder, which rewrites the buffer from the start position
+                    var maxByteCount = Encoding.UTF8.GetMaxByteCount(length);
+                    return Encoding.UTF8.GetBytes(str, new Span<byte>(start, maxByteCount));
+                }
+
+                // Latin narrowing of values below 0x80 is a plain truncation
+                Vector128.Narrow(lower, upper).StoreUnsafe(ref Unsafe.AsRef<byte>(dest + index));
+                index += 16;
+            }
+#endif
+        }
+
+        for (; index < length; index++)
+        {
+            var c = str[index];
             if (c >= 0x80)
             {
                 // Contains non-ASCII characters; fall back to the encoder and rewrite from the start position
-                var maxByteCount = Encoding.UTF8.GetMaxByteCount(str.Length);
+                var maxByteCount = Encoding.UTF8.GetMaxByteCount(length);
                 return Encoding.UTF8.GetBytes(str, new Span<byte>(start, maxByteCount));
             }
-            *dest = (byte) c;
-            dest++;
+
+            dest[index] = (byte) c;
         }
-        return (int) (dest - start);
+
+        return length;
     }
 
     #endregion

@@ -64,6 +64,28 @@ public static unsafe partial class StringHelper
 
     #endregion
 
+    /// <summary>Packs the first eight bytes of the key into a <c>ulong</c> for switch dispatch.</summary>
+    /// <remarks>
+    /// A key of eight bytes or longer is read as one little endian word; a shorter key is packed the same way but zero
+    /// padded, so a caller can compare against a constant that was built from an ASCII member name with the same rule.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetKeyPrefix(ReadOnlySpan<byte> key)
+    {
+        if (key.Length >= 8)
+        {
+            return Unsafe.ReadUnaligned<ulong>(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(key));
+        }
+
+        ulong value = 0;
+        for (var i = 0; i < key.Length; i++)
+        {
+            value |= (ulong) key[i] << (i * 8);
+        }
+
+        return value;
+    }
+
     /// <summary>Takes the first 8 bytes at the pointer (little endian, zero padded) as a key prefix for switch dispatch.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong GetKeyPrefix(byte* start, int length)
@@ -80,6 +102,77 @@ public static unsafe partial class StringHelper
         }
         return value;
     }
+
+    /// <summary>Compares a UTF8 byte span against a UTF16 string, decoding the bytes as it goes.</summary>
+    /// <remarks>
+    /// <see cref="StringHelper.EqualsUnaligned(ReadOnlySpan{byte}, ReadOnlySpan{char})"/> assumes one byte per character,
+    /// which only holds for ASCII member names. Member names with other characters need the real decoder, and decoding
+    /// into a temporary string would allocate on every key comparison.
+    /// </remarks>
+    public static bool EqualsUtf8(ReadOnlySpan<byte> utf8, ReadOnlySpan<char> utf16)
+    {
+        var byteIndex = 0;
+        var charIndex = 0;
+        while (byteIndex < utf8.Length && charIndex < utf16.Length)
+        {
+            var b = utf8[byteIndex];
+            int codePoint;
+            if (b < 0x80)
+            {
+                codePoint = b;
+                byteIndex++;
+            }
+            else if ((b & 0xE0) == 0xC0 && byteIndex + 1 < utf8.Length)
+            {
+                codePoint = ((b & 0x1F) << 6) | (utf8[byteIndex + 1] & 0x3F);
+                byteIndex += 2;
+            }
+            else if ((b & 0xF0) == 0xE0 && byteIndex + 2 < utf8.Length)
+            {
+                codePoint = ((b & 0x0F) << 12) | ((utf8[byteIndex + 1] & 0x3F) << 6) | (utf8[byteIndex + 2] & 0x3F);
+                byteIndex += 3;
+            }
+            else if ((b & 0xF8) == 0xF0 && byteIndex + 3 < utf8.Length)
+            {
+                codePoint = ((b & 0x07) << 18) | ((utf8[byteIndex + 1] & 0x3F) << 12)
+                                               | ((utf8[byteIndex + 2] & 0x3F) << 6) | (utf8[byteIndex + 3] & 0x3F);
+                byteIndex += 4;
+            }
+            else
+            {
+                return false;
+            }
+
+            if (codePoint > 0xFFFF)
+            {
+                // Surrogate pair in the UTF16 side
+                if (charIndex + 1 >= utf16.Length)
+                {
+                    return false;
+                }
+
+                codePoint -= 0x10000;
+                if (utf16[charIndex] != (char) (0xD800 + (codePoint >> 10))
+                    || utf16[charIndex + 1] != (char) (0xDC00 + (codePoint & 0x3FF)))
+                {
+                    return false;
+                }
+
+                charIndex += 2;
+                continue;
+            }
+
+            if (utf16[charIndex] != (char) codePoint)
+            {
+                return false;
+            }
+
+            charIndex++;
+        }
+
+        return byteIndex == utf8.Length && charIndex == utf16.Length;
+    }
+
     /// <summary>Determines whether a character is a whitespace character</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsWhiteSpace(byte c) =>

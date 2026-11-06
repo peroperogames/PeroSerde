@@ -207,67 +207,21 @@ public partial class SerdeJsonGenerator
                                                    reader.ReadEndObject();
                                                    return obj;
                                        """);
-        for (var index = 0; index < members.Length; index++)
-        {
-            var member = members[index];
-            var memberTypeName = member.type.ToDisplayString();
-            var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
-            utf8Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{member.formatName}\"))");
-            utf16Builder.AppendLine($"            {(index == 0 ? "if" : "else if")} (PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
-            var memberReadStr = $$"""
-                                                  {
-                                                      obj.{{member.name}} = reader.ReadValue<{{memberTypeName}}>({{formatter}}false);
-                                                  }
-                                      """;
-            utf16Builder.AppendLine(memberReadStr);
-            utf8Builder.AppendLine(memberReadStr);
-        }
-        if (members.Length > 0)
-        {
-            // If the Json property is redundant, read it directly
-            var finalCheck =
-                """
-                            else
-                            {
-                                reader.ReadUntilEnd();
-                            }
-                """;
-            utf16Builder.Append(finalCheck);
-            utf8Builder.Append(finalCheck);
-        }
-        else
-        {
-            utf8Builder.AppendLine("                reader.ReadUntilEnd();");
-            utf16Builder.AppendLine("                reader.ReadUntilEnd();");
-        }
+        AppendUtf8KeyDispatch(utf8Builder, members);
+
+        AppendUtf16KeyDispatch(utf16Builder, members);
 
         // P1 prototype: when all members are builtin primitive types, use the new cursor + static direct-call reader
         var utf8OldBody = new StringBuilder();
         utf8OldBody.AppendLine("            System.ReadOnlySpan<byte> key;");
         utf8OldBody.Append(deserializerBuilder);
         var utf8Body = utf8OldBody.ToString();
-        if (members.Length > 0 && members.All(member => TryGetCursorMemberAccess(member, out _)))
-        {
-            var cursorBody = BuildCursorDeserializeBody(type, members);
-            if (cursorBody != null)
-            {
-                // An unpinned reader (the caller creates one and then calls the formatter) falls back to the old form
-                utf8Body = cursorBody;
-            }
-        }
 
         var utf16OldBody = new StringBuilder();
         utf16OldBody.AppendLine("            System.ReadOnlySpan<char> key;");
         utf16OldBody.Append(deserializerBuilder);
         var utf16Body = utf16OldBody.ToString();
-        if (members.Length > 0 && members.All(member => TryGetCursorMemberAccessUtf16(member, out _)))
-        {
-            var cursorBody = BuildCursorDeserializeBodyUtf16(type, members);
-            if (cursorBody != null)
-            {
-                utf16Body = cursorBody;
-            }
-        }
+
 
         // Generate the partial serializer
         return $$"""
@@ -286,6 +240,7 @@ public partial class SerdeJsonGenerator
                  {{utf16Body}}
                          }
 
+
                          [global::System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
                          private void OnReadKey(ref System.ReadOnlySpan<byte> key, ref {{type.ToDisplayString()}} obj, ref PeroTools2.Serde.Json.JsonReaderUtf8 reader)
                          {
@@ -302,54 +257,235 @@ public partial class SerdeJsonGenerator
                  """;
     }
 
-    // Whether this is a fixed formatter type built into this package (already registered in the FixedCache of SerdeJsonFormatterProvider)
-    // Generation-time prefix matching the runtime StringHelper.GetKeyPrefix (ASCII assumption, consistent with the existing equality comparison)
-    private static ulong GetKeyPrefix(string name)
+
+    /// <summary>
+    /// Emits the UTF16 key dispatch as a <c>switch</c> over the first four characters of the key packed into a
+    /// <see cref="ulong"/>, instead of a chain of comparisons: the jump table reaches the candidate in one step, and a
+    /// member name that fits in eight characters is fully identified by the packed prefix plus the key length, so it
+    /// needs no string comparison at all. Names that share their first eight characters fall back to a full compare.
+    /// </summary>
+    /// <summary>Emits the UTF8 key dispatch as a <c>switch</c> over the first eight key bytes packed into a <c>ulong</c>.</summary>
+    /// <remarks>
+    /// Eight bytes plus the key length identify a member name of up to eight bytes, so the common case needs no string
+    /// comparison. Longer names can collide on the packed prefix and verify in full; names that are not pure ASCII keep
+    /// the byte-for-byte comparison because their packed prefix depends on the encoded length.
+    /// </remarks>
+    private static void AppendUtf8KeyDispatch(StringBuilder builder, MemberMeta[] members)
+    {
+        if (members.Length == 0)
+        {
+            builder.AppendLine("                reader.ReadUntilEnd();");
+            return;
+        }
+
+        var switchable = members.Where(member => IsSimpleKey(member.formatName)).ToArray();
+        var fallback = members.Where(member => !IsSimpleKey(member.formatName)).ToArray();
+        var groups = switchable
+            .GroupBy(member => PackKeyPrefix(member.formatName))
+            .Select(group => (prefix: group.Key, candidates: group.ToArray()))
+            .ToArray();
+
+        builder.AppendLine("            var prefix = PeroTools2.Serde.StringHelper.GetKeyPrefix(key);");
+        builder.AppendLine("            switch (prefix)");
+        builder.AppendLine("            {");
+        foreach (var (prefix, candidates) in groups)
+        {
+            builder.AppendLine($"                case 0x{prefix:X}UL:");
+            foreach (var member in candidates)
+            {
+                var name = member.formatName;
+                var guard = $"key.Length == {name.Length}";
+                if (name.Length > 8)
+                {
+                    // The switch above already matched the first eight bytes, so only the tail is left to compare
+                    guard += $" && PeroTools2.Serde.StringHelper.EqualsUnaligned(key, \"{name}\", 8)";
+                }
+
+                builder.AppendLine($"                    if ({guard})");
+                builder.AppendLine("                    {");
+                builder.AppendLine($"                        obj.{member.name} = {MemberReadStatement(member)};");
+                builder.AppendLine("                        return;");
+                builder.AppendLine("                    }");
+            }
+
+            builder.AppendLine("                    break;");
+        }
+
+        builder.AppendLine("            }");
+        foreach (var member in fallback)
+        {
+            // A non-ASCII member name has a different length in UTF16 characters and UTF8 bytes, so this branch
+            // compares the bytes instead of guessing a length
+            builder.AppendLine($"            if (PeroTools2.Serde.StringHelper.EqualsUtf8(key, \"{member.formatName}\"))");
+            builder.AppendLine("            {");
+            builder.AppendLine($"                obj.{member.name} = {MemberReadStatement(member)};");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
+        builder.AppendLine("            reader.ReadUntilEnd();");
+    }
+
+    /// <summary>Packs the first eight bytes of an ASCII member name into a <c>ulong</c>, like StringHelper.GetKeyPrefix.</summary>
+    private static ulong PackKeyPrefix(string name)
     {
         ulong value = 0;
-        var limit = name.Length < 8 ? name.Length : 8;
-        for (var i = 0; i < limit; i++)
+        for (var i = 0; i < 8 && i < name.Length; i++)
         {
             value |= (ulong) (byte) name[i] << (i * 8);
         }
+
         return value;
     }
-    private static bool IsFixedPrimitive(ITypeSymbol type, out string typeName)
+    private static void AppendUtf16KeyDispatch(StringBuilder builder, MemberMeta[] members)
     {
-        typeName = type.ToDisplayString();
-        return type.SpecialType is SpecialType.System_Boolean
-            or SpecialType.System_Byte
-            or SpecialType.System_SByte
-            or SpecialType.System_UInt16
-            or SpecialType.System_Int16
-            or SpecialType.System_UInt32
-            or SpecialType.System_Int32
-            or SpecialType.System_UInt64
-            or SpecialType.System_Int64
-            or SpecialType.System_Single
-            or SpecialType.System_Double
-            or SpecialType.System_Decimal;
-    }
-
-    // Only for member names that are pure ASCII and contain neither " nor \ do the generation-time constants match the runtime prefix/length semantics
-
-    private static string IndentBody(string body, string indent)
-    {
-        var builder = new StringBuilder();
-        foreach (var line in body.Split('\n'))
+        if (members.Length == 0)
         {
-            var trimmed = line.TrimEnd('\r');
-            if (trimmed.Length == 0)
-            {
-                builder.AppendLine();
-                continue;
-            }
-
-            builder.Append(indent).AppendLine(trimmed);
+            builder.AppendLine("                reader.ReadUntilEnd();");
+            return;
         }
 
-        return builder.ToString();
+        // Non-ASCII member names go through the string comparer; the packed switch only covers ASCII names
+        var switchable = members.Where(member => IsSimpleKey(member.formatName)).ToArray();
+        var fallback = members.Where(member => !IsSimpleKey(member.formatName)).ToArray();
+        var groups = switchable
+            .GroupBy(member => PackPrefix(member.formatName, 0))
+            .Select(group => (low: group.Key, candidates: group.ToArray()))
+            .ToArray();
+
+        builder.AppendLine("            PeroTools2.Serde.StringHelper.GetKeyPrefix(key, out var prefixLow, out var prefixHigh);");
+        builder.AppendLine("            switch (prefixLow)");
+        builder.AppendLine("            {");
+        foreach (var (low, candidates) in groups)
+        {
+            builder.AppendLine($"                case 0x{low:X}UL:");
+            foreach (var member in candidates)
+            {
+                var name = member.formatName;
+                var high = PackPrefix(name, 4);
+                // Names longer than eight characters can still collide on the packed prefix, so they verify in full
+                var guard = $"prefixHigh == 0x{high:X}UL && key.Length == {name.Length}";
+                if (name.Length > 8)
+                {
+                    guard += $" && PeroTools2.Serde.StringHelper.Equals(key, \"{name}\")";
+                }
+
+                builder.AppendLine($"                    if ({guard})");
+                builder.AppendLine("                    {");
+                builder.AppendLine($"                        obj.{member.name} = {MemberReadStatement(member)};");
+                builder.AppendLine("                        return;");
+                builder.AppendLine("                    }");
+            }
+
+            builder.AppendLine("                    break;");
+        }
+
+        builder.AppendLine("            }");
+        foreach (var member in fallback)
+        {
+            builder.AppendLine($"            if (key.Length == {member.formatName.Length} && PeroTools2.Serde.StringHelper.Equals(key, \"{member.formatName}\"))");
+            builder.AppendLine("            {");
+            builder.AppendLine($"                obj.{member.name} = {MemberReadStatement(member)};");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
+        builder.AppendLine("            reader.ReadUntilEnd();");
     }
+
+    /// <summary>Emits the reader call that parses <paramref name="member"/>.</summary>
+    /// <remarks>
+    /// Primitives, and arrays or lists of them, call the reader's per-type parse directly. Going through the formatter
+    /// registry for every member costs a cache lookup and an interface call per value, which is what an emit-based
+    /// serializer avoids.
+    /// </remarks>
+    private static string MemberReadStatement(MemberMeta member)
+    {
+        if (member.formatter == null)
+        {
+            var direct = DirectReaderMethod(member.type);
+            if (direct != null)
+            {
+                return $"reader.{direct}(false)";
+            }
+
+            var collection = DirectCollectionReader(member);
+            if (collection != null)
+            {
+                return $"reader.{collection}(false)";
+            }
+        }
+
+        var formatter = member.useFormatter ? $"s_{member.name}Formatter, " : string.Empty;
+        return $"reader.ReadValue<{member.type.ToDisplayString()}>({formatter}false)";
+    }
+
+    /// <summary>Maps a primitive member type onto the reader method that parses it without a formatter.</summary>
+    private static string? DirectReaderMethod(ITypeSymbol type) =>
+        type.SpecialType switch
+        {
+            SpecialType.System_Int32 => "ReadInt32Value",
+            SpecialType.System_Int64 => "ReadInt64Value",
+            SpecialType.System_Int16 => "ReadInt16Value",
+            SpecialType.System_UInt16 => "ReadUInt16Value",
+            SpecialType.System_Byte => "ReadByteValue",
+            SpecialType.System_SByte => "ReadSByteValue",
+            SpecialType.System_UInt32 => "ReadUInt32Value",
+            SpecialType.System_UInt64 => "ReadUInt64Value",
+            SpecialType.System_Single => "ReadSingleValue",
+            SpecialType.System_Double => "ReadDoubleValue",
+            SpecialType.System_Decimal => "ReadDecimalValue",
+            SpecialType.System_Boolean => "ReadBooleanValue",
+            SpecialType.System_Char => "ReadCharValue",
+            SpecialType.System_String => "ReadStringValue",
+            _ => null
+        };
+
+    /// <summary>
+    /// Maps an array or <see cref="System.Collections.Generic.List{T}"/> member of a primitive element type onto the
+    /// reader method that parses the whole collection, or null when the member has to go through its formatter.
+    /// </summary>
+    private static string? DirectCollectionReader(MemberMeta member)
+    {
+        ITypeSymbol elementType;
+        bool isArray;
+        switch (member.kind)
+        {
+            case BuiltinKind.Array when member.type is IArrayTypeSymbol arrayType:
+                elementType = arrayType.ElementType;
+                isArray = true;
+                break;
+            case BuiltinKind.Collection
+                when member.type is INamedTypeSymbol { Name: "List", TypeArguments.Length: 1 } named
+                     && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic":
+                elementType = named.TypeArguments[0];
+                isArray = false;
+                break;
+            default:
+                return null;
+        }
+
+        var direct = DirectReaderMethod(elementType);
+        if (direct == null)
+        {
+            return null;
+        }
+
+        // ReadStringValue -> ReadStringArray / ReadStringList
+        return direct.Substring(0, direct.Length - "Value".Length) + (isArray ? "Array" : "List");
+    }
+
+    /// <summary>Packs four characters of a member name into a <see cref="ulong"/>, exactly like StringHelper.GetKeyPrefix.</summary>
+    private static ulong PackPrefix(string name, int start)    {
+        ulong value = 0;
+        for (var i = 0; i < 4 && start + i < name.Length; i++)
+        {
+            value |= (ulong) name[start + i] << (i * 16);
+        }
+        return value;
+    }
+
+    // Only pure ASCII member names may use the generated byte/char length guard for the key comparison
     private static bool IsSimpleKey(string name)
     {
         if (string.IsNullOrEmpty(name))
@@ -368,269 +504,6 @@ public partial class SerdeJsonGenerator
         return true;
     }
 
-    // Cursor read expression for a member (including the ref cursor); returns false when unsupported
-    private static bool TryGetCursorMemberAccess(MemberMeta member, out string expression)
-    {
-        expression = null;
-
-        // For non-ASCII or characters that need escaping the generation-time constant does not match the runtime prefix/length, so fall back to the old path
-        if (!IsSimpleKey(member.formatName))
-        {
-            return false;
-        }
-
-        var type = member.type;
-        const string ns = "global::PeroTools2.Serde.Json";
-
-        // Members with an explicit [SerdeJsonFormatter]: the formatter is not in the provider registry, so read with the instance attached to that member
-        if (member.formatter != null)
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
-            return true;
-        }
-
-        if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
-            return true;
-        }
-
-        // enum / Nullable / collection / builtin struct, etc.: the formatter is already in the registry, so read through the reader
-        // Members with an explicit [SerdeJsonFormatter] are not registered, so they must take the original path
-        if (member.useFormatter && member.formatter == null)
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
-            return true;
-        }
-
-        if (TryGetCursorReader(type, out var readerName))
-        {
-            expression = $"{ns}.JsonReader.{readerName}(ref cursor)";
-            return true;
-        }
-
-        return false;
-    }
-    // Member types supported by the cursor path (primitive types + string + char); returns the matching reader name
-    private static bool TryGetCursorReader(ITypeSymbol type, out string readerName)
-    {
-        switch (type.SpecialType)
-        {
-            case SpecialType.System_String:
-                readerName = "ReadString";
-                return true;
-            case SpecialType.System_Char:
-                readerName = "ReadChar";
-                return true;
-        }
-
-        if (IsFixedPrimitive(type, out _) && GetPrimitiveReaderName(type.SpecialType, out readerName))
-        {
-            return true;
-        }
-
-        readerName = null;
-        return false;
-    }
-    private static bool GetPrimitiveReaderName(SpecialType specialType, out string readerName)
-    {
-        readerName = specialType switch
-        {
-            SpecialType.System_Boolean => "ReadBoolean",
-            SpecialType.System_Byte => "ReadByte",
-            SpecialType.System_SByte => "ReadSByte",
-            SpecialType.System_Int16 => "ReadInt16",
-            SpecialType.System_UInt16 => "ReadUInt16",
-            SpecialType.System_Int32 => "ReadInt32",
-            SpecialType.System_UInt32 => "ReadUInt32",
-            SpecialType.System_Int64 => "ReadInt64",
-            SpecialType.System_UInt64 => "ReadUInt64",
-            SpecialType.System_Single => "ReadSingle",
-            SpecialType.System_Double => "ReadDouble",
-            SpecialType.System_Decimal => "ReadDecimal",
-            SpecialType.System_Char => "ReadChar",
-            _ => null,
-        };
-        return readerName != null;
-    }
-
-    // Cursor-style deserialization body (P1 prototype): generated only when the prefix+length pair is unique
-    // UTF-16 version of the member read expression
-    private static bool TryGetCursorMemberAccessUtf16(MemberMeta member, out string expression)
-    {
-        expression = null;
-
-        // For non-ASCII or characters that need escaping the generation-time constant does not match the runtime prefix/length, so fall back to the old path
-        if (!IsSimpleKey(member.formatName))
-        {
-            return false;
-        }
-
-        var type = member.type;
-        const string ns = "global::PeroTools2.Serde.Json";
-
-        if (member.formatter != null)
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor, s_{member.name}Formatter)";
-            return true;
-        }
-
-        if (type.GetAttributes().Any(attribute => attribute.AttributeClass?.Name == "SerdeJsonSerializableAttribute"))
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
-            return true;
-        }
-
-        if (member.useFormatter && member.formatter == null)
-        {
-            expression = $"{ns}.JsonReader.ReadNested<{type.ToDisplayString()}>(ref cursor)";
-            return true;
-        }
-
-        if (TryGetCursorReader(type, out var readerName))
-        {
-            expression = $"{ns}.JsonReader.{readerName}(ref cursor)";
-            return true;
-        }
-
-        return false;
-    }
-
-    // Pack the first 8 characters of the key into two ulongs (4 characters each)
-    private static void GetKeyPrefixUtf16(string key, out ulong low, out ulong high)
-    {
-        low = 0;
-        high = 0;
-        var first = key.Length < 4 ? key.Length : 4;
-        for (var i = 0; i < first; i++)
-        {
-            low |= (ulong) key[i] << (i * 16);
-        }
-
-        var second = key.Length - 4;
-        if (second > 4) second = 4;
-        for (var i = 0; i < second; i++)
-        {
-            high |= (ulong) key[i + 4] << (i * 16);
-        }
-    }
-
-    private static string BuildCursorDeserializeBodyUtf16(ITypeSymbol type, MemberMeta[] members)
-    {
-        var seen = new System.Collections.Generic.HashSet<(ulong, ulong)>();
-        foreach (var member in members)
-        {
-            GetKeyPrefixUtf16(member.formatName, out var low, out var high);
-            if (!TryGetCursorMemberAccessUtf16(member, out _))
-            {
-                return null;
-            }
-
-            if (!seen.Add((low, high)))
-            {
-                return null;
-            }
-        }
-
-        var body = new StringBuilder();
-        body.AppendLine("            if (reader.TryReadNull())");
-        body.AppendLine("            {");
-        body.AppendLine("                return default;");
-        body.AppendLine("            }");
-        body.AppendLine();
-        body.AppendLine($"            var obj = new {type.ToDisplayString()}();");
-        body.AppendLine("            var cursor = reader.CreateCursor();");
-        body.AppendLine("            cursor.Expect('{');");
-        body.AppendLine("            while (cursor.TryReadKey(out var keyLength, out var prefixLow, out var prefixHigh))");
-        body.AppendLine("            {");
-        body.AppendLine("                switch (prefixLow, prefixHigh)");
-        body.AppendLine("                {");
-        foreach (var member in members)
-        {
-            TryGetCursorMemberAccessUtf16(member, out var memberAccess);
-            GetKeyPrefixUtf16(member.formatName, out var low, out var high);
-            body.AppendLine($"                    case (0x{low:X16}UL, 0x{high:X16}UL):");
-            body.AppendLine($"                        if (keyLength == {member.formatName.Length})");
-            body.AppendLine("                        {");
-            body.AppendLine($"                            obj.{member.name} = {memberAccess};");
-            body.AppendLine("                        }");
-            body.AppendLine("                        else");
-            body.AppendLine("                        {");
-            body.AppendLine("                            cursor.SkipValue();");
-            body.AppendLine("                        }");
-            body.AppendLine("                        break;");
-        }
-        body.AppendLine("                    default:");
-        body.AppendLine("                        cursor.SkipValue();");
-        body.AppendLine("                        break;");
-        body.AppendLine("                }");
-        body.AppendLine();
-        body.AppendLine("                cursor.TryConsume(',');");
-        body.AppendLine("            }");
-        body.AppendLine();
-        body.AppendLine("            cursor.Expect('}');");
-        body.AppendLine("            reader.SyncCursor(in cursor);");
-        body.AppendLine("            return obj;");
-        return body.ToString();
-    }
-    private static string BuildCursorDeserializeBody(ITypeSymbol type, MemberMeta[] members)
-    {
-        // switch labels are only the prefix: if two keys share the first 8 bytes the whole approach must be abandoned, otherwise duplicate cases are generated
-        var seen = new System.Collections.Generic.HashSet<ulong>();
-        foreach (var member in members)
-        {
-            var prefix = GetKeyPrefix(member.formatName);
-            if (!TryGetCursorMemberAccess(member, out _))
-            {
-                return null;
-            }
-
-            if (!seen.Add(prefix))
-            {
-                return null;
-            }
-        }
-
-        var body = new StringBuilder();
-        body.AppendLine("            if (reader.TryReadNull())");
-        body.AppendLine("            {");
-        body.AppendLine("                return default;");
-        body.AppendLine("            }");
-        body.AppendLine();
-        body.AppendLine($"            var obj = new {type.ToDisplayString()}();");
-        body.AppendLine("            var cursor = reader.CreateCursor();");
-        body.AppendLine("            cursor.Expect((byte) '{');");
-        body.AppendLine("            while (cursor.TryReadKey(out var keyLength, out var prefix))");
-        body.AppendLine("            {");
-        body.AppendLine("                switch (prefix)");
-        body.AppendLine("                {");
-        foreach (var member in members)
-        {
-            TryGetCursorMemberAccess(member, out var memberAccess);
-            body.AppendLine($"                    case 0x{GetKeyPrefix(member.formatName):X16}UL:");
-            body.AppendLine($"                        if (keyLength == {member.formatName.Length})");
-            body.AppendLine("                        {");
-            body.AppendLine($"                            obj.{member.name} = {memberAccess};");
-            body.AppendLine("                        }");
-            body.AppendLine("                        else");
-            body.AppendLine("                        {");
-            body.AppendLine("                            cursor.SkipValue();");
-            body.AppendLine("                        }");
-            body.AppendLine("                        break;");
-        }
-        body.AppendLine("                    default:");
-        body.AppendLine("                        cursor.SkipValue();");
-        body.AppendLine("                        break;");
-        body.AppendLine("                }");
-        body.AppendLine();
-        body.AppendLine("                cursor.TryConsume((byte) ',');");
-        body.AppendLine("            }");
-        body.AppendLine();
-        body.AppendLine("            cursor.Expect((byte) '}');");
-        body.AppendLine("            reader.SyncCursor(in cursor);");
-        body.AppendLine("            return obj;");
-        return body.ToString();
-    }
     private static string GenerateRecordsSerialization(ITypeSymbol type, TypeMeta typeMeta)
     {
         var typeName = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);

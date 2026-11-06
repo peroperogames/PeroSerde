@@ -9,16 +9,10 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace PeroTools2.Serde.Json;
-
 public unsafe ref struct JsonReaderUtf8
 {
     private int m_Advanced;
     private readonly ReadOnlySpan<byte> m_Json;
-
-    /// <summary>Base address after the entry point pinned the buffer; null means nothing is pinned, so cursors cannot be created.</summary>
-    private readonly byte* m_Base;
-
-    private readonly bool m_HasBase;
 
     public readonly ReadOnlySpan<byte> json => m_Json;
 
@@ -32,44 +26,10 @@ public unsafe ref struct JsonReaderUtf8
     {
         m_Advanced = 0;
         m_Json = json;
-        m_Base = null;
-        m_HasBase = false;
-    }
-
-    /// <summary>Created by the entry point: <paramref name="basePtr"/> points at the start of <paramref name="json"/> and is already pinned.</summary>
-    internal JsonReaderUtf8(ReadOnlySpan<byte> json, byte* basePtr)
-    {
-        m_Advanced = 0;
-        m_Json = json;
-        m_Base = basePtr;
-        m_HasBase = true;
-    }
-
-    /// <summary>Creates a cursor starting at the current read position</summary>
-    public JsonCursorUtf8 CreateCursor()
-    {
-        if (!m_HasBase)
-        {
-            throw new NotSupportedException(
-                "JsonCursorUtf8 requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
-        }
-
-        return new JsonCursorUtf8(m_Base + m_Advanced, m_Base + m_Json.Length);
-    }
-
-    /// <summary>Synchronizes the position consumed by the cursor back to the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SyncCursor(in JsonCursorUtf8 cursor)
-    {
-        m_Advanced = (int) (cursor.p - m_Base);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Advance(int count) => m_Advanced += count;
-
-    /// <summary>Synchronizes the length consumed through the cursor by generated code back to the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipConsumed(int count) => m_Advanced += count;
 
     #region Read Value
 
@@ -82,7 +42,7 @@ public unsafe ref struct JsonReaderUtf8
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
+    public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
     {
         T result;
         var span = remains;
@@ -108,12 +68,1876 @@ public unsafe ref struct JsonReaderUtf8
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T ReadValue<T>(bool readComma = false)
     {
-        var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
-        if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+        // The per-call resolution is cached per registration, so the hot path pays one version compare instead of the
+        // three generic static reads and interface casts GetFormatterInternal performs on every call.
+        SerdeJsonFormatterProvider.Resolve<T>(out var fixedFormatter, out var unfixedFormatter);
+        if (fixedFormatter != null)
             return ReadValue(fixedFormatter, readComma);
-        if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+        if (unfixedFormatter != null)
             return ReadValue(unfixedFormatter, readComma);
         throw SerdeException.ThrowFormatterNotFound(typeof(T));
+    }
+
+    #endregion
+
+    #region Read Value Directly
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int ReadInt32Value(bool readComma = false)
+    {
+        var value = JsonReader.ReadIntFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public long ReadInt64Value(bool readComma = false)
+    {
+        var value = JsonReader.ReadLongFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public short ReadInt16Value(bool readComma = false)
+    {
+        var span = remains;
+        short value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadShortUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ushort ReadUInt16Value(bool readComma = false)
+    {
+        var span = remains;
+        ushort value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadUshortUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte ReadByteValue(bool readComma = false)
+    {
+        var span = remains;
+        byte value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadByteUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public sbyte ReadSByteValue(bool readComma = false)
+    {
+        var span = remains;
+        sbyte value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadSbyteUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint ReadUInt32Value(bool readComma = false)
+    {
+        var span = remains;
+        uint value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadUintUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ulong ReadUInt64Value(bool readComma = false)
+    {
+        var span = remains;
+        ulong value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadUlongUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float ReadSingleValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadFloatFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double ReadDoubleValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadDoubleFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public decimal ReadDecimalValue(bool readComma = false)
+    {
+        var span = remains;
+        decimal value;
+        fixed (byte* src = span)
+        {
+            value = JsonReader.ReadDecimalUtf8(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ReadBooleanValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadBoolFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public char ReadCharValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadCharFastUtf8(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a string value through the single-allocation fast path, without the formatter indirection.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ReadStringValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadStringValueUtf8(remains, out var advance);
+        Advance(advance);
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    #endregion
+
+    #region Read Collection Directly
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public int[] ReadInt32Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<int>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<int>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt32Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<int>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<int> ReadInt32List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<int>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt32Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public long[] ReadInt64Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<long>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<long>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt64Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<long>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<long> ReadInt64List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<long>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt64Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public short[] ReadInt16Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<short>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<short>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt16Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<short>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<short> ReadInt16List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<short>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt16Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public ushort[] ReadUInt16Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<ushort>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<ushort>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt16Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<ushort>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<ushort> ReadUInt16List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<ushort>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt16Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public byte[] ReadByteArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<byte>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<byte>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadByteValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<byte>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<byte> ReadByteList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<byte>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadByteValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public sbyte[] ReadSByteArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<sbyte>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<sbyte>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadSByteValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<sbyte>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<sbyte> ReadSByteList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<sbyte>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadSByteValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public uint[] ReadUInt32Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<uint>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<uint>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt32Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<uint>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<uint> ReadUInt32List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<uint>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt32Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public ulong[] ReadUInt64Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<ulong>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<ulong>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt64Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<ulong>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<ulong> ReadUInt64List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<ulong>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt64Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public float[] ReadSingleArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<float>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<float>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadSingleValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<float>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<float> ReadSingleList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<float>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadSingleValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public double[] ReadDoubleArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<double>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<double>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadDoubleValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<double>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<double> ReadDoubleList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<double>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadDoubleValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public decimal[] ReadDecimalArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<decimal>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<decimal>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadDecimalValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<decimal>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<decimal> ReadDecimalList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<decimal>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadDecimalValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public bool[] ReadBooleanArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<bool>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<bool>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadBooleanValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<bool>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<bool> ReadBooleanList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<bool>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadBooleanValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public char[] ReadCharArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<char>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<char>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadCharValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<char>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<char> ReadCharList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<char>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadCharValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public string[] ReadStringArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<string>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == (byte) ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<string>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadStringValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == (byte) ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == (byte) ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<string>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<string> ReadStringList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<string>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == (byte) ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadStringValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == (byte) ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == (byte) ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
     }
 
     #endregion
@@ -150,7 +1974,12 @@ public unsafe ref struct JsonReaderUtf8
     {
         ReadBeginArray();
         ReadWhiteSpace();
-        if (m_Json[m_Advanced] == (byte) ']')
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if(m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
             return;
@@ -158,6 +1987,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == (byte) ',')
@@ -177,7 +2011,12 @@ public unsafe ref struct JsonReaderUtf8
     {
         ReadBeginArray();
         ReadWhiteSpace();
-        if (m_Json[m_Advanced] == (byte) ']')
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if(m_Json[m_Advanced] == (byte) ']')
         {
             Advance(1);
             return;
@@ -185,6 +2024,11 @@ public unsafe ref struct JsonReaderUtf8
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == (byte) ',')
@@ -205,7 +2049,7 @@ public unsafe ref struct JsonReaderUtf8
     #region Read Literal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadUntilEnd()
+    public unsafe ReadOnlySpan<byte> ReadUntilEnd()
     {
         var span = remains;
         fixed (byte* src = remains)
@@ -261,18 +2105,32 @@ public unsafe ref struct JsonReaderUtf8
     public bool TryReadKeyBegin() => TryReadChar(':');
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryReadComma() => TryReadChar(',');
+    public bool TryReadComma()
+    {
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
+        if (index >= json.Length || json[index] != (byte) ',')
+        {
+            return false;
+        }
+
+        // Consume the comma only: the next key read skips the whitespace in front of the next key
+        m_Advanced = index + 1;
+        return true;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryReadNull()
     {
         var length = m_Json.Length - m_Advanced;
         var span = m_Json.Slice(m_Advanced, length);
-        // Up to 4 characters are needed, so the length is Length - 3
+        // Up to 4 characters are needed, hence the length of Length - 3
         for (var i = 0; i < span.Length - 3; i++)
         {
             if (StringHelper.IsWhiteSpace(span[i])) continue;
-            // Find consecutive "null"
+            // Find consecutive nulls
             if (span[i] == (byte) 'n' && span[i + 1] == (byte) 'u' && span[i + 2] == (byte) 'l' && span[i + 3] == (byte) 'l')
             {
                 Advance(i + 4);
@@ -294,19 +2152,54 @@ public unsafe ref struct JsonReaderUtf8
         return key;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>Reads the next object key and consumes its colon.</summary>
+    /// <remarks>
+    /// This runs once per member, so it walks the buffer directly instead of going through the whitespace, quote and
+    /// character helpers: one whitespace skip, one vectorised quote search and one whitespace skip before the colon.
+    /// Keys that contain escapes keep the general path.
+    /// </remarks>
     public bool TryReadKey(out ReadOnlySpan<byte> key)
     {
-        ReadWhiteSpace();
-        if (remains[0] != (byte) '"')
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != (byte) '"')
         {
+            m_Advanced = index;
             key = default;
             return false;
         }
-        key = ReadString();
-        ReadWhiteSpace();
-        ReadKeyBegin();
-        ReadWhiteSpace();
+
+        var start = index + 1;
+        var end = JsonReader.IndexOfQuoteOrBackslashUtf8(json, start);
+        if (end < 0)
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        if (json[end] == (byte) '\\')
+        {
+            // Escaped key: fall back to the general string reader, which has to restart from the opening quote
+            m_Advanced = index;
+            key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return true;
+        }
+
+        key = json.Slice(start, end - start);
+        index = end + 1;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != (byte) ':')
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        // Skip the whitespace after the colon so the value reader starts on the value itself
+        index++;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
         return true;
     }
 
@@ -317,34 +2210,34 @@ public unsafe ref struct JsonReaderUtf8
             throw SerdeException.ThrowInvalidJson(m_Json.ToString());
         }
 
-        var escaped = false;
-        for (var i = m_Advanced + 1; i < m_Json.Length; i++)
+        // Track escapes by skipping the escaped character: outside a string a JSON text holds only quotes and
+        // backslashes, so one vectorised search per special character keeps the common case at a single scan.
+        var position = m_Advanced + 1;
+        while (true)
         {
-            var character = m_Json[i];
-            if (escaped)
+            var found = JsonReader.IndexOfQuoteOrBackslashUtf8(m_Json, position);
+            if (found < 0)
             {
-                escaped = false;
-                continue;
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
 
-            if (character == (byte) '\\')
+            if (m_Json[found] == (byte) '"')
             {
-                escaped = true;
-                continue;
-            }
-
-            if (character == (byte) '"')
-            {
-                var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
-                Advance(i + 1 - m_Advanced);
+                var result = m_Json.Slice(m_Advanced + 1, found - m_Advanced - 1);
+                Advance(found + 1 - m_Advanced);
                 return result;
             }
+
+            position = found + 2;
+            if (position >= m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
         }
-        throw SerdeException.ThrowInvalidJson(m_Json.ToString());
     }
 
     /// <summary>
-    /// Keeps reading characters until the first target character is encountered
+    /// Reads characters until the first target character is encountered
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadChar(char c)
@@ -358,7 +2251,7 @@ public unsafe ref struct JsonReaderUtf8
     }
 
     /// <summary>
-    /// Keeps reading characters until the first target character is encountered
+    /// Reads characters until the first target character is encountered
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryReadChar(char c)
@@ -380,16 +2273,10 @@ public unsafe ref struct JsonReaderUtf8
 
     #endregion
 }
-
 public unsafe ref struct JsonReaderUtf16
 {
     private int m_Advanced;
     private readonly ReadOnlySpan<char> m_Json;
-
-    /// <summary>Base address after the entry point pinned the buffer; null means nothing is pinned, so cursors cannot be created.</summary>
-    private readonly char* m_Base;
-
-    private readonly bool m_HasBase;
 
     public readonly ReadOnlySpan<char> json => m_Json;
 
@@ -403,44 +2290,10 @@ public unsafe ref struct JsonReaderUtf16
     {
         m_Advanced = 0;
         m_Json = json;
-        m_Base = null;
-        m_HasBase = false;
-    }
-
-    /// <summary>Created by the entry point: <paramref name="basePtr"/> points at the start of <paramref name="json"/> and is already pinned.</summary>
-    internal JsonReaderUtf16(ReadOnlySpan<char> json, char* basePtr)
-    {
-        m_Advanced = 0;
-        m_Json = json;
-        m_Base = basePtr;
-        m_HasBase = true;
-    }
-
-    /// <summary>Creates a cursor starting at the current read position (the buffer must already be pinned by the entry point).</summary>
-    public JsonCursorUtf16 CreateCursor()
-    {
-        if (!m_HasBase)
-        {
-            throw new NotSupportedException(
-                "JsonCursorUtf16 requires a pinned buffer. Use JsonConverter.Deserialize instead of calling the formatter directly.");
-        }
-
-        return new JsonCursorUtf16(m_Base + m_Advanced, m_Base + m_Json.Length);
-    }
-
-    /// <summary>Synchronizes the position consumed by the cursor back to the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SyncCursor(in JsonCursorUtf16 cursor)
-    {
-        m_Advanced = (int) (cursor.p - m_Base);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Advance(int count) => m_Advanced += count;
-
-    /// <summary>Synchronizes the length consumed through the cursor by generated code back to the reader.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipConsumed(int count) => m_Advanced += count;
 
     #region Read Value
 
@@ -453,7 +2306,7 @@ public unsafe ref struct JsonReaderUtf16
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
+    public unsafe T ReadValue<T>(IFixedSerdeJsonFormatter<T> formatter, bool readComma = false)
     {
         T result;
         var span = remains;
@@ -479,12 +2332,1876 @@ public unsafe ref struct JsonReaderUtf16
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T ReadValue<T>(bool readComma = false)
     {
-        var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
-        if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
+        // The per-call resolution is cached per registration, so the hot path pays one version compare instead of the
+        // three generic static reads and interface casts GetFormatterInternal performs on every call.
+        SerdeJsonFormatterProvider.Resolve<T>(out var fixedFormatter, out var unfixedFormatter);
+        if (fixedFormatter != null)
             return ReadValue(fixedFormatter, readComma);
-        if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
+        if (unfixedFormatter != null)
             return ReadValue(unfixedFormatter, readComma);
         throw SerdeException.ThrowFormatterNotFound(typeof(T));
+    }
+
+    #endregion
+
+    #region Read Value Directly
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int ReadInt32Value(bool readComma = false)
+    {
+        var value = JsonReader.ReadIntFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public long ReadInt64Value(bool readComma = false)
+    {
+        var value = JsonReader.ReadLongFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public short ReadInt16Value(bool readComma = false)
+    {
+        var span = remains;
+        short value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadShortUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ushort ReadUInt16Value(bool readComma = false)
+    {
+        var span = remains;
+        ushort value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadUshortUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte ReadByteValue(bool readComma = false)
+    {
+        var span = remains;
+        byte value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadByteUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public sbyte ReadSByteValue(bool readComma = false)
+    {
+        var span = remains;
+        sbyte value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadSbyteUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint ReadUInt32Value(bool readComma = false)
+    {
+        var span = remains;
+        uint value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadUintUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ulong ReadUInt64Value(bool readComma = false)
+    {
+        var span = remains;
+        ulong value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadUlongUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float ReadSingleValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadFloatFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double ReadDoubleValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadDoubleFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public decimal ReadDecimalValue(bool readComma = false)
+    {
+        var span = remains;
+        decimal value;
+        fixed (char* src = span)
+        {
+            value = JsonReader.ReadDecimalUtf16(src, out var advance);
+            Advance(advance);
+        }
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ReadBooleanValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadBoolFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public char ReadCharValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadCharFastUtf16(remains, out var advance);
+        Advance(advance);
+
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    /// <summary>Reads a string value through the single-allocation fast path, without the formatter indirection.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ReadStringValue(bool readComma = false)
+    {
+        var value = JsonReader.ReadStringValueUtf16(remains, out var advance);
+        Advance(advance);
+        if (readComma) ReadComma();
+        return value;
+    }
+
+    #endregion
+
+    #region Read Collection Directly
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public int[] ReadInt32Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<int>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<int>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt32Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<int>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<int> ReadInt32List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<int>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt32Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public long[] ReadInt64Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<long>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<long>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt64Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<long>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<long> ReadInt64List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<long>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt64Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public short[] ReadInt16Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<short>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<short>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadInt16Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<short>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<short> ReadInt16List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<short>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadInt16Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public ushort[] ReadUInt16Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<ushort>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<ushort>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt16Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<ushort>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<ushort> ReadUInt16List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<ushort>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt16Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public byte[] ReadByteArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<byte>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<byte>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadByteValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<byte>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<byte> ReadByteList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<byte>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadByteValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public sbyte[] ReadSByteArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<sbyte>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<sbyte>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadSByteValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<sbyte>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<sbyte> ReadSByteList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<sbyte>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadSByteValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public uint[] ReadUInt32Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<uint>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<uint>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt32Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<uint>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<uint> ReadUInt32List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<uint>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt32Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public ulong[] ReadUInt64Array(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<ulong>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<ulong>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadUInt64Value());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<ulong>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<ulong> ReadUInt64List(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<ulong>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadUInt64Value());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public float[] ReadSingleArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<float>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<float>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadSingleValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<float>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<float> ReadSingleList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<float>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadSingleValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public double[] ReadDoubleArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<double>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<double>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadDoubleValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<double>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<double> ReadDoubleList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<double>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadDoubleValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public decimal[] ReadDecimalArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<decimal>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<decimal>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadDecimalValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<decimal>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<decimal> ReadDecimalList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<decimal>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadDecimalValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public bool[] ReadBooleanArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<bool>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<bool>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadBooleanValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<bool>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<bool> ReadBooleanList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<bool>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadBooleanValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public char[] ReadCharArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<char>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<char>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadCharValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<char>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<char> ReadCharList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<char>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadCharValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
+    }
+
+    /// <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+    public string[] ReadStringArray(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var buffer = ListPool<string>.shared.Rent();
+        try
+        {
+            ReadBeginArray();
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (m_Json[m_Advanced] == ']')
+            {
+                Advance(1);
+                if (readComma) ReadComma();
+                return Array.Empty<string>();
+            }
+
+            while (true)
+            {
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+
+                buffer.Add(ReadStringValue());
+                // The value parse leaves us on the delimiter (numbers skip their trailing whitespace, strings do not),
+                // so one whitespace skip and two character compares replace the generic TryReadChar helper here.
+                ReadWhiteSpace();
+                if ((uint) m_Advanced >= (uint) m_Json.Length)
+                {
+                    throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+                }
+                var delimiter = m_Json[m_Advanced];
+                if (delimiter == ',')
+                {
+                    Advance(1);
+                    continue;
+                }
+                if (delimiter == ']')
+                {
+                    Advance(1);
+                    break;
+                }
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            if (readComma) ReadComma();
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ListPool<string>.shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+    public List<string> ReadStringList(bool readComma = false)
+    {
+        if (TryReadNull())
+        {
+            return null;
+        }
+
+        var list = new List<string>();
+        ReadBeginArray();
+        ReadWhiteSpace();
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (m_Json[m_Advanced] == ']')
+        {
+            Advance(1);
+            if (readComma) ReadComma();
+            return list;
+        }
+
+        while (true)
+        {
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
+            list.Add(ReadStringValue());
+            ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+            var delimiter = m_Json[m_Advanced];
+            if (delimiter == ',')
+            {
+                Advance(1);
+                continue;
+            }
+            if (delimiter == ']')
+            {
+                Advance(1);
+                break;
+            }
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if (readComma) ReadComma();
+        return list;
     }
 
     #endregion
@@ -521,7 +4238,12 @@ public unsafe ref struct JsonReaderUtf16
     {
         ReadBeginArray();
         ReadWhiteSpace();
-        if (m_Json[m_Advanced] == ']')
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if(m_Json[m_Advanced] == ']')
         {
             Advance(1);
             return;
@@ -529,6 +4251,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == ',')
@@ -548,7 +4275,12 @@ public unsafe ref struct JsonReaderUtf16
     {
         ReadBeginArray();
         ReadWhiteSpace();
-        if (m_Json[m_Advanced] == ']')
+        if ((uint) m_Advanced >= (uint) m_Json.Length)
+        {
+            throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+        }
+
+        if(m_Json[m_Advanced] == ']')
         {
             Advance(1);
             return;
@@ -556,6 +4288,11 @@ public unsafe ref struct JsonReaderUtf16
         while (true)
         {
             ReadWhiteSpace();
+            if ((uint) m_Advanced >= (uint) m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
+
             col.Add(ReadValue(formatter));
             ReadWhiteSpace();
             if (m_Json[m_Advanced] == ',')
@@ -576,7 +4313,7 @@ public unsafe ref struct JsonReaderUtf16
     #region Read Literal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> ReadUntilEnd()
+    public unsafe ReadOnlySpan<char> ReadUntilEnd()
     {
         var span = remains;
         fixed (char* src = remains)
@@ -632,18 +4369,32 @@ public unsafe ref struct JsonReaderUtf16
     public bool TryReadKeyBegin() => TryReadChar(':');
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryReadComma() => TryReadChar(',');
+    public bool TryReadComma()
+    {
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
+        if (index >= json.Length || json[index] != ',')
+        {
+            return false;
+        }
+
+        // Consume the comma only: the next key read skips the whitespace in front of the next key
+        m_Advanced = index + 1;
+        return true;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryReadNull()
     {
         var length = m_Json.Length - m_Advanced;
         var span = m_Json.Slice(m_Advanced, length);
-        // Up to 4 characters are needed, so the length is Length - 3
+        // Up to 4 characters are needed, hence the length of Length - 3
         for (var i = 0; i < span.Length - 3; i++)
         {
             if (StringHelper.IsWhiteSpace(span[i])) continue;
-            // Find consecutive "null"
+            // Find consecutive nulls
             if (span[i] == 'n' && span[i + 1] == 'u' && span[i + 2] == 'l' && span[i + 3] == 'l')
             {
                 Advance(i + 4);
@@ -665,19 +4416,54 @@ public unsafe ref struct JsonReaderUtf16
         return key;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>Reads the next object key and consumes its colon.</summary>
+    /// <remarks>
+    /// This runs once per member, so it walks the buffer directly instead of going through the whitespace, quote and
+    /// character helpers: one whitespace skip, one vectorised quote search and one whitespace skip before the colon.
+    /// Keys that contain escapes keep the general path.
+    /// </remarks>
     public bool TryReadKey(out ReadOnlySpan<char> key)
     {
-        ReadWhiteSpace();
-        if (remains[0] != '"')
+        var json = m_Json;
+        var index = m_Advanced;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != '"')
         {
+            m_Advanced = index;
             key = default;
             return false;
         }
-        key = ReadString();
-        ReadWhiteSpace();
-        ReadKeyBegin();
-        ReadWhiteSpace();
+
+        var start = index + 1;
+        var end = JsonReader.IndexOfQuoteOrBackslashUtf16(json, start);
+        if (end < 0)
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        if (json[end] == '\\')
+        {
+            // Escaped key: fall back to the general string reader, which has to restart from the opening quote
+            m_Advanced = index;
+            key = ReadString();
+            ReadWhiteSpace();
+            ReadKeyBegin();
+            ReadWhiteSpace();
+            return true;
+        }
+
+        key = json.Slice(start, end - start);
+        index = end + 1;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        if (index >= json.Length || json[index] != ':')
+        {
+            throw SerdeException.ThrowInvalidJson(json.ToString());
+        }
+
+        // Skip the whitespace after the colon so the value reader starts on the value itself
+        index++;
+        while (index < json.Length && StringHelper.IsWhiteSpace(json[index])) index++;
+        m_Advanced = index;
         return true;
     }
 
@@ -688,34 +4474,34 @@ public unsafe ref struct JsonReaderUtf16
             throw SerdeException.ThrowInvalidJson(m_Json.ToString());
         }
 
-        var escaped = false;
-        for (var i = m_Advanced + 1; i < m_Json.Length; i++)
+        // Track escapes by skipping the escaped character: outside a string a JSON text holds only quotes and
+        // backslashes, so one vectorised search per special character keeps the common case at a single scan.
+        var position = m_Advanced + 1;
+        while (true)
         {
-            var character = m_Json[i];
-            if (escaped)
+            var found = JsonReader.IndexOfQuoteOrBackslashUtf16(m_Json, position);
+            if (found < 0)
             {
-                escaped = false;
-                continue;
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
             }
 
-            if (character == '\\')
+            if (m_Json[found] == '"')
             {
-                escaped = true;
-                continue;
-            }
-
-            if (character == '"')
-            {
-                var result = m_Json.Slice(m_Advanced + 1, i - m_Advanced - 1);
-                Advance(i + 1 - m_Advanced);
+                var result = m_Json.Slice(m_Advanced + 1, found - m_Advanced - 1);
+                Advance(found + 1 - m_Advanced);
                 return result;
             }
+
+            position = found + 2;
+            if (position >= m_Json.Length)
+            {
+                throw SerdeException.ThrowInvalidJson(m_Json.ToString());
+            }
         }
-        throw SerdeException.ThrowInvalidJson(m_Json.ToString());
     }
 
     /// <summary>
-    /// Keeps reading characters until the first target character is encountered
+    /// Reads characters until the first target character is encountered
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadChar(char c)
@@ -729,7 +4515,7 @@ public unsafe ref struct JsonReaderUtf16
     }
 
     /// <summary>
-    /// Keeps reading characters until the first target character is encountered
+    /// Reads characters until the first target character is encountered
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryReadChar(char c)

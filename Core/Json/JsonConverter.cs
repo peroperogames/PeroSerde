@@ -121,7 +121,7 @@ namespace PeroTools2.Serde.Json
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
 
-                if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                if (!SerdeJsonFormatterProvider.IsResolved<T>() && !SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
                     {
@@ -133,9 +133,15 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
+                try
                 {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
+                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue<T>();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    // The fast paths read past the last token, so a truncated document can run past the buffer; report
+                    // it as invalid json instead of leaking the index error
+                    throw SerdeException.ThrowInvalidJson(jsonTrimmedWhiteSpace.ToString());
                 }
             }
 
@@ -154,10 +160,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -175,10 +178,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf16(jsonTrimmedWhiteSpace);
-                fixed (char* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf16(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf16(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -311,7 +311,7 @@ namespace PeroTools2.Serde.Json
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
 
-                if (!SerdeJsonFormatterProvider.IsRegistered<T>())
+                if (!SerdeJsonFormatterProvider.IsResolved<T>() && !SerdeJsonFormatterProvider.IsRegistered<T>())
                 {
                     if (BuiltinGenericFormatter<T>.formatter != null)
                     {
@@ -323,9 +323,13 @@ namespace PeroTools2.Serde.Json
                         SerdeJsonFormatterProvider.GetFormatter<T>();
                     }
                 }
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
+                try
                 {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue<T>();
+                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue<T>();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    throw SerdeException.ThrowInvalidJson(System.Text.Encoding.UTF8.GetString(jsonTrimmedWhiteSpace));
                 }
             }
 
@@ -344,10 +348,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>
@@ -365,10 +366,7 @@ namespace PeroTools2.Serde.Json
                 }
 
                 jsonTrimmedWhiteSpace = JsonBufferSentinel.PadUtf8(jsonTrimmedWhiteSpace);
-                fixed (byte* pJson = jsonTrimmedWhiteSpace)
-                {
-                    return new JsonReaderUtf8(jsonTrimmedWhiteSpace, pJson).ReadValue(formatter);
-                }
+                return new JsonReaderUtf8(jsonTrimmedWhiteSpace).ReadValue(formatter);
             }
 
             /// <summary>

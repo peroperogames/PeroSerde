@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>14</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>PeroTools2.Serde.Core</RootNamespace>
     <AssemblyName>PeroTools2.Serde.Core</AssemblyName>
     <Nullable>disable</Nullable>
+    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

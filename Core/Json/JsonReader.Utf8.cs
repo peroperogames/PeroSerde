@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PeroTools2.Serde.Json;
@@ -132,7 +133,41 @@ public static unsafe partial class JsonReader
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint ZeroByte(uint v) => (v - 0x0101_0101u) & ~v & 0x8080_8080u;
 
+    /// <summary>Finds the next <c>"</c> or <c>\</c> at or after <paramref name="start"/>, or -1 when there is none.</summary>
+    /// <remarks>
+    /// Keys and values both scan for the closing quote, so the scan is delegated to the vectorised
+    /// <see cref="MemoryExtensions.IndexOfAny{T}(ReadOnlySpan{T},T,T)"/> instead of walking bytes one by one.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOfQuoteOrBackslashUtf8(ReadOnlySpan<byte> span, int start)
+    {
+        if ((uint) start >= (uint) span.Length)
+        {
+            return -1;
+        }
+
+        var offset = span.Slice(start).IndexOfAny((byte) '"', (byte) '\\');
+        return offset < 0 ? -1 : start + offset;
+    }
+
     /// <summary>The single parse entry for strings: ASCII fast path plus general decoding; null returns null.</summary>
+    internal static string ReadStringValueUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        advance = 0;
+        if (span.Length > 0 && span[0] == (byte) '"')
+        {
+            if (TryReadAsciiStringUtf8(span, out var value, out advance))
+            {
+                return value;
+            }
+        }
+
+        fixed (byte* src = span)
+        {
+            return ReadStringValueUtf8(src, span.Length, out advance);
+        }
+    }
+
     internal static string ReadStringValueUtf8(byte* src, int length, out int advance)
     {
         advance = 0;
@@ -158,15 +193,6 @@ public static unsafe partial class JsonReader
         return Encoding.UTF8.GetString(result);
     }
 
-    /// <summary>Skips one complete value and returns the number of bytes consumed (used by cursors).</summary>
-    internal static int SkipValueUtf8(ReadOnlySpan<byte> src)
-    {
-        fixed (byte* p = src)
-        {
-            ReadValueUntilEndUtf8(p, src.Length, out var advance);
-            return advance;
-        }
-    }
     public static ReadOnlySpan<byte> ReadValueUntilEndUtf8(byte* src, int maxLength, out int advance)
     {
         var span = new Span<byte>(src, maxLength);
@@ -272,10 +298,12 @@ public static unsafe partial class JsonReader
     /// Returns false on a non-ASCII byte or non-ASCII escape, and the caller takes the general path.
     /// </remarks>
     internal static bool TryReadAsciiStringUtf8(byte* src, int maxLength, out string result, out int advance)
+        => TryReadAsciiStringUtf8(new ReadOnlySpan<byte>(src, maxLength), out result, out advance);
+
+    internal static bool TryReadAsciiStringUtf8(ReadOnlySpan<byte> span, out string result, out int advance)
     {
         result = null;
         advance = 0;
-        var span = new ReadOnlySpan<byte>(src, maxLength);
 
         // Pass 1: locate the closing quote while confirming the whole token is ASCII with intact escape sequences.
         // Pure ASCII without escapes is the most common case, so first skip 16 bytes at a time with 4x uint.
@@ -288,11 +316,12 @@ public static unsafe partial class JsonReader
             var vectorLimit = span.Length - 16;
             while (pos <= vectorLimit)
             {
-                var p = src + pos;
-                var v0 = Unsafe.ReadUnaligned<uint>(p);
-                var v1 = Unsafe.ReadUnaligned<uint>(p + 4);
-                var v2 = Unsafe.ReadUnaligned<uint>(p + 8);
-                var v3 = Unsafe.ReadUnaligned<uint>(p + 12);
+                ref var head = ref MemoryMarshal.GetReference(span);
+                ref var p = ref Unsafe.Add(ref head, pos);
+                var v0 = Unsafe.ReadUnaligned<uint>(ref p);
+                var v1 = Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref p, 4));
+                var v2 = Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref p, 8));
+                var v3 = Unsafe.ReadUnaligned<uint>(ref Unsafe.Add(ref p, 12));
                 if (((v0 | v1 | v2 | v3) & 0x8080_8080u) != 0
                     || (ZeroByte(v0 ^ quote) | ZeroByte(v1 ^ quote) | ZeroByte(v2 ^ quote) | ZeroByte(v3 ^ quote)) != 0
                     || (ZeroByte(v0 ^ slash) | ZeroByte(v1 ^ slash) | ZeroByte(v2 ^ slash) | ZeroByte(v3 ^ slash)) != 0)
@@ -402,7 +431,11 @@ public static unsafe partial class JsonReader
                     continue;
                 }
                 // Reuse the existing decode logic so behavior matches the general path (pass 1 already guarantees no exception in range)
-                dest[index++] = ReadEscapedCharUtf8(src + 1 + i, out var escapedLength);
+                int escapedLength;
+                fixed (byte* source = span)
+                {
+                    dest[index++] = ReadEscapedCharUtf8(source + 1 + i, out escapedLength);
+                }
                 i += escapedLength - 1;
             }
         }
@@ -519,177 +552,6 @@ public static unsafe partial class JsonReader
     #endregion
 
     #region Read Primitive
-
-    /// <summary>Reads a nested [SerdeJsonSerializable] object: goes through the reader and syncs the consumed length back to the cursor.</summary>
-    public static T ReadNested<T>(ref JsonCursorUtf8 cursor)
-    {
-        var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
-        var reader = new JsonReaderUtf8(span, cursor.p);
-        // Leave both the fixed and unfixed formatter shapes to the reader
-        var value = reader.ReadValue<T>();
-        cursor.p = cursor.end - reader.remains.Length;
-        return value;
-    }
-
-    /// <summary>Reads with the formatter specified on the member (types with an explicit [SerdeJsonFormatter] are not in the provider registry).</summary>
-    public static T ReadNested<T>(ref JsonCursorUtf8 cursor, object formatter)
-    {
-        var span = new ReadOnlySpan<byte>(cursor.p, (int) (cursor.end - cursor.p));
-        var reader = new JsonReaderUtf8(span, cursor.p);
-        T value;
-        if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
-        {
-            value = reader.ReadValue(fixedFormatter);
-        }
-        else if (formatter is ISerdeJsonFormatter<T> unfixedFormatter)
-        {
-            value = reader.ReadValue(unfixedFormatter);
-        }
-        else
-        {
-            throw SerdeException.ThrowFormatterNotFound(typeof(T));
-        }
-
-        cursor.p = cursor.end - reader.remains.Length;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ReadInt32(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadIntUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long ReadInt64(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadLongUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ReadUInt32(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadUintUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong ReadUInt64(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadUlongUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static short ReadInt16(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadShortUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ushort ReadUInt16(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadUshortUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ReadByte(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadByteUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static sbyte ReadSByte(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadSbyteUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float ReadSingle(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadFloatUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double ReadDouble(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadDoubleUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static decimal ReadDecimal(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadDecimalUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ReadBoolean(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadBoolUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static char ReadChar(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadCharUtf8(cursor.p, out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ReadString(ref JsonCursorUtf8 cursor)
-    {
-        BeginPrimitive(ref cursor);
-        var value = ReadStringValueUtf8(cursor.p, (int) (cursor.end - cursor.p), out var advance);
-        cursor.p += advance;
-        return value;
-    }
-
-    /// <summary>Skips whitespace and makes sure there is still content to read.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void BeginPrimitive(ref JsonCursorUtf8 cursor)
-    {
-        cursor.SkipWhiteSpace();
-        if (cursor.p >= cursor.end)
-        {
-            throw SerdeException.ThrowInvalidJson("Invalid json format.");
-        }
-    }
 
     /// <summary>Reads an escaped character; supports UTF8 and UTF16</summary>
     // ReSharper disable once CognitiveComplexity
@@ -818,14 +680,12 @@ public static unsafe partial class JsonReader
         return SpanConverter.ToInt(in span);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ReadLongUtf8(byte* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf8(src, LongFormatter.max_size, out advance);
         return SpanConverter.ToLong(in span);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort ReadUshortUtf8(byte* src, out int advance)
     {
         var span = ReadPrimitiveUntilEndUtf8(src, UshortFormatter.max_size, out advance);
@@ -845,6 +705,261 @@ public static unsafe partial class JsonReader
         var span = ReadPrimitiveUntilEndUtf8(src, UlongFormatter.max_size, out advance);
         return SpanConverter.ToUlong(in span);
     }
+    #region Span Parsing
+
+    /// <summary>Finds the end of the current primitive token and skips the whitespace after it.</summary>
+    internal static ReadOnlySpan<byte> ReadPrimitiveUntilEndUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            var character = span[i];
+            if (!StringHelper.IsWhiteSpace(character) && character is not ((byte) '}' or (byte) ']' or (byte) ','))
+            {
+                continue;
+            }
+
+            advance = i;
+            for (var j = i; j < span.Length; j++)
+            {
+                if (StringHelper.IsWhiteSpace(span[j]))
+                {
+                    continue;
+                }
+
+                advance = j;
+                break;
+            }
+
+            return span.Slice(0, i);
+        }
+
+        throw SerdeException.ThrowInvalidAdvance();
+    }
+
+    /// <summary>Skips the whitespace that follows a token that ended at <paramref name="index"/>.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int SkipWhiteSpaceUtf8(ReadOnlySpan<byte> span, int index)
+    {
+        while (index < span.Length && StringHelper.IsWhiteSpace(span[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    /// <summary>Parses a small integer in one pass: the digits are read and accumulated at the same time.</summary>
+    /// <remarks>
+    /// The general path has to find the end of the token before it can parse it, which walks the digits twice. A
+    /// cursor-free reader pays that twice per value, so the common case is parsed straight from the span; anything else
+    /// falls back to the general path that also reports the JSON errors.
+    /// </remarks>
+    internal static int ReadIntFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        ref var start = ref MemoryMarshal.GetReference(span);
+        var negative = span[0] == (byte) '-';
+        var index = negative ? 1 : 0;
+        var first = index;
+        var value = 0;
+        while (index < span.Length)
+        {
+            var digit = Unsafe.Add(ref start, index) - '0';
+            if ((uint) digit > 9)
+            {
+                break;
+            }
+
+            value = (value * 10) + digit;
+            index++;
+        }
+
+        // Ten digit values overflow an int, and a token that is not followed by a delimiter is not a number
+        if (index == first || index - first > 9 || index >= span.Length
+            || (span[index] != (byte) ',' && span[index] != (byte) ']' && span[index] != (byte) '}'))
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ToInt(in token);
+        }
+
+        advance = SkipWhiteSpaceUtf8(span, index);
+        return negative ? -value : value;
+    }
+
+    /// <summary>Parses a small 64-bit integer in one pass, see <see cref="ReadIntFastUtf8(ReadOnlySpan{byte}, out int)"/>.</summary>
+    internal static long ReadLongFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        ref var start = ref MemoryMarshal.GetReference(span);
+        var negative = span[0] == (byte) '-';
+        var index = negative ? 1 : 0;
+        var first = index;
+        long value = 0;
+        while (index < span.Length)
+        {
+            var digit = Unsafe.Add(ref start, index) - '0';
+            if ((uint) digit > 9)
+            {
+                break;
+            }
+
+            value = (value * 10) + digit;
+            index++;
+        }
+
+        if (index == first || index - first > 18 || index >= span.Length
+            || (span[index] != (byte) ',' && span[index] != (byte) ']' && span[index] != (byte) '}'))
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ToLong(in token);
+        }
+
+        advance = SkipWhiteSpaceUtf8(span, index);
+        return negative ? -value : value;
+    }
+
+    /// <summary>
+    /// Reads <c>[-]digits[.digits]</c> into a mantissa and a fraction digit count. Returns false for exponents, long
+    /// mantissas and anything the general parser has to handle.
+    /// </summary>
+    private static bool TryParseRealFastUtf8(ReadOnlySpan<byte> span, out ulong mantissa, out bool negative, out int fractionDigits, out int end)
+    {
+        mantissa = 0;
+        negative = false;
+        fractionDigits = 0;
+        end = 0;
+        if (span.IsEmpty)
+        {
+            return false;
+        }
+
+        ref var start = ref MemoryMarshal.GetReference(span);
+        var index = 0;
+        if (Unsafe.Add(ref start, 0) == (byte) '-')
+        {
+            negative = true;
+            index = 1;
+        }
+
+        var digits = 0;
+        var seenDot = false;
+        while (index < span.Length)
+        {
+            var c = Unsafe.Add(ref start, index);
+            var digit = c - '0';
+            if ((uint) digit <= 9)
+            {
+                if (mantissa > 900_000_000)
+                {
+                    // More precision than the fast path can hold, the framework parser rounds it correctly
+                    return false;
+                }
+
+                mantissa = (mantissa * 10) + (ulong) digit;
+                digits++;
+                if (seenDot)
+                {
+                    fractionDigits++;
+                }
+
+                index++;
+                continue;
+            }
+
+            if (c == (byte) '.' && !seenDot)
+            {
+                seenDot = true;
+                index++;
+                continue;
+            }
+
+            break;
+        }
+
+        if (digits == 0 || digits > 15 || fractionDigits > 22 || index >= span.Length
+            || (span[index] != (byte) ',' && span[index] != (byte) ']' && span[index] != (byte) '}'))
+        {
+            return false;
+        }
+
+        end = index;
+        return true;
+    }
+
+    /// <summary>Parses a real number in one pass, see <see cref="TryParseRealFastUtf8"/> for the fallback.</summary>
+    internal static float ReadFloatFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        if (!TryParseRealFastUtf8(span, out var mantissa, out var negative, out var fractionDigits, out var end))
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ParseFloatFramework(in token);
+        }
+
+        // Mantissa and power of ten are both exact in float below 2^24 and 1e10; anything else goes to the framework
+        // parser, so the result is never rounded through double first
+        if (mantissa >= 1 << 24 || fractionDigits > 10)
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ParseFloatFramework(in token);
+        }
+
+        advance = SkipWhiteSpaceUtf8(span, end);
+        var value = fractionDigits == 0 ? (float) mantissa : (float) mantissa / SpanConverter.floatPowersOfTen[fractionDigits];
+        return negative ? -value : value;
+    }
+
+    /// <summary>Parses a real number in one pass, see <see cref="TryParseRealFastUtf8"/> for the fallback.</summary>
+    internal static double ReadDoubleFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        if (!TryParseRealFastUtf8(span, out var mantissa, out var negative, out var fractionDigits, out var end))
+        {
+            var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ToDouble(in token);
+        }
+
+        advance = SkipWhiteSpaceUtf8(span, end);
+        var result = fractionDigits == 0 ? mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
+        return negative ? -result : result;
+    }
+
+    /// <summary>Parses a literal directly; anything that is not <c>true</c> or <c>false</c> takes the general path.</summary>
+    internal static bool ReadBoolFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        ref var start = ref MemoryMarshal.GetReference(span);
+        if (span.Length >= 4
+            && Unsafe.Add(ref start, 0) == (byte) 't' && Unsafe.Add(ref start, 1) == (byte) 'r' && Unsafe.Add(ref start, 2) == (byte) 'u' && Unsafe.Add(ref start, 3) == (byte) 'e')
+        {
+            advance = 4;
+            return true;
+        }
+
+        if (span.Length >= 5
+            && Unsafe.Add(ref start, 0) == (byte) 'f' && Unsafe.Add(ref start, 1) == (byte) 'a' && Unsafe.Add(ref start, 2) == (byte) 'l' && Unsafe.Add(ref start, 3) == (byte) 's' && Unsafe.Add(ref start, 4) == (byte) 'e')
+        {
+            advance = 5;
+            return false;
+        }
+
+        var token = ReadPrimitiveUntilEndUtf8(span, out advance);
+            return SpanConverter.ToBool(in token);
+    }
+
+    /// <summary>Reads a single character string directly; escaped characters take the general path.</summary>
+    internal static char ReadCharFastUtf8(ReadOnlySpan<byte> span, out int advance)
+    {
+        ref var start = ref MemoryMarshal.GetReference(span);
+        if (span.Length >= 3 && Unsafe.Add(ref start, 0) == (byte) '"' && Unsafe.Add(ref start, 2) == (byte) '"')
+        {
+            advance = 3;
+            return (char) Unsafe.Add(ref start, 1);
+        }
+
+        // The general path has to strip the quotes, so it stays on the pointer overload
+        fixed (byte* src = span)
+        {
+            return ReadCharUtf8(src, out advance);
+        }
+    }
+
+    #endregion
 }
 
 #endregion

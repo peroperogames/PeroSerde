@@ -6,6 +6,7 @@
  */
 
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -30,11 +31,23 @@ public static partial class SerdeJsonFormatterProvider
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsRegistered<T>() => Cache<T>.registered || FixedCache<T>.registered || GenericCache<T>.registered;
 
+    /// <summary>
+    /// Whether the hot-path cache already resolved a formatter for <typeparamref name="T"/>. Callers use it to skip the
+    /// generic static lookups (and the generic cache's type initializer check) on every deserialize call.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool IsResolved<T>() =>
+        Dispatch<T>.version == s_version && (Dispatch<T>.fixedFormatter != null || Dispatch<T>.unfixedFormatter != null);
+
+    /// <summary>Bumped on every registration so the per-call caches know they have to resolve again</summary>
+    internal static volatile int s_version;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Register<T>(ISerdeJsonFormatter<T> formatter)
     {
         Cache<T>.registered = true;
         Cache<T>.formatter = formatter;
+        s_version++;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,6 +55,34 @@ public static partial class SerdeJsonFormatterProvider
     {
         FixedCache<T>.registered = true;
         FixedCache<T>.formatter = formatter;
+        s_version++;
+    }
+
+    /// <summary>
+    /// Resolves the formatter of <typeparamref name="T"/> once per registration, for the hot paths that call a
+    /// formatter per member. Reading the registration counter and comparing it is cheaper than the three generic
+    /// static reads plus the interface casts that <see cref="GetFormatterInternal{T}"/> performs on every call.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Resolve<T>(out IFixedSerdeJsonFormatter<T> fixedFormatter, out ISerdeJsonFormatter<T> unfixedFormatter)
+    {
+        if (Dispatch<T>.version != s_version)
+        {
+            ResolveSlow<T>();
+        }
+        fixedFormatter = Dispatch<T>.fixedFormatter;
+        unfixedFormatter = Dispatch<T>.unfixedFormatter;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ResolveSlow<T>()
+    {
+        var formatter = GetFormatterInternal<T>();
+        Dispatch<T>.fixedFormatter = formatter as IFixedSerdeJsonFormatter<T>;
+        Dispatch<T>.unfixedFormatter = formatter as ISerdeJsonFormatter<T>;
+        // Publish the formatter fields before the registration counter that vouches for them, so another thread that
+        // reads the new counter value can never observe a half written cache
+        Volatile.Write(ref Dispatch<T>.version, Volatile.Read(ref s_version));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -105,6 +146,14 @@ public static partial class SerdeJsonFormatterProvider
         // ReSharper disable once StaticMemberInGenericType
         public static bool registered;
         public static IFixedSerdeJsonFormatter<T> formatter;
+    }
+
+    private static class Dispatch<T>
+    {
+        // ReSharper disable once StaticMemberInGenericType
+        public static int version = -1;
+        public static IFixedSerdeJsonFormatter<T> fixedFormatter;
+        public static ISerdeJsonFormatter<T> unfixedFormatter;
     }
 
     private static class GenericCache<T>
