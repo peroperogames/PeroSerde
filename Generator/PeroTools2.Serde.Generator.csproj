@@ -3,12 +3,26 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>14</LangVersion>
+        <Authors>PeroperoGames</Authors>
+        <Company>PeroperoGames</Company>
+        <Title>PeroSerde.Generator</Title>
+        <PackageId>PeroTools2.Serde.Generator</PackageId>
         <AssemblyName>PeroTools2.Serde.Generator</AssemblyName>
         <RootNamespace>PeroTools2.Serde.Generator</RootNamespace>
+        <Description>Generator for PeroSerde.</Description>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
+        <Copyright>© 2026 PeroperoGames</Copyright>
+        <PackageProjectUrl>https://github.com/peroperogames/PeroSerde</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/peroperogames/PeroSerde</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryType>git</RepositoryType>
+        <Version>0.1.25</Version>
+        <AssemblyVersion>0.1.25</AssemblyVersion>
+        <FileVersion>0.1.25</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

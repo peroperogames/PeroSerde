@@ -1,0 +1,1715 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PeroTools2.Serde.Core</name>
+    </assembly>
+    <members>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonSerializableAttribute">
+            <summary>
+            Automatically adds a Formatter for this type
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonSerializableAttribute.#ctor(System.Boolean,System.Boolean)">
+            <param name="ignoreMissingMembers">If true, missing members are ignored during deserialization</param>
+            <param name="ignoreNullMembers">If true, members whose value is null are ignored during serialization</param>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonMemberAttribute">
+            <summary>
+            Tells Serde which name to use when serializing and deserializing JSON
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonMemberAttribute.#ctor(System.String)">
+            <summary>
+            Tells Serde which name to use when serializing and deserializing JSON
+            </summary>
+            <param name="formatName">The name to use</param>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonIgnoreMemberAttribute">
+            <summary>
+            Tells Serde to ignore this property or field when serializing and deserializing JSON
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonFormatterAttribute">
+            <summary>
+            Tells Serde which JSON formatter to use when serializing and deserializing JSON
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonFormatterAttribute.#ctor(System.Type)">
+            <summary>
+            Tells Serde which JSON formatter to use when serializing and deserializing JSON
+            </summary>
+            <param name="formatterType">The formatter type</param>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonEnumFormatterAttribute">
+            <summary>
+            Tells Serde how to provide the default serializer and deserializer for an enum type
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonEnumFormatterAttribute.#ctor(PeroTools2.Serde.Json.SerdeEnumFormat,PeroTools2.Serde.Json.SerdeEnumFormat)">
+            <summary>
+            Tells Serde how to provide the default serializer and deserializer for an enum type
+            </summary>
+            <param name="serializationFormat">The format to use when serializing</param>
+            <param name="deserializationFormat">The format to use when deserializing</param>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.SerdeEnumFormat.String">
+            <summary>
+            Tells Serde to provide the enum serializer or deserializer using the string form
+            </summary>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.SerdeEnumFormat.Number">
+            <summary>
+            Tells Serde to provide the enum serializer or deserializer using the numeric form
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.ArrayFormatter`1">
+            <summary>
+            Json formatter for arrays
+            </summary>
+            <typeparam name="T">Element type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.CollectionFormatter`2">
+            <summary>
+            Json formatter for Collection
+            </summary>
+            <typeparam name="T">Element type</typeparam>
+            <typeparam name="TCollection">Collection type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.ReadonlyCollectionFormatter`2">
+            <summary>
+            Json formatter for ReadOnlyCollection
+            </summary>
+            <typeparam name="T">Element type</typeparam>
+            <typeparam name="TCollection">Collection type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.DateTimeFormatter">
+            <summary>
+            DateTime formatter
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.UnixSecondsFormatter">
+            <summary>
+            Json formatter for second-precision Unix timestamps
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.UnixMillisecondsFormatter">
+            <summary>
+            Json formatter for millisecond-precision Unix timestamps
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.DictionaryFormatter`2">
+            <summary>
+            Newtonsoft.Json-style Dictionary formatter
+            </summary>
+            <typeparam name="TKey">Key type</typeparam>
+            <typeparam name="TValue">Value type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.DictionaryFormatter`3">
+            <summary>
+            Newtonsoft.Json-style Dictionary formatter
+            </summary>
+            <typeparam name="TKey">Key type</typeparam>
+            <typeparam name="TValue">Value type</typeparam>
+            <typeparam name="TDictionary">Dictionary type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.EnumInfo`1">
+            <summary>
+            Static enum information
+            </summary>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.EnumInfo`1.typeCode">
+            <summary>TypeCode of the Enum underlying type</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.EnumHelper">
+            <summary>
+            Enum helper class
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EnumHelper.AsUInt64``1(``0)">
+            <summary>Converts an enum value to ulong.</summary>
+            <remarks>Both signed and unsigned integer types are supported.</remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EnumHelper.AsEnum``1(System.UInt64)">
+            <summary>Converts a ulong value to an enum of the specified type</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EnumHelper.AsEnum``1(System.Int64)">
+            <summary>Converts a long value to an enum of the specified type</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.EnumNumberFormatter`1">
+            <summary>
+            Enum formatter for Number values
+            </summary>
+            <typeparam name="T">Enum type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.EnumStringFormatter`1">
+            <summary>
+            Enum formatter for String values
+            </summary>
+            <typeparam name="T">Enum type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.GuidFormatter">
+            <summary>
+            Guid formatter
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.ISerdeJsonFormatter`1">
+            <summary>
+            General-purpose formatter
+            </summary>
+            <typeparam name="T">Formatted type</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.ISerdeJsonFormatter`1.SerializeUtf8(`0,PeroTools2.Serde.Json.JsonWriterUtf8@)">
+            <summary>
+            Serializes to a UTF-8 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">Json Utf8 writer</param>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.ISerdeJsonFormatter`1.SerializeUtf16(`0,PeroTools2.Serde.Json.JsonWriterUtf16@)">
+            <summary>
+            Serializes to a UTF-16 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">Json Utf16 writer</param>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.ISerdeJsonFormatter`1.DeserializeUtf8(System.ReadOnlySpan{System.Byte}@,PeroTools2.Serde.Json.JsonReaderUtf8@)">
+            <summary>
+            Deserializes from a UTF-8 string
+            </summary>
+            <param name="remains">The remaining Json string</param>
+            <param name="reader">Json Utf8 reader</param>
+            <returns>The deserialized instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.ISerdeJsonFormatter`1.DeserializeUtf16(System.ReadOnlySpan{System.Char}@,PeroTools2.Serde.Json.JsonReaderUtf16@)">
+            <summary>
+            Deserializes from a UTF-16 string
+            </summary>
+            <param name="remains">The remaining Json string</param>
+            <param name="reader">Json Utf16 reader</param>
+            <returns>The deserialized instance</returns>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.IFixedSerdeJsonFormatter`1">
+            <summary>
+            Formatter for fixed-size types
+            </summary>
+            <typeparam name="T">Formatted type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.EncodingJsonFormatter`1">
+            <summary>
+            Encoding formatter for Primitive types
+            </summary>
+            <typeparam name="T">Formatted type; only Primitive types are supported</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EncodingJsonFormatter`1.DeserializeUtf16(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Deserializes from a UTF-16 string
+            </summary>
+            <param name="value">The string to deserialize</param>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EncodingJsonFormatter`1.DeserializeUtf8(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            Deserializes from a UTF-8 string
+            </summary>
+            <param name="value">The string to deserialize</param>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EncodingJsonFormatter`1.SerializeUtf16(`0)">
+            <summary>
+            Serializes to a UTF-16 string
+            </summary>
+            <param name="value">The object instance to serialize</param>
+            <returns>The serialized UTF-16 string</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.EncodingJsonFormatter`1.SerializeUtf8(`0)">
+            <summary>
+            Serializes to a UTF-16 string
+            </summary>
+            <param name="value">The object instance to serialize</param>
+            <returns>The serialized UTF-8 string</returns>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.PrimitiveJsonFormatter`1">
+            <summary>
+            Primitive Json formatter
+            </summary>
+            <typeparam name="T">Formatted type; only Primitive types are supported</typeparam>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.PrimitiveJsonFormatter`1.max_stack_alloc_bytes">
+            <summary>
+            Upper bound on the bytes allocated on the stack; above it the buffer is rented from the pool to avoid a stack overflow.
+            Both directions compare the actual stack bytes used so that stack usage stays consistent.
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.KeyValuePairFormatter`2">
+            <summary>
+            Formatter that writes or reads a Json key-value pair
+            </summary>
+            <typeparam name="TKey">Key type</typeparam>
+            <typeparam name="TValue">Value type</typeparam>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.LazyFormatter`1">
+            <summary>
+            Formatter for lazy types
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.NullableFormatter`1">
+            <summary>
+            Nullable type formatter
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.SerdeJsonFormatterProvider">
+            <summary>
+            Global cache of JSON formatters
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonFormatterProvider.IsResolved``1">
+            <summary>
+            Whether the hot-path cache already resolved a formatter for <typeparamref name="T"/>. Callers use it to skip the
+            generic static lookups (and the generic cache's type initializer check) on every deserialize call.
+            </summary>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.SerdeJsonFormatterProvider.s_version">
+            <summary>Bumped on every registration so the per-call caches know they have to resolve again</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonFormatterProvider.Resolve``1(PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0}@,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0}@)">
+            <summary>
+            Resolves the formatter of <typeparamref name="T"/> once per registration, for the hot paths that call a
+            formatter per member. Reading the registration counter and comparing it is cheaper than the three generic
+            static reads plus the interface casts that <see cref="M:PeroTools2.Serde.Json.SerdeJsonFormatterProvider.GetFormatterInternal``1"/> performs on every call.
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.SerdeJsonFormatterProvider.GenericCache`1.#cctor">
+            <summary>
+            Generic types cannot be registered eagerly; the static constructor must be called explicitly
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.RoundTripNumberHelper">
+            <summary>
+            Shared implementation of round-trip floating-point writing.
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.RoundTripFloatFormatter">
+            <summary>Round-trip formatter for float</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.RoundTripDoubleFormatter">
+            <summary>Round-trip formatter for double</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.NullableRoundTripFloatFormatter">
+            <summary>Round-trip formatter for float?</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.NullableRoundTripDoubleFormatter">
+            <summary>Round-trip formatter for double?</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.StringFormatter">
+            <summary>
+            String Json formatter
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.IndentFormatHelper.FormatJson(System.String)">
+            <summary>
+            Formats JSON data
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.JsonConverter">
+            <summary>
+            JSON serializer/deserializer
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.JsonConverter.UTF16">
+            <summary>
+            UTF-16 JSON serializer/deserializer
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0)">
+            <summary>
+            Serializes an object into a UTF-16 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-16 JSON string</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0})">
+            <summary>
+            Serializes an object into a UTF-16 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-16 JSON string</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0})">
+            <summary>
+            Serializes an object into a UTF-16 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-16 JSON string</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,System.IO.TextWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            <paramref name="writer"/> never observes a partially written document
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.TextWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            <paramref name="writer"/> never observes a partially written document
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.TextWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The writer to write the serialized JSON to; must not be null</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single write call, so
+            <paramref name="writer"/> never observes a partially written document
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.SerializeAsync``1(``0,System.IO.TextWriter,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The writer to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.SerializeAsync``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.TextWriter,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The writer to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.SerializeAsync``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.TextWriter,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.TextWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The writer to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,System.Buffers.IBufferWriter{System.Char})">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.Buffers.IBufferWriter{System.Char})">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.Buffers.IBufferWriter{System.Char})">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            <remarks>
+            <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="!:BinaryWriter.Encoding"/>
+            and writes no byte order mark, so a default <see cref="T:System.IO.BinaryWriter"/> stores UTF-8 bytes even though this
+            overload belongs to the <see cref="T:PeroTools2.Serde.Json.JsonConverter.UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            UTF-16 bytes are required, and prefer <see cref="T:System.IO.TextWriter"/> when the target works with characters
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="!:BinaryWriter.Encoding"/>
+            and writes no byte order mark, so a default <see cref="T:System.IO.BinaryWriter"/> stores UTF-8 bytes even though this
+            overload belongs to the <see cref="T:PeroTools2.Serde.Json.JsonConverter.UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            UTF-16 bytes are required, and prefer <see cref="T:System.IO.TextWriter"/> when the target works with characters
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into a UTF-16 JSON string and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            <c>BinaryWriter.Write(ReadOnlySpan&lt;char&gt;)</c> encodes the characters with <see cref="!:BinaryWriter.Encoding"/>
+            and writes no byte order mark, so a default <see cref="T:System.IO.BinaryWriter"/> stores UTF-8 bytes even though this
+            overload belongs to the <see cref="T:PeroTools2.Serde.Json.JsonConverter.UTF16"/> entry. Construct the writer with <c>Encoding.Unicode</c> when raw
+            UTF-16 bytes are required, and prefer <see cref="T:System.IO.TextWriter"/> when the target works with characters
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Deserialize``1(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Deserializes a UTF-16 string into an object
+            </summary>
+            <param name="json">The UTF-16 string</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Deserialize``1(System.ReadOnlySpan{System.Char},PeroTools2.Serde.Json.ISerdeJsonFormatter{``0})">
+            <summary>
+            Deserializes a UTF-16 string into an object
+            </summary>
+            <param name="json">The UTF-16 string</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.Deserialize``1(System.ReadOnlySpan{System.Char},PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0})">
+            <summary>
+            Deserializes a UTF-16 string into an object
+            </summary>
+            <param name="json">The UTF-16 string</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF16.TrimWhiteSpace(System.ReadOnlySpan{System.Char},System.ReadOnlySpan{System.Char}@)">
+            <summary>
+            Trims the leading whitespace characters
+            </summary>
+            <param name="origin">The original JSON buffer</param>
+            <param name="trimmed">The buffer without its leading whitespace characters</param>
+            <returns>True if everything is whitespace, otherwise false</returns>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.JsonConverter.UTF8">
+            <summary>
+            UTF-8 JSON serializer/deserializer
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0)">
+            <summary>
+            Serializes an object into a UTF-8 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-8 JSON string</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0})">
+            <summary>
+            Serializes an object into a UTF-8 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-8 JSON string</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0})">
+            <summary>
+            Serializes an object into a UTF-8 string
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The serialized UTF-8 JSON string</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,System.IO.Stream)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.Stream)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.Stream)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.SerializeAsync``1(``0,System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.SerializeAsync``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.SerializeAsync``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.Stream"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="stream">The stream to write the serialized JSON to</param>
+            <param name="cancellationToken">The token to cancel the asynchronous write operation</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>A task that represents the asynchronous write operation</returns>
+            <remarks>
+            The whole document is serialized into a pooled buffer first and then written with a single asynchronous
+            write call. Cancelling the token or failing the write can leave a partially written document in the target,
+            nothing is rolled back, so the caller has to discard or rebuild it
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,System.Buffers.IBufferWriter{System.Byte})">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.Buffers.IBufferWriter{System.Byte})">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.Buffers.IBufferWriter{System.Byte})">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.Buffers.IBufferWriter`1"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The buffer writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+            <remarks>
+            The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            is written and <see cref="!:BinaryWriter.Encoding"/> is not involved
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.ISerdeJsonFormatter{``0},System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            is written and <see cref="!:BinaryWriter.Encoding"/> is not involved
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Serialize``1(``0,PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0},System.IO.BinaryWriter)">
+            <summary>
+            Serializes an object into UTF-8 encoded JSON and writes it to the specified <see cref="T:System.IO.BinaryWriter"/>
+            </summary>
+            <param name="value">The value to serialize</param>
+            <param name="formatter">The formatter</param>
+            <param name="writer">The binary writer to write the serialized JSON to</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <remarks>
+            The raw UTF-8 bytes are appended with <c>BinaryWriter.Write(ReadOnlySpan&lt;byte&gt;)</c>; no byte order mark
+            is written and <see cref="!:BinaryWriter.Encoding"/> is not involved
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Deserialize``1(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            Deserializes a UTF-8 string into an object
+            </summary>
+            <param name="json">The UTF-8 string</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+            <exception cref="T:PeroTools2.Serde.SerdeException">Thrown when no formatter has ever been registered for the type</exception>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Deserialize``1(System.ReadOnlySpan{System.Byte},PeroTools2.Serde.Json.ISerdeJsonFormatter{``0})">
+            <summary>
+            Deserializes a UTF-8 string into an object
+            </summary>
+            <param name="json">The UTF-8 string</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.Deserialize``1(System.ReadOnlySpan{System.Byte},PeroTools2.Serde.Json.IFixedSerdeJsonFormatter{``0})">
+            <summary>
+            Deserializes a UTF-8 string into an object
+            </summary>
+            <param name="json">The UTF-8 string</param>
+            <param name="formatter">The formatter</param>
+            <typeparam name="T">The type of the value to serialize</typeparam>
+            <returns>The deserialized object instance</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.UTF8.TrimWhiteSpace(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Byte}@)">
+            <summary>
+            Trims the leading whitespace characters
+            </summary>
+            <param name="origin">The original JSON buffer</param>
+            <param name="trimmed">The buffer without its leading whitespace characters</param>
+            <returns>True if everything is whitespace, otherwise false</returns>
+        </member>
+        <member name="T:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1">
+            <summary>
+            Generic formatter for built-in types, so that serializing and deserializing a built-in generic type directly does not fail to find a Formatter
+            </summary>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1.formatter">
+            <summary>
+            The formatter instance for the built-in generic type, or null when the type is not supported
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1.IsCollection(System.Type)">
+            <summary>
+            Checks whether the type implements a generic collection interface
+            </summary>
+            <param name="type">The type to check</param>
+            <returns>True if the type is a collection, otherwise false</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1.IsNullable(System.Type)">
+            <summary>
+            Checks whether the type is <see cref="T:System.Nullable`1"/>
+            </summary>
+            <param name="type">The type to check</param>
+            <returns>True if the type is nullable, otherwise false</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1.IsLazy(System.Type)">
+            <summary>
+            Checks whether the type is <see cref="T:System.Lazy`1"/>
+            </summary>
+            <param name="type">The type to check</param>
+            <returns>True if the type is lazy, otherwise false</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonConverter.BuiltinGenericFormatter`1.IsKeyValuePair(System.Type)">
+            <summary>
+            Checks whether the type is <see cref="!:KeyValuePair&lt;TKey,TValue&gt;"/>
+            </summary>
+            <param name="type">The type to check</param>
+            <returns>True if the type is a key-value pair, otherwise false</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt32Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt64Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt16Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt16Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadByteValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSByteValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt32Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt64Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSingleValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDoubleValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDecimalValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadBooleanValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadCharValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadStringValue(System.Boolean)">
+            <summary>Reads a string value through the single-allocation fast path, without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt32Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt32List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt64Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt64List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt16Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadInt16List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt16Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt16List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadByteArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadByteList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSByteArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSByteList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt32Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt32List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt64Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadUInt64List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSingleArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadSingleList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDoubleArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDoubleList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDecimalArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadDecimalList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadBooleanArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadBooleanList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadCharArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadCharList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadStringArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadStringList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.TryReadKey(System.ReadOnlySpan{System.Byte}@)">
+            <summary>Reads the next object key and consumes its colon.</summary>
+            <remarks>
+            This runs once per member, so it walks the buffer directly instead of going through the whitespace, quote and
+            character helpers: one whitespace skip, one vectorised quote search and one whitespace skip before the colon.
+            Keys that contain escapes keep the general path.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.ReadChar(System.Char)">
+            <summary>
+            Reads characters until the first target character is encountered
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf8.TryReadChar(System.Char)">
+            <summary>
+            Reads characters until the first target character is encountered
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt32Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt64Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt16Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt16Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadByteValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSByteValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt32Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt64Value(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSingleValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDoubleValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDecimalValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadBooleanValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadCharValue(System.Boolean)">
+            <summary>Reads a primitive with the same parse as its formatter, without the formatter lookup and interface call.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadStringValue(System.Boolean)">
+            <summary>Reads a string value through the single-allocation fast path, without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt32Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt32List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt64Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt64List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt16Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadInt16List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt16Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt16List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadByteArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadByteList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSByteArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSByteList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt32Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt32List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt64Array(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadUInt64List(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSingleArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadSingleList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDoubleArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDoubleList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDecimalArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadDecimalList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadBooleanArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadBooleanList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadCharArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadCharList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadStringArray(System.Boolean)">
+            <summary>Reads an array of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadStringList(System.Boolean)">
+            <summary>Reads a list of primitive values, parsing every element without the formatter indirection.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.TryReadKey(System.ReadOnlySpan{System.Char}@)">
+            <summary>Reads the next object key and consumes its colon.</summary>
+            <remarks>
+            This runs once per member, so it walks the buffer directly instead of going through the whitespace, quote and
+            character helpers: one whitespace skip, one vectorised quote search and one whitespace skip before the colon.
+            Keys that contain escapes keep the general path.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.ReadChar(System.Char)">
+            <summary>
+            Reads characters until the first target character is encountered
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReaderUtf16.TryReadChar(System.Char)">
+            <summary>
+            Reads characters until the first target character is encountered
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadStringValueUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>The single parse entry for UTF-16 strings: null returns null.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.IndexOfQuoteOrBackslashUtf16(System.ReadOnlySpan{System.Char},System.Int32)">
+            <summary>Finds the next <c>"</c> or <c>\</c> at or after <paramref name="start"/>, or -1 when there is none.</summary>
+            <remarks>
+            The string scan is the hot path of both keys and values, so it is delegated to the vectorised
+            <see cref="M:System.MemoryExtensions.IndexOfAny``1(System.ReadOnlySpan{``0},``0,``0)"/> instead of walking characters one by one.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.TryReadStringUtf16(System.Char*,System.Int32,System.String@,System.Int32@)">
+            <summary>
+            Reads a JSON string value (escapes allowed) with a single heap allocation.
+            </summary>
+            <remarks>
+            Scans the whole buffer up to <paramref name="maxLength"/>, so a string ending at the end of the buffer still parses correctly;
+            Returns false on an illegal escape, and the caller takes the general path to throw the original exception.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadEscapedCharUtf16(System.Char*,System.Int32@)">
+            <summary>Reads an escaped character; supports UTF8 and UTF16</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadPrimitiveUntilEndUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Finds the end of the current primitive token and skips the whitespace after it.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.SkipWhiteSpaceUtf16(System.ReadOnlySpan{System.Char},System.Int32)">
+            <summary>Skips the whitespace that follows a token that ended at <paramref name="index"/>.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadIntFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Parses a small integer in one pass: the digits are read and accumulated at the same time.</summary>
+            <remarks>
+            The general path has to find the end of the token before it can parse it, which walks the digits twice. A
+            cursor-free reader pays that twice per value, so the common case is parsed straight from the span; anything else
+            falls back to the general path that also reports the JSON errors.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadLongFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Parses a small 64-bit integer in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.ReadIntFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)"/>.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf16(System.ReadOnlySpan{System.Char},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)">
+            <summary>
+            Reads <c>[-]digits[.digits]</c> into a mantissa and a fraction digit count. Returns false for exponents, long
+            mantissas and anything the general parser has to handle.
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadFloatFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Parses a real number in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf16(System.ReadOnlySpan{System.Char},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)"/> for the fallback.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadDoubleFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Parses a real number in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf16(System.ReadOnlySpan{System.Char},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)"/> for the fallback.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadBoolFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Parses a literal directly; anything that is not <c>true</c> or <c>false</c> takes the general path.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadCharFastUtf16(System.ReadOnlySpan{System.Char},System.Int32@)">
+            <summary>Reads a single character string directly; escaped characters take the general path.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.IndexOfQuoteOrBackslashUtf8(System.ReadOnlySpan{System.Byte},System.Int32)">
+            <summary>Finds the next <c>"</c> or <c>\</c> at or after <paramref name="start"/>, or -1 when there is none.</summary>
+            <remarks>
+            Keys and values both scan for the closing quote, so the scan is delegated to the vectorised
+            <see cref="M:System.MemoryExtensions.IndexOfAny``1(System.ReadOnlySpan{``0},``0,``0)"/> instead of walking bytes one by one.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadStringValueUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>The single parse entry for strings: ASCII fast path plus general decoding; null returns null.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.TryReadAsciiStringUtf8(System.Byte*,System.Int32,System.String@,System.Int32@)">
+            <summary>
+            Reads a pure ASCII JSON string value (ASCII escapes allowed) with a single heap allocation.
+            </summary>
+            <remarks>
+            The general path must first unescape into a byte[] and then convert it to a string (two allocations);
+            in the ASCII case the output length can be computed up front and allocated directly as a string in one pass.
+            Returns false on a non-ASCII byte or non-ASCII escape, and the caller takes the general path.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadEscapedCharUtf8(System.Byte*,System.Int32@)">
+            <summary>Reads an escaped character; supports UTF8 and UTF16</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadPrimitiveUntilEndUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Finds the end of the current primitive token and skips the whitespace after it.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.SkipWhiteSpaceUtf8(System.ReadOnlySpan{System.Byte},System.Int32)">
+            <summary>Skips the whitespace that follows a token that ended at <paramref name="index"/>.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadIntFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Parses a small integer in one pass: the digits are read and accumulated at the same time.</summary>
+            <remarks>
+            The general path has to find the end of the token before it can parse it, which walks the digits twice. A
+            cursor-free reader pays that twice per value, so the common case is parsed straight from the span; anything else
+            falls back to the general path that also reports the JSON errors.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadLongFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Parses a small 64-bit integer in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.ReadIntFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)"/>.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf8(System.ReadOnlySpan{System.Byte},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)">
+            <summary>
+            Reads <c>[-]digits[.digits]</c> into a mantissa and a fraction digit count. Returns false for exponents, long
+            mantissas and anything the general parser has to handle.
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadFloatFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Parses a real number in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf8(System.ReadOnlySpan{System.Byte},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)"/> for the fallback.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadDoubleFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Parses a real number in one pass, see <see cref="M:PeroTools2.Serde.Json.JsonReader.TryParseRealFastUtf8(System.ReadOnlySpan{System.Byte},System.UInt64@,System.Boolean@,System.Int32@,System.Int32@)"/> for the fallback.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadBoolFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Parses a literal directly; anything that is not <c>true</c> or <c>false</c> takes the general path.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonReader.ReadCharFastUtf8(System.ReadOnlySpan{System.Byte},System.Int32@)">
+            <summary>Reads a single character string directly; escaped characters take the general path.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf8.WriteString(System.ReadOnlySpan{System.Char})">
+            <summary>Writes a string</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf8.WriteStringWithoutQuote(System.ReadOnlySpan{System.Char})">
+            <summary>Writes a string</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf8.WriteKeyEnding">
+            <summary>Writes an ASCII colon</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf8.WriteValueEnding">
+            <summary>Writes an ASCII comma</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf16.WriteString(System.ReadOnlySpan{System.Char})">
+            <summary>Writes a string</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf16.WriteStringWithoutQuote(System.ReadOnlySpan{System.Char})">
+            <summary>Writes a string</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf16.WriteKeyEnding">
+            <summary>Writes an ASCII colon</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriterUtf16.WriteValueEnding">
+            <summary>Writes an ASCII comma</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteEscapedCharUtf16(System.Char,System.Char*)">
+            <summary>Writes an escaped character; supports UTF8 and UTF16</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteStringNoEscapeUtf16(System.Char*,System.ReadOnlySpan{System.Char})">
+            <summary>Writes a string without considering escape characters</summary>
+            <return>charsWritten</return>
+            <remarks>The caller must ensure no out-of-bounds access happens</remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteStringValueUtf16(System.ReadOnlySpan{System.Char},System.Char*)">
+            <summary>Writes a <see cref="T:System.String"/> into a UTF16 buffer.</summary>
+            <returns>charsWritten</returns>
+            <remarks>Takes escape characters into account.</remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteStringValueUtf16(System.ReadOnlySpan{System.Char},System.Char*,System.Boolean)">
+            <summary>Writes a <see cref="T:System.String"/> into a UTF16 buffer.</summary>
+            <param name="str">The value to write</param>
+            <param name="dest">The destination</param>
+            <param name="hasEscape">Whether the value contains a character that has to be escaped, as returned by
+            <see cref="M:PeroTools2.Serde.StringHelper.ContainsEscapeChar(System.ReadOnlySpan{System.Char})"/>. The caller already scans for the reserve
+            size, so it hands the result over instead of walking the string twice.</param>
+            <returns>charsWritten</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteKeyEndingUtf16(System.Char*)">
+            <summary>Writes an ASCII colon</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteValueEndingUtf16(System.Char*)">
+            <summary>Writes an ASCII comma</summary>
+        </member>
+        <member name="F:PeroTools2.Serde.Json.JsonWriter.MaxEscapedCharWidth">
+            <summary>The widest form a single escaped character occupies ("\u00XX")</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteStringValueUtf8(System.ReadOnlySpan{System.Char},System.Byte*,System.Boolean)">
+            <summary>Writes a <see cref="T:System.String"/> into a UTF8 buffer.</summary>
+            <param name="str">The value to write</param>
+            <param name="dest">The destination</param>
+            <param name="hasEscape">Whether the value contains a character that has to be escaped, as returned by
+            <see cref="M:PeroTools2.Serde.StringHelper.ContainsEscapeChar(System.ReadOnlySpan{System.Char})"/>. The caller already scans for the reserve
+            size, so it hands the result over instead of walking the string twice.</param>
+            <returns>bytesWritten</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteStringValueNoEscapeUtf8(System.ReadOnlySpan{System.Char},System.Byte*)">
+            <summary>
+            Writes a UTF8 sequence without considering escape characters.
+            
+            </summary>
+            <remarks>
+            1. If the string contains characters that need escaping, the result will be invalid.
+            2. The available length at dest must be greater than <c>Encoding.UTF8.GetMaxByteCount(str.Length)</c>
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteEscapedCharUtf8(System.Char,System.Byte*)">
+            <summary>Writes an escaped character; supports UTF8 and UTF16</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteKeyEndingUtf8(System.Byte*)">
+            <summary>Writes an ASCII colon</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.Json.JsonWriter.WriteValueEndingUtf8(System.Byte*)">
+            <summary>Writes an ASCII comma</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.BufferSegment`1">
+            <summary>
+            An immutable buffer rented from <see cref="T:System.Buffers.ArrayPool`1"/>.
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.BufferSegment`1.#ctor(System.Int32,System.Buffers.ArrayPool{`0})">
+            <summary>
+            An immutable buffer rented from <see cref="T:System.Buffers.ArrayPool`1"/>.
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.ListPool`1">
+            <summary>
+            Pool of List objects
+            </summary>
+            <typeparam name="T"></typeparam>
+            <remarks>
+            The cache is per thread. A concurrent queue costs a CAS loop plus a cache line transfer on every rent and return,
+            which is more than the pooled list saves on a five element array, so the pool has to stay off the shared path to be
+            worth having at all.
+            </remarks>
+        </member>
+        <member name="F:PeroTools2.Serde.ListPool`1.max_capacity">
+            <summary>Lists grown past this many elements are dropped instead of pooled.</summary>
+        </member>
+        <member name="T:PeroTools2.Serde.DateTimeHelper">
+            <summary>
+            Timestamp helper
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.DateTimeToUnixTimeSeconds(System.DateTime)">
+            <summary>
+            Converts a DateTime to a Unix timestamp in seconds
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.UnixTimeSecondsToDateTime(System.Int64)">
+            <summary>
+            Converts a Unix timestamp in seconds to a DateTime
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.DateTimeToUnixTimeMilliseconds(System.DateTime)">
+            <summary>
+            Converts a DateTime to a Unix timestamp in milliseconds
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.UnixTimeMillisecondsToDateTime(System.Int64)">
+            <summary>
+            Converts a Unix timestamp in milliseconds to a DateTime
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.TryParseDateTime(System.ReadOnlySpan{System.Byte}@,System.DateTime@)">
+            <summary>
+            Converts a UTF8 string to a DateTime
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.TryParseDefaultDateTime(System.ReadOnlySpan{System.Byte},System.DateTime@)">
+            <summary>
+            Parses a DateTime in the default format. For example "2024-12-26T10:30:45.123Z"
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.DateTimeHelper.TryParseChineseDateTime(System.ReadOnlySpan{System.Byte},System.DateTime@)">
+            <summary>
+            Parses a DateTime in Chinese format. For example "2024年12月26日 10时30分45秒"
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.GuidBits">
+            <summary>
+            Guid bit layout
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.NumberHelper">
+            <summary>
+            Number helper
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.IsSpecialValue(System.Single)">
+            <summary>Determines whether a float value is a special value: Nan, Inf, -Inf</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.IsSpecialValue(System.Double)">
+            <summary>Determines whether a double value is a special value: Nan, Inf, -Inf</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.Pow(System.Double,System.Int32)">
+            <summary>Computes x raised to the power of y</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.GetExponent(System.Double)">
+            <summary>Gets the exponent part of a positive floating point number</summary>
+            <remarks>Cannot handle: negative numbers, Nan, Inf, -Inf</remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.ToUtf16StringUnsafe(System.Single,System.Char*)">
+            <summary>Formats a float value as a utf16 string.</summary>
+            <remarks>
+            dest must have enough space; at most <see cref="!:max_float_string_length"/> bytes are required
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.ToUtf8StringUnsafe(System.Single,System.Byte*)">
+            <summary>Formats a float value as a utf8 string.</summary>
+            <remarks>
+            dest must have enough space; at most <see cref="!:max_float_string_length"/> bytes are required
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.ToUtf16StringUnsafe(System.Double,System.Char*)">
+            <summary>Formats a double value as a utf16 string.</summary>
+            <remarks>
+            dest must have enough space; at most <see cref="!:max_double_string_length"/> bytes are required
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.ToUtf8StringUnsafe(System.Double,System.Byte*)">
+            <summary>Formats a double value as a utf8 string.</summary>
+            <remarks>
+            dest must have enough space; at most <see cref="!:max_double_string_length"/> bytes are required
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.NumberHelper.GetIntegerLength(System.UInt64)">
+            <summary>Gets the length of a decimal integer</summary>
+            <remarks>Accelerated with binary search</remarks>
+        </member>
+        <member name="T:PeroTools2.Serde.ReusableBufferWriter`1">
+            <summary>
+            Variable-length buffer writer
+            </summary>
+            <typeparam name="T">Buffer element type</typeparam>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.Pool.Rent">
+            <summary>
+            Rents an idle Buffer writer from the pool
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.Pool.Return(PeroTools2.Serde.ReusableBufferWriter{`0})">
+            <summary>
+            Returns and resets the Buffer writer
+            </summary>
+        </member>
+        <member name="F:PeroTools2.Serde.ReusableBufferWriter`1.initial_buffer_size">
+            <summary>Default Buffer size. Each subsequent growth doubles the size.</summary>
+        </member>
+        <member name="F:PeroTools2.Serde.ReusableBufferWriter`1.m_CurrentBuffer">
+            <summary>Currently available Buffer, created on the first GetSpan call and reallocated after growth</summary>
+        </member>
+        <member name="F:PeroTools2.Serde.ReusableBufferWriter`1.m_NextBufferSize">
+            <summary>Default size for the next CurrentBuffer growth</summary>
+        </member>
+        <member name="P:PeroTools2.Serde.ReusableBufferWriter`1.totalWritten">
+            <summary>
+            Total written length
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.GetSpan(System.Int32)">
+            <summary>
+            Gets an available free memory region
+            </summary>
+            <param name="sizeHint">Memory length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.Advance(System.Int32)">
+            <summary>
+            Advances the writer
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.GetWrittenSpan">
+            <summary>
+            Gets the already written Buffer
+            </summary>
+            <returns>The written part of the Buffer, or an empty span when nothing has been written</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.GetWrittenMemory">
+            <summary>
+            Gets the already written Buffer
+            </summary>
+            <returns>The written part of the Buffer, or empty memory when nothing has been written</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.CopyToArray">
+            <summary>
+            Converts the written part of the Buffer into an array
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.ReusableBufferWriter`1.Reset">
+            <summary>
+            Clears the buffer and releases the Buffer
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.SerdeException">
+            <summary>
+            General Serde exception
+            </summary>
+        </member>
+        <member name="T:PeroTools2.Serde.SpanConverter">
+            <summary>
+            UTF8/UTF16 primitive type converter
+            </summary>
+        </member>
+        <member name="M:PeroTools2.Serde.SpanConverter.ParseFloatFramework(System.ReadOnlySpan{System.Char}@)">
+            <summary>Parses a float with the framework parser, without rounding through double first.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.SpanConverter.ParseFloatFramework(System.ReadOnlySpan{System.Byte}@)">
+            <summary>Parses a float with the framework parser; the token of a JSON number is pure ASCII.</summary>
+        </member>
+        <member name="F:PeroTools2.Serde.SpanConverter.floatPowersOfTen">
+            <summary>Powers of ten that are exact in <see cref="T:System.Single"/>, the limit for the float fast path.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.SpanConverter.TryParseRealUtf16(System.ReadOnlySpan{System.Char}@,System.UInt64@,System.Int32@,System.Boolean@)">
+            <summary>
+            Parses <c>[-]digits[.digits][e[+-]digits]</c> into a mantissa and a power of ten.
+            </summary>
+            <remarks>
+            Returns false when the value does not fit the exact fast path (more than 15 significant digits, a mantissa that
+            does not fit in 2^53, or an exponent outside ±22), which leaves the work to the framework parser.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.SpanConverter.TryParseIntegerUtf16(System.ReadOnlySpan{System.Char}@,System.Int64@)">
+            <summary>Parses <c>[+-]?[0-9]+</c> without going through the culture aware number parser.</summary>
+            <remarks>Falls back to the framework parser on anything else (whitespace, separators, overflow).</remarks>
+        </member>
+        <member name="T:PeroTools2.Serde.StringHelper">
+            <summary>High-performance string helper</summary>
+            <remarks>
+            High performance is achieved mainly through the following:<br/>
+            1. Reduce loop iterations by performing multiple operations per iteration, thus reducing memory addressing<br/>
+            2. Prefer binary search over linear search where possible, for example when counting digits<br/>
+            3. Use direct pointer operations<br/>
+            4. Cache as much as possible
+            </remarks>
+            <summary>High-performance string helper</summary>
+            <remarks>
+            High performance is achieved mainly through the following:<br/>
+            1. Reduce loop iterations by performing multiple operations per iteration, thus reducing memory addressing<br/>
+            2. Prefer binary search over linear search where possible, for example when counting digits<br/>
+            3. Use direct pointer operations<br/>
+            4. Cache as much as possible
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsUnaligned(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Char})">
+            <summary>Determines whether a utf-8 string and a utf-16 string are equal, ignoring alignment.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsUnaligned(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Char},System.Int32)">
+            <summary>Compares a UTF8 span against a string from <paramref name="offset"/> onwards.</summary>
+            <remarks>
+            The generated key dispatch already matched the first eight bytes through its packed switch, so only the tail of
+            a longer member name has to be compared again. The name must be pure ASCII, which the generator guarantees.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Equals(System.ReadOnlySpan{System.Char},System.ReadOnlySpan{System.Char})">
+            <summary>Determines whether two utf-16 strings are equal.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Equals(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Byte})">
+            <summary>Determines whether two utf-8 strings are equal.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsWithIgnoreCase(System.Span{System.Char},System.Span{System.Char})">
+            <summary>Determines whether two utf-16 strings are equal, ignoring ASCII letter case.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsWithIgnoreCase(System.Span{System.Byte},System.Span{System.Byte})">
+            <summary>Determines whether two utf-8 strings are equal, ignoring ASCII letter case.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsWithIgnoreCase(System.Span{System.Char},System.String)">
+            <summary>Determines whether a string and a utf-16 string are equal, ignoring ASCII letter case.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Trim(System.Char*,System.Int32)">
+            <summary>
+            Removes whitespace characters from both ends of the string and returns a new string.
+            </summary>
+            <param name="chars">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.TrimStart(System.Char*,System.Int32)">
+            <summary>Removes whitespace characters from the start of the string and returns a new string.</summary>
+            <param name="chars">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.TrimEnd(System.Char*,System.Int32)">
+            <summary>Removes whitespace characters from the end of the string and returns a new string.</summary>
+            <param name="chars">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ToUpper(System.Char)">
+            <summary>Converts a lowercase English character to uppercase.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ToLower(System.Char)">
+            <summary>Converts an uppercase English character to lowercase.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ToUpper(System.Byte)">
+            <summary>Converts a lowercase English character to uppercase.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ToLower(System.Byte)">
+            <summary>Converts an uppercase English character to lowercase.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.GetKeyPrefix(System.ReadOnlySpan{System.Char},System.UInt64@,System.UInt64@)">
+            <summary>Takes the first 8 characters of the span (4 characters packed into each ulong) as a key prefix for switch dispatch.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IsWhiteSpace(System.Char)">
+            <summary>Determines whether a character is a whitespace character</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IndexOf(System.Char*,System.Int32,System.Char)">
+            <summary>
+            Finds the index of the specified character in the string, or returns -1 if not found.
+            </summary>
+            <param name="chars">String</param>
+            <param name="c">Character</param>
+            <param name="length">String length</param>
+            <returns>Returns an int value.</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IndexOfAny(System.Char*,System.Int32,System.Char,System.Char)">
+            <summary>
+            Finds the index of either of the two specified characters in the string, or returns -1 if not found.
+            </summary>
+            <param name="chars">String</param>
+            <param name="length">String length</param>
+            <param name="c1">Character 1</param>
+            <param name="c2">Character 2</param>
+            <returns>Returns an int value.</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Contains(System.Char*,System.Int32,System.Char)">
+            <summary>
+            Checks whether the specified character exists in the string.
+            </summary>
+            <param name="chars">String</param>
+            <param name="length">String length</param>
+            <param name="c">Specified character</param>
+            <returns>Returns whether it exists</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.GetRawStringData(System.String)">
+            <summary>Gets the raw data reference of the string.</summary>
+            <returns>Returns a reference to the first character</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ContainsEscapeChar(System.ReadOnlySpan{System.Char})">
+            <summary>Determines whether the chars contain characters that need JSON escaping (&lt; 0x20, double quote or backslash), using a vectorized scan.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.ContainsEscapeChar(System.Char*,System.Int32)">
+            <summary>Determines whether a UTF16 character sequence contains characters that need escaping (&lt; 0x20, double quote or backslash).</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IsAsciiString(System.String)">
+            <summary>Determines whether all characters of a UTF16 string are ASCII characters.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IsAsciiString(System.Span{System.Byte})">
+            <summary>Determines whether all characters of a UTF8 string are ASCII characters.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Trim(System.Byte*,System.Int32)">
+            <summary>
+            Removes whitespace characters from both ends of the string and returns a new string.
+            </summary>
+            <param name="bytes">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.TrimStart(System.Byte*,System.Int32)">
+            <summary>Removes whitespace characters from the start of the string and returns a new string.</summary>
+            <param name="bytes">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.TrimEnd(System.Byte*,System.Int32)">
+            <summary>Removes whitespace characters from the end of the string and returns a new string.</summary>
+            <param name="bytes">Original string</param>
+            <param name="length">Original length</param>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.GetKeyPrefix(System.ReadOnlySpan{System.Byte})">
+            <summary>Packs the first eight bytes of the key into a <c>ulong</c> for switch dispatch.</summary>
+            <remarks>
+            A key of eight bytes or longer is read as one little endian word; a shorter key is packed the same way but zero
+            padded, so a caller can compare against a constant that was built from an ASCII member name with the same rule.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.GetKeyPrefix(System.Byte*,System.Int32)">
+            <summary>Takes the first 8 bytes at the pointer (little endian, zero padded) as a key prefix for switch dispatch.</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.EqualsUtf8(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Char})">
+            <summary>Compares a UTF8 byte span against a UTF16 string, decoding the bytes as it goes.</summary>
+            <remarks>
+            <see cref="M:PeroTools2.Serde.StringHelper.EqualsUnaligned(System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Char})"/> assumes one byte per character,
+            which only holds for ASCII member names. Member names with other characters need the real decoder, and decoding
+            into a temporary string would allocate on every key comparison.
+            </remarks>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IsWhiteSpace(System.Byte)">
+            <summary>Determines whether a character is a whitespace character</summary>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IndexOf(System.Byte*,System.Int32,System.Byte)">
+            <summary>
+            Finds the index of the specified character in the string, or returns -1 if not found.
+            </summary>
+            <param name="bytes">String</param>
+            <param name="c">Character</param>
+            <param name="length">String length</param>
+            <returns>Returns an int value.</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.IndexOfAny(System.Byte*,System.Int32,System.Byte,System.Byte)">
+            <summary>
+            Finds the index of either of the two specified characters in the string, or returns -1 if not found.
+            </summary>
+            <param name="bytes">String</param>
+            <param name="length">String length</param>
+            <param name="c1">Character 1</param>
+            <param name="c2">Character 2</param>
+            <returns>Returns an int value.</returns>
+        </member>
+        <member name="M:PeroTools2.Serde.StringHelper.Contains(System.Byte*,System.Int32,System.Byte)">
+            <summary>
+            Checks whether the specified character exists in the string.
+            </summary>
+            <param name="bytes">String</param>
+            <param name="length">String length</param>
+            <param name="c">Specified character</param>
+            <returns>Returns whether it exists</returns>
+        </member>
+        <member name="T:JsonBufferSentinel">
+            <summary>
+            Appends a trailing space when the trimmed buffer does not end with a JSON delimiter or whitespace.
+            The primitive parsers rely on a terminator byte after the value, so a root-level scalar that sits
+            exactly at the end of the buffer would otherwise read past the buffer.
+            </summary>
+        </member>
+        <member name="M:JsonBufferSentinel.NeedsPadding(System.Byte)">
+            <summary>
+            Checks whether the given last byte needs a trailing space to terminate the value
+            </summary>
+            <param name="last">The last byte of the JSON buffer</param>
+            <returns>True if the buffer needs padding, otherwise false</returns>
+        </member>
+        <member name="M:JsonBufferSentinel.NeedsPadding(System.Char)">
+            <summary>
+            Checks whether the given last character needs a trailing space to terminate the value
+            </summary>
+            <param name="last">The last character of the JSON buffer</param>
+            <returns>True if the buffer needs padding, otherwise false</returns>
+        </member>
+        <member name="M:JsonBufferSentinel.PadUtf8(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            Appends a trailing space to the UTF-8 JSON buffer when required
+            </summary>
+            <param name="json">The UTF-8 JSON buffer</param>
+            <returns>The padded buffer, or the original buffer when no padding is needed</returns>
+        </member>
+        <member name="M:JsonBufferSentinel.PadUtf16(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Appends a trailing space to the UTF-16 JSON buffer when required
+            </summary>
+            <param name="json">The UTF-16 JSON buffer</param>
+            <returns>The padded buffer, or the original buffer when no padding is needed</returns>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.IsExternalInit">
+            <summary>
+            Makes the C# 9 init only setter feature work correctly in Unity
+            </summary>
+        </member>
+    </members>
+</doc>

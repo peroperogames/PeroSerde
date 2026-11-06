@@ -1,17 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <LangVersion>14</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>PeroTools2.Serde.Core</RootNamespace>
-    <AssemblyName>PeroTools2.Serde.Core</AssemblyName>
-    <Nullable>disable</Nullable>
-    <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
-  </PropertyGroup>
+    <PropertyGroup>
+        <LangVersion>14</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PackageId>PeroTools2.Serde</PackageId>
+        <RootNamespace>PeroTools2.Serde</RootNamespace>
+        <AssemblyName>PeroTools2.Serde.Core</AssemblyName>
+        <Nullable>disable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
+        <Title>PeroSerde</Title>
+        <Authors>PeroperoGames</Authors>
+        <Company>PeroperoGames</Company>
+        <Description>A zero-GC, reflection-free, high-performance serializer/deserializer with UTF8/UTF16 support.</Description>
+        <Copyright>© 2026 PeroperoGames</Copyright>
+        <PackageProjectUrl>https://github.com/peroperogames/PeroSerde</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/peroperogames/PeroSerde</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryType>git</RepositoryType>
+        <Version>0.1.25</Version>
+        <AssemblyVersion>0.1.25</AssemblyVersion>
+        <FileVersion>0.1.25</FileVersion>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0"/>
+    </ItemGroup>
 
     <Target Name="PostBuild" BeforeTargets="PostBuildEvent">
         <PropertyGroup>
@@ -24,6 +39,7 @@
             <ProjDlls Include="$(OutputPath)$(ProjectName).dll"/>
             <ProjDlls Include="$(OutputPath)$(ProjectName).mdb" Condition="Exists('$(OutputPath)$(ProjectName).mdb')"/>
             <ProjDlls Include="$(OutputPath)$(ProjectName).pdb" Condition="Exists('$(OutputPath)$(ProjectName).pdb')"/>
+            <ProjDlls Include="$(OutputPath)$(ProjectName).xml" Condition="Exists('$(OutputPath)$(ProjectName).xml')"/>
         </ItemGroup>
         <Copy SourceFiles="@(ProjDlls)" DestinationFolder="$(UnityOutDir)" SkipUnchangedFiles="true" Condition=" $(DotNetVer) == $(UnitySupportVer) "/>
     </Target>
