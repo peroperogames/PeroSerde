@@ -46,6 +46,20 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             return (ConcurrentQueue<ReusableBufferWriter<T>>)field.GetValue(null);
         }
 
+        private static async Task AssertThrowsAsync<TException>(Func<Task> action) where TException : Exception
+        {
+            // Unity ships NUnit 3.5, which has no Assert.CatchAsync / Assert.ThrowsAsync
+            try
+            {
+                await action();
+            }
+            catch (TException)
+            {
+                return;
+            }
+            Assert.Fail("expected " + typeof(TException).Name);
+        }
+
         private sealed class CharBufferWriter : IBufferWriter<char>
         {
             private char[] m_Buffer = new char[16];
@@ -424,6 +438,8 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         {
             var model = CreateModel();
             var charQueue = GetPoolQueue<char>();
+            // put one writer in the pool first, otherwise the very first rent creates a new one and the count grows
+            ReusableBufferWriter<char>.Pool.Return(ReusableBufferWriter<char>.Pool.Rent());
             var charCount = charQueue.Count;
 
             using (var throwingWriter = new ThrowingWriter())
@@ -434,6 +450,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             Assert.AreEqual(charCount, charQueue.Count, "the rented writer has to be returned to the pool when the target throws");
 
             var byteQueue = GetPoolQueue<byte>();
+            ReusableBufferWriter<byte>.Pool.Return(ReusableBufferWriter<byte>.Pool.Rent());
             var byteCount = byteQueue.Count;
 
             using (var throwingStream = new ThrowingStream())
@@ -449,21 +466,24 @@ namespace PeroTools2.Serde.Json.Editor.Tests
         {
             var model = CreateModel();
             var charQueue = GetPoolQueue<char>();
+            // put one writer in the pool first, otherwise the very first rent creates a new one and the count grows
+            ReusableBufferWriter<char>.Pool.Return(ReusableBufferWriter<char>.Pool.Rent());
             var charCount = charQueue.Count;
 
             using (var throwingWriter = new ThrowingWriter())
             {
-                Assert.CatchAsync<InvalidOperationException>(async () => await JsonConverter.UTF16.SerializeAsync(model, throwingWriter));
+                await AssertThrowsAsync<InvalidOperationException>(async () => await JsonConverter.UTF16.SerializeAsync(model, throwingWriter));
             }
 
             Assert.AreEqual(charCount, charQueue.Count, "the rented writer has to be returned to the pool when the asynchronous write fails");
 
             var byteQueue = GetPoolQueue<byte>();
+            ReusableBufferWriter<byte>.Pool.Return(ReusableBufferWriter<byte>.Pool.Rent());
             var byteCount = byteQueue.Count;
 
             using (var throwingStream = new ThrowingStream())
             {
-                Assert.CatchAsync<InvalidOperationException>(async () => await JsonConverter.UTF8.SerializeAsync(model, throwingStream));
+                await AssertThrowsAsync<InvalidOperationException>(async () => await JsonConverter.UTF8.SerializeAsync(model, throwingStream));
             }
 
             Assert.AreEqual(byteCount, byteQueue.Count, "the rented writer has to be returned to the pool when the asynchronous write fails");
@@ -477,7 +497,7 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             cts.Cancel();
             using var stream = new CancelingStream();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await JsonConverter.UTF8.SerializeAsync(model, stream, cts.Token));
+            await AssertThrowsAsync<OperationCanceledException>(async () => await JsonConverter.UTF8.SerializeAsync(model, stream, cts.Token));
             Assert.AreEqual(0, stream.Length);
         }
 
@@ -489,8 +509,16 @@ namespace PeroTools2.Serde.Json.Editor.Tests
             cts.Cancel();
             using var writer = new CancelingWriter();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await JsonConverter.UTF16.SerializeAsync(model, writer, cts.Token));
+            await AssertThrowsAsync<OperationCanceledException>(async () => await JsonConverter.UTF16.SerializeAsync(model, writer, cts.Token));
             Assert.AreEqual(string.Empty, writer.ToString());
+        }
+
+        [Test]
+        public void WhitespaceOnlyDocumentTest()
+        {
+            // a document made of nothing but whitespace has to be treated as empty, which the reader alone does not do
+            Assert.AreEqual(0, JsonConverter.UTF16.Deserialize<int>("\r\n\t "));
+            Assert.AreEqual(0, JsonConverter.UTF8.Deserialize<int>(Encoding.UTF8.GetBytes("\r\n\t ")));
         }
 
         [Test]
