@@ -37,17 +37,17 @@ public static partial class SerdeJsonFormatterProvider
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsResolved<T>() =>
-        Dispatch<T>.version == version && (Dispatch<T>.fixedFormatter != null || Dispatch<T>.unfixedFormatter != null);
+        Dispatch<T>.version == s_version && (Dispatch<T>.fixedFormatter != null || Dispatch<T>.unfixedFormatter != null);
 
     /// <summary>Bumped on every registration so the per-call caches know they have to resolve again</summary>
-    internal static volatile int version;
+    internal static volatile int s_version;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Register<T>(ISerdeJsonFormatter<T> formatter)
     {
         Cache<T>.registered = true;
         Cache<T>.formatter = formatter;
-        version++;
+        s_version++;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -55,18 +55,18 @@ public static partial class SerdeJsonFormatterProvider
     {
         FixedCache<T>.registered = true;
         FixedCache<T>.formatter = formatter;
-        version++;
+        s_version++;
     }
 
     /// <summary>
     /// Resolves the formatter of <typeparamref name="T"/> once per registration, for the hot paths that call a
-    /// formatter per member. Reading <see cref="version"/> and comparing it is cheaper than the three generic
+    /// formatter per member. Reading the registration counter and comparing it is cheaper than the three generic
     /// static reads plus the interface casts that <see cref="GetFormatterInternal{T}"/> performs on every call.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Resolve<T>(out IFixedSerdeJsonFormatter<T> fixedFormatter, out ISerdeJsonFormatter<T> unfixedFormatter)
     {
-        if (Dispatch<T>.version != version)
+        if (Dispatch<T>.version != s_version)
         {
             ResolveSlow<T>();
         }
@@ -80,9 +80,9 @@ public static partial class SerdeJsonFormatterProvider
         var formatter = GetFormatterInternal<T>();
         Dispatch<T>.fixedFormatter = formatter as IFixedSerdeJsonFormatter<T>;
         Dispatch<T>.unfixedFormatter = formatter as ISerdeJsonFormatter<T>;
-        // Publish the formatter fields before the version that vouches for them, so another thread that reads the new
-        // version can never observe a half written cache
-        Volatile.Write(ref Dispatch<T>.version, Volatile.Read(ref version));
+        // Publish the formatter fields before the registration counter that vouches for them, so another thread that
+        // reads the new counter value can never observe a half written cache
+        Volatile.Write(ref Dispatch<T>.version, Volatile.Read(ref s_version));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

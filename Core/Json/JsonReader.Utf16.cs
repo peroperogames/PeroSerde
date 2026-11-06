@@ -819,7 +819,7 @@ public static unsafe partial class JsonReader
         }
 
         advance = SkipWhiteSpaceUtf16(span, end);
-        var result = fractionDigits == 0 ? (double) mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
+        var result = fractionDigits == 0 ? mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
         return negative ? -result : result;
     }
 

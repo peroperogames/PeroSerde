@@ -785,7 +785,7 @@ public static unsafe partial class JsonReader
         return negative ? -value : value;
     }
 
-    /// <summary>Parses a small 64-bit integer in one pass, see <see cref="ReadIntFastUtf8(ReadOnlySpan{char}, out int)"/>.</summary>
+    /// <summary>Parses a small 64-bit integer in one pass, see <see cref="ReadIntFastUtf8(ReadOnlySpan{byte}, out int)"/>.</summary>
     internal static long ReadLongFastUtf8(ReadOnlySpan<byte> span, out int advance)
     {
         ref var start = ref MemoryMarshal.GetReference(span);
@@ -916,7 +916,7 @@ public static unsafe partial class JsonReader
         }
 
         advance = SkipWhiteSpaceUtf8(span, end);
-        var result = fractionDigits == 0 ? (double) mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
+        var result = fractionDigits == 0 ? mantissa : mantissa / SpanConverter.doublePowersOfTen[fractionDigits];
         return negative ? -result : result;
     }
 

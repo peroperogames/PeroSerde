@@ -421,7 +421,7 @@ public partial class SerdeJsonGenerator
     }
 
     /// <summary>Maps a primitive member type onto the reader method that parses it without a formatter.</summary>
-    private static string DirectReaderMethod(ITypeSymbol type) =>
+    private static string? DirectReaderMethod(ITypeSymbol type) =>
         type.SpecialType switch
         {
             SpecialType.System_Int32 => "ReadInt32Value",
@@ -445,7 +445,7 @@ public partial class SerdeJsonGenerator
     /// Maps an array or <see cref="System.Collections.Generic.List{T}"/> member of a primitive element type onto the
     /// reader method that parses the whole collection, or null when the member has to go through its formatter.
     /// </summary>
-    private static string DirectCollectionReader(MemberMeta member)
+    private static string? DirectCollectionReader(MemberMeta member)
     {
         ITypeSymbol elementType;
         bool isArray;

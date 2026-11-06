@@ -42,7 +42,7 @@ public partial class NonAsciiMemberHolder
 /// If the generation-time prefix constant and the runtime packing differ in a single bit, members silently keep their
 /// default value, so this behavior must be pinned down by tests.
 /// </summary>
-public sealed unsafe class KeyDispatchTests
+public sealed class KeyDispatchTests
 {
     private static (ulong low, ulong high) NaivePrefix(string key)
     {

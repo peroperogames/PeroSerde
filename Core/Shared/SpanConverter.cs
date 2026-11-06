@@ -8,7 +8,6 @@ using System;
 using System.Buffers.Text;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PeroTools2.Serde;
@@ -39,9 +38,9 @@ public static class SpanConverter
     public static unsafe bool IsNull(in ReadOnlySpan<char> span)
     {
         // Little endian
-        const ulong le_llun = 0x006C_006C_0075_006E;
+        const ulong leLlun = 0x006C_006C_0075_006E;
         // Big endian
-        const ulong be_llun = 0x6C00_6C00_7500_6E00;
+        const ulong beLlun = 0x6C00_6C00_7500_6E00;
 
         if (span.Length != 4)
         {
@@ -50,7 +49,7 @@ public static class SpanConverter
         fixed (char* ptr = span)
         {
             var value = Unsafe.ReadUnaligned<ulong>(ptr);
-            return BitConverter.IsLittleEndian ? value == le_llun : value == be_llun;
+            return BitConverter.IsLittleEndian ? value == leLlun : value == beLlun;
         }
     }
 
@@ -265,10 +264,10 @@ public static class SpanConverter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe static bool ToBool(in ReadOnlySpan<char> span)
     {
-        const ulong le_eurt = 0x0065_0075_0072_0074;
-        const ulong le_slaf = 0x0073_006C_0061_0066;
-        const ulong be_eurt = 0x0074_0072_0075_0065;
-        const ulong be_slaf = 0x0066_0061_006C_0073;
+        const ulong leEurt = 0x0065_0075_0072_0074;
+        const ulong leSlaf = 0x0073_006C_0061_0066;
+        const ulong beEurt = 0x0074_0072_0075_0065;
+        const ulong beSlaf = 0x0066_0061_006C_0073;
 
         // The reader hands over the exact token, so the two literals are the whole common case
         if (span.Length == 4)
@@ -276,7 +275,7 @@ public static class SpanConverter
             fixed (char* ptr = span)
             {
                 var v = Unsafe.ReadUnaligned<ulong>(ptr);
-                if (v == (BitConverter.IsLittleEndian ? le_eurt : be_eurt)) return true;
+                if (v == (BitConverter.IsLittleEndian ? leEurt : beEurt)) return true;
             }
         }
         else if (span.Length == 5)
@@ -284,7 +283,7 @@ public static class SpanConverter
             fixed (char* ptr = span)
             {
                 var v = Unsafe.ReadUnaligned<ulong>(ptr);
-                if (v == (BitConverter.IsLittleEndian ? le_slaf : be_slaf) && span[4] == 'e') return false;
+                if (v == (BitConverter.IsLittleEndian ? leSlaf : beSlaf) && span[4] == 'e') return false;
             }
         }
         throw SerdeException.ThrowInvalidParsing<bool>();

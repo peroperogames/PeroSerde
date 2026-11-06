@@ -21,24 +21,26 @@ namespace PeroTools2.Serde;
 /// </remarks>
 internal sealed class ListPool<T>
 {
-    private const int MaxDepth = 8;
+    private const int max_depth = 8;
 
     /// <summary>Lists grown past this many elements are dropped instead of pooled.</summary>
     private const int max_capacity = 16 * 1024;
 
     public static readonly ListPool<T> shared = new();
 
-    [ThreadStatic] private static List<T>[] t_Items;
+    // ReSharper disable once StaticMemberInGenericType
+    [ThreadStatic] private static List<T>[] s_Items;
 
-    [ThreadStatic] private static int t_Count;
+    // ReSharper disable once StaticMemberInGenericType
+    [ThreadStatic] private static int s_Count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public List<T> Rent()
     {
-        var items = t_Items;
-        if (items != null && t_Count > 0)
+        var items = s_Items;
+        if (items != null && s_Count > 0)
         {
-            var index = --t_Count;
+            var index = --s_Count;
             var list = items[index];
             items[index] = null;
             return list;
@@ -56,12 +58,12 @@ internal sealed class ListPool<T>
         }
 
         collection.Clear();
-        var items = t_Items ??= new List<T>[MaxDepth];
-        if (t_Count >= items.Length)
+        var items = s_Items ??= new List<T>[max_depth];
+        if (s_Count >= items.Length)
         {
             // Nesting deeper than the cache holds drops the list instead of growing the cache
             return;
         }
-        items[t_Count++] = collection;
+        items[s_Count++] = collection;
     }
 }
