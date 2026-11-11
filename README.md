@@ -1,3 +1,5 @@
+# PeroSerde
+
 A zero-GC, reflection-free, high-performance serializer/deserializer with UTF8/UTF16 support. PeroSerde supports the following types out of the box:
 
 1. **Primitive types:** string, int, uint, short, ushort, long, ulong, double, float, byte, sbyte, bool, char, decimal
