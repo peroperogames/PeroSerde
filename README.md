@@ -47,7 +47,7 @@ Append following content to `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.prpr.serde": "https://github.com/peroperogames/PeroSerde.git#0.2.0-base"
+    "com.prpr.serde": "https://github.com/peroperogames/PeroSerde.git#0.2.0"
   }
 }
 ```
