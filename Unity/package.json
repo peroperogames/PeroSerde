@@ -12,7 +12,8 @@
   "changelogUrl": "https://github.com/peroperogames/PeroSerde/releases",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peroperogames/PeroSerde.git"
+    "url": "https://github.com/peroperogames/PeroSerde.git"
+    "directory": "Unity"
   },
   "dependencies": {
     "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
