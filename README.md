@@ -28,14 +28,14 @@ Append following content to project file (`.csproj`):
 ```xml
 
 <ItemGroup>
-    <PackageReference Include="PeroTools2.Serde" Version="0.2.0"/>
+    <PackageReference Include="PeroTools2.Serde" Version="0.2.1"/>
 </ItemGroup>
 ```
 
 Or install via CLI:
 
 ```sh
-dotnet add package PeroTools2.Serde --version 0.2.0
+dotnet add package PeroTools2.Serde --version 0.2.1
 ```
 
 ### Unity
@@ -47,7 +47,7 @@ Append following content to `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.prpr.serde": "https://github.com/peroperogames/PeroSerde.git#0.2.0"
+    "com.prpr.serde": "https://github.com/peroperogames/PeroSerde.git#0.2.1"
   }
 }
 ```
@@ -66,7 +66,7 @@ Append following content to `Packages/manifest.json`:
     }
   ],
   "dependencies": {
-    "com.prpr.serde": "0.2.0"
+    "com.prpr.serde": "0.2.1"
   }
 }
 ```
@@ -85,7 +85,7 @@ Append following content to `Packages/manifest.json`:
     }
   ],
   "dependencies": {
-    "com.prpr.serde": "0.2.0"
+    "com.prpr.serde": "0.2.1"
   }
 }
 ```
