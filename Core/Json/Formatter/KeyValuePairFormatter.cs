@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -17,13 +18,33 @@ namespace PeroTools2.Serde.Json;
 /// <typeparam name="TValue">Value type</typeparam>
 public sealed class KeyValuePairFormatter<TKey, TValue> : ISerdeJsonFormatter<KeyValuePair<TKey, TValue>>
 {
-    private static readonly EncodingJsonFormatter<TKey> s_KeyEncodingJsonFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as EncodingJsonFormatter<TKey>;
-    private static readonly IFixedSerdeJsonFormatter<TKey> s_KeyFixedFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as IFixedSerdeJsonFormatter<TKey>;
+    private static EncodingJsonFormatter<TKey> s_KeyEncodingJsonFormatter;
+    private static IFixedSerdeJsonFormatter<TKey> s_KeyFixedFormatter;
+    private static bool s_Resolved;
     private static readonly TypeCode s_KeyType = Type.GetTypeCode(typeof(TKey));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureResolved()
+    {
+        // Resolved on first use: the key formatter can be registered after this formatter, which happens when a
+        // generated registrar runs before the registrations of the key type
+        if (s_Resolved)
+        {
+            return;
+        }
+        Resolve();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Resolve()
+    {
+        s_KeyEncodingJsonFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as EncodingJsonFormatter<TKey>;
+        s_KeyFixedFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as IFixedSerdeJsonFormatter<TKey>;
+        Volatile.Write(ref s_Resolved, true);
+    }
     public unsafe void SerializeUtf8(KeyValuePair<TKey, TValue> kv, ref JsonWriterUtf8 writer)
     {
+        EnsureResolved();
         writer.WriteBeginObject();
         if (s_KeyFixedFormatter == null)
         {
@@ -54,6 +75,7 @@ public sealed class KeyValuePairFormatter<TKey, TValue> : ISerdeJsonFormatter<Ke
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void SerializeUtf16(KeyValuePair<TKey, TValue> kv, ref JsonWriterUtf16 writer)
     {
+        EnsureResolved();
         writer.WriteBeginObject();
         if (s_KeyFixedFormatter == null)
         {
@@ -79,6 +101,7 @@ public sealed class KeyValuePairFormatter<TKey, TValue> : ISerdeJsonFormatter<Ke
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe KeyValuePair<TKey, TValue> DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
     {
+        EnsureResolved();
         reader.ReadBeginObject();
         var keyStr = reader.ReadKey();
         var value = reader.ReadValue<TValue>();
@@ -133,6 +156,7 @@ public sealed class KeyValuePairFormatter<TKey, TValue> : ISerdeJsonFormatter<Ke
 
     public unsafe KeyValuePair<TKey, TValue> DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
     {
+        EnsureResolved();
         reader.ReadBeginObject();
         var keyStr = reader.ReadKey();
         var value = reader.ReadValue<TValue>();

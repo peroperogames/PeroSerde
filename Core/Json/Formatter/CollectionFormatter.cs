@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -22,11 +23,25 @@ namespace PeroTools2.Serde.Json;
 [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
 public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : ICollection<T>, new()
 {
-    private static readonly IFixedSerdeJsonFormatter<T> s_FixedFormatter;
-    private static readonly ISerdeJsonFormatter<T> s_UnfixedFormatter;
-    private static readonly bool s_IsFixed;
+    private static IFixedSerdeJsonFormatter<T> s_FixedFormatter;
+    private static ISerdeJsonFormatter<T> s_UnfixedFormatter;
+    private static bool s_IsFixed;
+    private static bool s_Resolved;
 
-    static CollectionFormatter()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureResolved()
+    {
+        // Resolved on first use: the element formatter can be registered after this formatter, which happens when a
+        // generated registrar runs before the registrations of the element types
+        if (s_Resolved)
+        {
+            return;
+        }
+        Resolve();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Resolve()
     {
         if (!SerdeJsonFormatterProvider.IsRegistered<T>())
         {
@@ -42,11 +57,13 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
         {
             s_UnfixedFormatter = unfixedFormatter;
         }
+        Volatile.Write(ref s_Resolved, true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf8(TCollection value, ref JsonWriterUtf8 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteCollection(value, s_FixedFormatter);
@@ -60,6 +77,7 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf16(TCollection value, ref JsonWriterUtf16 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteCollection(value, s_FixedFormatter);
@@ -73,6 +91,7 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TCollection DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
     {
+        EnsureResolved();
         return s_IsFixed
             ? reader.ReadCollection<TCollection, T>(s_FixedFormatter)
             : reader.ReadCollection<TCollection, T>(s_UnfixedFormatter);
@@ -81,6 +100,7 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TCollection DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
     {
+        EnsureResolved();
         return s_IsFixed
             ? reader.ReadCollection<TCollection, T>(s_FixedFormatter)
             : reader.ReadCollection<TCollection, T>(s_UnfixedFormatter);
@@ -95,9 +115,10 @@ public sealed class CollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TC
 [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
 public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonFormatter<TCollection> where TCollection : IReadOnlyCollection<T>
 {
-    private static readonly IFixedSerdeJsonFormatter<T> s_FixedFormatter;
-    private static readonly ISerdeJsonFormatter<T> s_UnfixedFormatter;
-    private static readonly bool s_IsFixed;
+    private static IFixedSerdeJsonFormatter<T> s_FixedFormatter;
+    private static ISerdeJsonFormatter<T> s_UnfixedFormatter;
+    private static bool s_IsFixed;
+    private static bool s_Resolved;
     private static readonly bool s_IsICollection = typeof(ICollection<T>).IsAssignableFrom(typeof(TCollection));
     private static readonly bool s_IsIProducerConsumerCollection = typeof(IProducerConsumerCollection<T>).IsAssignableFrom(typeof(TCollection));
 
@@ -121,7 +142,20 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     private static readonly bool s_IsInterface = typeof(TCollection).IsInterface;
     private static readonly ConstructorInfo s_ParameterlessCtor = typeof(TCollection).GetConstructor(Type.EmptyTypes);
 
-    static ReadonlyCollectionFormatter()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureResolved()
+    {
+        // Resolved on first use: the element formatter can be registered after this formatter, which happens when a
+        // generated registrar runs before the registrations of the element types
+        if (s_Resolved)
+        {
+            return;
+        }
+        Resolve();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Resolve()
     {
         if (!SerdeJsonFormatterProvider.IsRegistered<T>())
         {
@@ -138,11 +172,13 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
         {
             s_UnfixedFormatter = unfixedFormatter;
         }
+        Volatile.Write(ref s_Resolved, true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf8(TCollection value, ref JsonWriterUtf8 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteReadonlyCollection(value, s_FixedFormatter);
@@ -156,6 +192,7 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf16(TCollection value, ref JsonWriterUtf16 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteReadonlyCollection(value, s_FixedFormatter);
@@ -169,6 +206,7 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TCollection DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
     {
+        EnsureResolved();
         if (s_IsICollection)
         {
             if (s_IsList)
@@ -213,6 +251,7 @@ public sealed class ReadonlyCollectionFormatter<TCollection, T> : ISerdeJsonForm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TCollection DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
     {
+        EnsureResolved();
         if (s_IsICollection)
         {
             if (s_IsList)

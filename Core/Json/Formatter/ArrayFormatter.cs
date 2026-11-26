@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -17,11 +18,25 @@ namespace PeroTools2.Serde.Json;
 [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
 public sealed class ArrayFormatter<T> : ISerdeJsonFormatter<T[]>
 {
-    private static readonly IFixedSerdeJsonFormatter<T> s_FixedFormatter;
-    private static readonly ISerdeJsonFormatter<T> s_UnfixedFormatter;
-    private static readonly bool s_IsFixed;
+    private static IFixedSerdeJsonFormatter<T> s_FixedFormatter;
+    private static ISerdeJsonFormatter<T> s_UnfixedFormatter;
+    private static bool s_IsFixed;
+    private static bool s_Resolved;
 
-    static ArrayFormatter()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureResolved()
+    {
+        // Resolved on first use: the element formatter can be registered after this formatter, which happens when a
+        // generated registrar runs before the registrations of the element types
+        if (s_Resolved)
+        {
+            return;
+        }
+        Resolve();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Resolve()
     {
         var formatter = SerdeJsonFormatterProvider.GetFormatterInternal<T>();
         if (formatter is IFixedSerdeJsonFormatter<T> fixedFormatter)
@@ -33,11 +48,13 @@ public sealed class ArrayFormatter<T> : ISerdeJsonFormatter<T[]>
         {
             s_UnfixedFormatter = unfixedFormatter;
         }
+        Volatile.Write(ref s_Resolved, true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf8(T[] value, ref JsonWriterUtf8 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteCollection(value, s_FixedFormatter);
@@ -51,6 +68,7 @@ public sealed class ArrayFormatter<T> : ISerdeJsonFormatter<T[]>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SerializeUtf16(T[] value, ref JsonWriterUtf16 writer)
     {
+        EnsureResolved();
         if (s_IsFixed)
         {
             writer.WriteCollection(value, s_FixedFormatter);
@@ -64,6 +82,7 @@ public sealed class ArrayFormatter<T> : ISerdeJsonFormatter<T[]>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T[] DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
     {
+        EnsureResolved();
         if (reader.TryReadNull())
         {
             return null;
@@ -91,6 +110,7 @@ public sealed class ArrayFormatter<T> : ISerdeJsonFormatter<T[]>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T[] DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
     {
+        EnsureResolved();
         if (reader.TryReadNull())
         {
             return null;

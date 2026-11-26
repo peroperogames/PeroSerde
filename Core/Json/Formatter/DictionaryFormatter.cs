@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PeroTools2.Serde.Json;
 
@@ -25,12 +26,34 @@ public sealed class DictionaryFormatter<TKey, TValue> : DictionaryFormatter<Dict
 /// <typeparam name="TDictionary">Dictionary type</typeparam>
 public class DictionaryFormatter<TDictionary, TKey, TValue> : ISerdeJsonFormatter<TDictionary> where TDictionary : IDictionary<TKey, TValue>, new()
 {
-    private static readonly EncodingJsonFormatter<TKey> s_KeyEncodingJsonFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as EncodingJsonFormatter<TKey>;
-    private static readonly IFixedSerdeJsonFormatter<TKey> s_KeyFixedFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as IFixedSerdeJsonFormatter<TKey>;
+    private static EncodingJsonFormatter<TKey> s_KeyEncodingJsonFormatter;
+    private static IFixedSerdeJsonFormatter<TKey> s_KeyFixedFormatter;
+    private static bool s_Resolved;
     private static readonly TypeCode s_KeyType = Type.GetTypeCode(typeof(TKey));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureResolved()
+    {
+        // Resolved on first use: the key formatter can be registered after this formatter, which happens when a
+        // generated registrar runs before the registrations of the key type
+        if (s_Resolved)
+        {
+            return;
+        }
+        Resolve();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Resolve()
+    {
+        s_KeyEncodingJsonFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as EncodingJsonFormatter<TKey>;
+        s_KeyFixedFormatter = SerdeJsonFormatterProvider.GetFormatterInternal<TKey>() as IFixedSerdeJsonFormatter<TKey>;
+        Volatile.Write(ref s_Resolved, true);
+    }
 
     public unsafe void SerializeUtf8(TDictionary dic, ref JsonWriterUtf8 writer)
     {
+        EnsureResolved();
         if (dic == null)
         {
             writer.WriteNull();
@@ -114,6 +137,7 @@ public class DictionaryFormatter<TDictionary, TKey, TValue> : ISerdeJsonFormatte
 
     public unsafe void SerializeUtf16(TDictionary dic, ref JsonWriterUtf16 writer)
     {
+        EnsureResolved();
         if (dic == null)
         {
             writer.WriteNull();
@@ -187,6 +211,7 @@ public class DictionaryFormatter<TDictionary, TKey, TValue> : ISerdeJsonFormatte
 
     public TDictionary DeserializeUtf8(ref ReadOnlySpan<byte> remains, ref JsonReaderUtf8 reader)
     {
+        EnsureResolved();
         if (reader.TryReadNull())
         {
             return default;
@@ -258,6 +283,7 @@ public class DictionaryFormatter<TDictionary, TKey, TValue> : ISerdeJsonFormatte
 
     public TDictionary DeserializeUtf16(ref ReadOnlySpan<char> remains, ref JsonReaderUtf16 reader)
     {
+        EnsureResolved();
         if (reader.TryReadNull())
         {
             return default;
